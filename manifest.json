@@ -3,6 +3,10 @@
   "name": "fxreplayFunded",
   "version": "1.0",
 
+  "background": {
+    "service_worker": "src/background.js"
+  },
+
   "content_scripts": [
     {
       "matches": ["https://*.fxreplay.com/*"],
@@ -11,5 +15,8 @@
   ],
   "action": {
     "default_popup": "dist/index.html"
-  }
+  },
+  "permissions": [
+    "storage"
+  ]
 }

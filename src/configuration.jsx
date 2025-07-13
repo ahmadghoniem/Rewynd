@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { Plus, Minus } from "lucide-react"
 
 const NumberInput = ({
@@ -92,7 +93,7 @@ const PhaseSelector = ({ phases, onChange }) => {
   )
 }
 
-const ConfigurationView = ({ config, onSave, onConfigChange }) => {
+const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
   const getDefaultProfitTargets = (phases) => {
     switch (phases) {
       case 1:
@@ -125,9 +126,19 @@ const ConfigurationView = ({ config, onSave, onConfigChange }) => {
     })
   }
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
+    }).format(amount)
+  }
+
   const renderProfitTargets = () => {
     const targets = []
     for (let i = 1; i <= config.phases; i++) {
+      const targetAmount = (accountData.balance * (config.profitTargets[`phase${i}`] || 2)) / 100
+      
       targets.push(
         <div key={i} className="space-y-2">
           <Label className="text-sm font-medium">Phase {i} Profit Target</Label>
@@ -138,6 +149,9 @@ const ConfigurationView = ({ config, onSave, onConfigChange }) => {
             max={50}
             step={1}
           />
+          <div className="text-xs text-gray-500 pl-2">
+            Target: {formatCurrency(targetAmount)}
+          </div>
         </div>
       )
     }
@@ -150,62 +164,64 @@ const ConfigurationView = ({ config, onSave, onConfigChange }) => {
         <CardTitle className="text-lg">Configure Challenge</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Account Balance</Label>
-          <div className="flex items-center justify-center p-3 bg-green-50 rounded-lg border">
-            <span className="text-2xl font-bold text-green-600">${5000}</span>
+        {/* Challenge Configuration */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Number of Phases</Label>
+            <PhaseSelector phases={config.phases} onChange={handlePhasesChange} />
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Number of Phases</Label>
-          <PhaseSelector phases={config.phases} onChange={handlePhasesChange} />
-        </div>
+          {renderProfitTargets()}
 
-        {renderProfitTargets()}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Max Drawdown</Label>
+            <NumberInput
+              value={config.maxDrawdown}
+              onChange={(value) =>
+                onConfigChange({ ...config, maxDrawdown: value })
+              }
+              min={1}
+              max={30}
+              step={1}
+            />
+            <div className="text-xs text-gray-500 pl-2">
+              Loss limit: {formatCurrency((accountData.balance * config.maxDrawdown) / 100)}
+            </div>
+          </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Max Drawdown</Label>
-          <NumberInput
-            value={config.maxDrawdown}
-            onChange={(value) =>
-              onConfigChange({ ...config, maxDrawdown: value })
-            }
-            min={1}
-            max={30}
-            step={1}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Daily Drawdown</Label>
+            <NumberInput
+              value={config.dailyDrawdown}
+              onChange={(value) =>
+                onConfigChange({ ...config, dailyDrawdown: value })
+              }
+              min={1}
+              max={20}
+              step={1}
+            />
+            <div className="text-xs text-gray-500 pl-2">
+              Daily limit: {formatCurrency((accountData.balance * config.dailyDrawdown) / 100)}
+            </div>
+          </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Daily Drawdown</Label>
-          <NumberInput
-            value={config.dailyDrawdown}
-            onChange={(value) =>
-              onConfigChange({ ...config, dailyDrawdown: value })
-            }
-            min={1}
-            max={20}
-            step={1}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Drawdown Type</Label>
-          <Select
-            value={config.isTrailing ? "trailing" : "static"}
-            onValueChange={(value) =>
-              onConfigChange({ ...config, isTrailing: value === "trailing" })
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select drawdown type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="static">Static Drawdown</SelectItem>
-              <SelectItem value="trailing">Trailing Drawdown</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Drawdown Type</Label>
+            <Select
+              value={config.isTrailing ? "trailing" : "static"}
+              onValueChange={(value) =>
+                onConfigChange({ ...config, isTrailing: value === "trailing" })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select drawdown type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="static">Static Drawdown</SelectItem>
+                <SelectItem value="trailing">Trailing Drawdown</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Button onClick={onSave} className="w-full mt-6">
