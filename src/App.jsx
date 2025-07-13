@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import ConfigurationView from "./configuration"
 import AnalyticsView from "./analytics"
+import { ThemeProvider } from "./ThemeContext"
 
 const App = () => {
   const [view, setView] = useState("analytics") // "config" or "analytics"
@@ -142,22 +143,24 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-w-[320px] max-w-sm bg-gray-50 p-4">
-      {view === "config" ? (
-        <ConfigurationView
-          config={challengeConfig}
-          onSave={handleSave}
-          onConfigChange={setChallengeConfig}
-          accountData={accountData}
-        />
-      ) : (
-        <AnalyticsView 
-          config={challengeConfig} 
-          onBack={handleBack}
-          accountData={accountData}
-        />
-      )}
-    </div>
+    <ThemeProvider>
+      <div className="min-w-[320px] max-w-sm bg-gray-50 dark:bg-gray-900 p-4 transition-colors duration-200">
+        {view === "config" ? (
+          <ConfigurationView
+            config={challengeConfig}
+            onSave={handleSave}
+            onConfigChange={setChallengeConfig}
+            accountData={accountData}
+          />
+        ) : (
+          <AnalyticsView 
+            config={challengeConfig} 
+            onBack={handleBack}
+            accountData={accountData}
+          />
+        )}
+      </div>
+    </ThemeProvider>
   )
 }
 
