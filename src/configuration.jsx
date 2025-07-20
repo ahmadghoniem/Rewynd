@@ -1,17 +1,11 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Minus, Sun, Moon } from "lucide-react"
+import { Plus, Minus, Sun, Moon, Settings, Target, Calendar } from "lucide-react"
 import { useTheme } from "./ThemeContext"
 import "./hideNumberArrows.css"
 
@@ -157,86 +151,102 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
   }
 
   return (
-    <Card className="w-full max-w-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-lg dark:shadow-gray-900/20">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center justify-between text-gray-900 dark:text-gray-100">
-          <span>Configure Challenge</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleTheme}
-            className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-gray-900 dark:text-gray-100">
-        {/* Challenge Configuration */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Number of Phases</Label>
-            <PhaseSelector phases={config.phases} onChange={handlePhasesChange} />
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Challenge Configuration
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Configure your funded trading challenge parameters
+        </p>
+      </div>
 
-          {renderProfitTargets()}
+      {/* Configuration Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        {/* Left Column - Basic Settings */}
+        <div className="space-y-6">
+          {/* Challenge Structure */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Challenge Structure
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Number of Phases</Label>
+                <PhaseSelector phases={config.phases} onChange={handlePhasesChange} />
+              </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Max Drawdown</Label>
-            <NumberInput
-              value={config.maxDrawdown}
-              onChange={(value) =>
-                onConfigChange({ ...config, maxDrawdown: value })
-              }
-              min={1}
-              max={30}
-              step={1}
-            />
-          </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Profit Targets</Label>
+                {renderProfitTargets()}
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Daily Drawdown</Label>
-            <NumberInput
-              value={config.dailyDrawdown}
-              onChange={(value) =>
-                onConfigChange({ ...config, dailyDrawdown: value })
-              }
-              min={1}
-              max={20}
-              step={1}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Drawdown Type</Label>
-            <Select
-              value={config.isTrailing ? "trailing" : "static"}
-              onValueChange={(value) =>
-                onConfigChange({ ...config, isTrailing: value === "trailing" })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select drawdown type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="static">Static Drawdown</SelectItem>
-                <SelectItem value="trailing">Trailing Drawdown</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Account Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Account Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Account Size:</span>
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                  {formatCurrency(accountData.capital)}
+                </span>
+              </div>
+              
+              <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                Last updated: {accountData.lastUpdated ? new Date(accountData.lastUpdated).toLocaleString() : 'Never'}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Data Status */}
-        <div className="text-xs text-gray-500 dark:text-gray-400 text-center border-t border-gray-200 dark:border-gray-700 pt-2">
-          <div>Data last updated: {accountData.lastUpdated ? new Date(accountData.lastUpdated).toLocaleString() : 'Never'}</div>
+        {/* Right Column - Summary */}
+        <div className="space-y-6">
+          {/* Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Challenge Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Challenge Type:</span>
+                <Badge variant="secondary">{config.phases} Phase{config.phases > 1 ? 's' : ''}</Badge>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Total Profit Target:</span>
+                <Badge variant="outline">
+                  {Object.values(config.profitTargets).reduce((sum, target) => sum + target, 0)}%
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+      </div>
 
-        <Button onClick={onSave} className="w-full mt-6 hover:bg-gray-100 dark:hover:bg-gray-700">
-          Save & View Analytics
+      {/* Action Buttons */}
+      <div className="flex justify-center pt-6">
+        <Button 
+          onClick={onSave} 
+          className="px-8 py-3 text-lg font-semibold hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
+          Save & View Analytics Dashboard
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

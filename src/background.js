@@ -35,6 +35,74 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })
     return true // Keep the message channel open for async response
   }
+  
+  if (message.type === 'OPEN_EXTENSION_TAB') {
+    console.log('Opening extension tab...')
+    
+    // Open the extension in a new tab
+    chrome.tabs.create({
+      url: chrome.runtime.getURL('dist/index.html')
+    }, (tab) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error opening tab:', chrome.runtime.lastError)
+        sendResponse({ success: false, error: chrome.runtime.lastError.message })
+      } else {
+        console.log('Extension opened in new tab:', tab.id)
+        sendResponse({ success: true, tabId: tab.id })
+      }
+    })
+    return true // Keep the message channel open for async response
+  }
+  
+  if (message.type === 'TRADE_DATA_UPDATE') {
+    // Store the trade data in extension storage
+    chrome.storage.local.set({ 
+      'fxreplay_trade_data': message.data 
+    }, () => {
+      console.log('Trade data stored in extension storage:', message.data)
+      
+      // Broadcast to all popup windows
+      chrome.runtime.sendMessage({
+        type: 'TRADE_DATA_UPDATED',
+        data: message.data
+      }).catch(() => {
+        // Popup might not be open, that's okay
+        console.log('Popup not open, trade data stored for later')
+      })
+    })
+    
+    sendResponse({ success: true })
+  }
+
+  if (message.type === 'SESSION_DATA_UPDATE') {
+    // Store the session data in extension storage
+    const sessionKey = `session_${message.data.sessionId}`
+    chrome.storage.local.set({ 
+      [sessionKey]: message.data 
+    }, () => {
+      console.log('Session data stored in extension storage:', message.data)
+      
+      // Broadcast to all popup windows
+      chrome.runtime.sendMessage({
+        type: 'SESSION_DATA_UPDATED',
+        data: message.data
+      }).catch(() => {
+        // Popup might not be open, that's okay
+        console.log('Popup not open, session data stored for later')
+      })
+    })
+    
+    sendResponse({ success: true })
+  }
+  
+  if (message.type === 'GET_TRADE_DATA') {
+    // Retrieve trade data from extension storage
+    chrome.storage.local.get(['fxreplay_trade_data'], (result) => {
+      console.log('Retrieved trade data from storage:', result.fxreplay_trade_data)
+      sendResponse({ data: result.fxreplay_trade_data })
+    })
+    return true // Keep the message channel open for async response
+  }
 })
 
 // Handle extension installation

@@ -7,10 +7,7 @@ const App = () => {
   const [view, setView] = useState("analytics") // "config" or "analytics"
   const [challengeConfig, setChallengeConfig] = useState({
     phases: 1,
-    profitTargets: { phase1: 10 },
-    maxDrawdown: 10,
-    dailyDrawdown: 5,
-    isTrailing: false
+    profitTargets: { phase1: 10 }
   })
   
   const [accountData, setAccountData] = useState({
@@ -104,6 +101,10 @@ useEffect(() => {
       console.log('Account data updated via extension:', message.data)
       setAccountData(message.data)
     }
+    if (message.type === 'TRADE_DATA_UPDATED') {
+      console.log('Trade data updated via extension:', message.data)
+      // This will be handled by the analytics component
+    }
   }
 
   // Add event listeners
@@ -144,21 +145,44 @@ useEffect(() => {
 
   return (
     <ThemeProvider>
-      <div className="min-w-[320px] max-w-sm bg-gray-50 dark:bg-gray-900 p-4 transition-colors duration-200">
-        {view === "config" ? (
-          <ConfigurationView
-            config={challengeConfig}
-            onSave={handleSave}
-            onConfigChange={setChallengeConfig}
-            accountData={accountData}
-          />
-        ) : (
-          <AnalyticsView 
-            config={challengeConfig} 
-            onBack={handleBack}
-            accountData={accountData}
-          />
-        )}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+        {/* Header */}
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  📊 FxReplay Funded Analytics
+                </h1>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {view === "analytics" ? "Dashboard" : "Configuration"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {view === "config" ? (
+            <div className="max-w-2xl mx-auto">
+              <ConfigurationView
+                config={challengeConfig}
+                onSave={handleSave}
+                onConfigChange={setChallengeConfig}
+                accountData={accountData}
+              />
+            </div>
+          ) : (
+            <AnalyticsView 
+              config={challengeConfig} 
+              onBack={handleBack}
+              accountData={accountData}
+            />
+          )}
+        </main>
       </div>
     </ThemeProvider>
   )

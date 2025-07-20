@@ -2,8 +2,13 @@ import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, TrendingUp, DollarSign, Activity, AlertCircle, RefreshCw, Sun, Moon, Loader2 } from "lucide-react"
+import { ArrowLeft, TrendingUp, DollarSign, Activity, RefreshCw, Sun, Moon, Loader2, Target, Calendar } from "lucide-react"
 import { useTheme } from "./ThemeContext"
+import TradingStatsTable from "./components/TradingStatsTable"
+
+import TradeDataTable from "./components/TradeDataTable"
+import EquityCurve from "./components/EquityCurve"
+import DailyAnalysis from "./components/DailyAnalysis"
 
 const AnalyticsView = ({ config, onBack, accountData }) => {
   const { isDark, toggleTheme } = useTheme()
@@ -58,12 +63,106 @@ const AnalyticsView = ({ config, onBack, accountData }) => {
   // State for storage data
   const [storageData, setStorageData] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [extractedTrades, setExtractedTrades] = useState([])
+  const [sessions, setSessions] = useState([])
+  const [selectedSessionId, setSelectedSessionId] = useState(null)
+  const [currentSessionId, setCurrentSessionId] = useState(null)
   
+  // Get current session ID from localStorage
+  const getCurrentSessionId = () => {
+    try {
+      const sessionId = localStorage.getItem('lastSelectedSessionID')
+      console.log('Current session ID from localStorage:', sessionId)
+      return sessionId
+    } catch (error) {
+      console.error('Error getting current session ID:', error)
+      return null
+    }
+  }
+
+  // Get all available sessions from localStorage
+  const getAvailableSessions = () => {
+    try {
+      const sessions = []
+      console.log('Scanning localStorage for sessions...')
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        
+        if (key && key.startsWith('tradeAnalytics_session_')) {
+          const sessionId = key.replace('tradeAnalytics_session_', '')
+          
+          const sessionData = localStorage.getItem(key)
+          if (sessionData) {
+            try {
+              const parsed = JSON.parse(sessionData)
+              
+              // Create a better session name
+              let sessionName = `Session ${sessionId}`
+              if (parsed.lastUpdated) {
+                const date = new Date(parsed.lastUpdated)
+                sessionName = `Session ${sessionId} (${date.toLocaleDateString()})`
+              }
+              
+              sessions.push({
+                id: sessionId,
+                name: sessionName,
+                data: parsed,
+                lastUpdated: parsed.lastUpdated || Date.now(),
+                url: parsed.url || '',
+                trades: parsed.trades || []
+              })
+              console.log(`Added session: ${sessionId} with ${parsed.trades?.length || 0} trades`)
+            } catch (e) {
+              console.error('Error parsing session data:', e)
+            }
+          }
+        }
+      }
+      
+      console.log('Total sessions found:', sessions.length)
+      
+      return sessions.sort((a, b) => b.lastUpdated - a.lastUpdated)
+    } catch (error) {
+      console.error('Error getting available sessions:', error)
+      return []
+    }
+  }
+
   // Load storage data on component mount
   useEffect(() => {
+    // Get current session ID
+    const currentId = getCurrentSessionId()
+    setCurrentSessionId(currentId)
+    
+    // Get available sessions
+    const availableSessions = getAvailableSessions()
+    setSessions(availableSessions)
+    
+    // Set selected session to current session
+    setSelectedSessionId(currentId)
+    
     getStorageData().then(data => {
       setStorageData(data)
     })
+    
+    // Set up Chrome extension message listener for trade data
+    const handleTradeDataUpdate = (message, sender, sendResponse) => {
+      if (message.type === 'TRADE_DATA_UPDATED') {
+        console.log('Trade data updated via extension:', message.data)
+        setExtractedTrades(message.data.trades || [])
+      }
+    }
+    
+    if (chrome && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener(handleTradeDataUpdate)
+    }
+    
+    return () => {
+      if (chrome && chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleTradeDataUpdate)
+      }
+    }
   }, [])
   
   // Use storage data if available, otherwise fall back to props
@@ -92,9 +191,6 @@ const AnalyticsView = ({ config, onBack, accountData }) => {
     console.log('Data refreshed from storage:', data)
   }
 
-
-
-
   const getTotalProfitTarget = () => {
     return Object.values(config.profitTargets).reduce(
       (sum, target) => sum + target,
@@ -111,9 +207,7 @@ const AnalyticsView = ({ config, onBack, accountData }) => {
   }
 
   const targetAmounts = getTargetAmounts()
-  const totalTargetAmount = (displayData.capital * getTotalProfitTarget()) / 100
-  const maxDrawdownAmount = (displayData.capital * config.maxDrawdown) / 100
-  const dailyDrawdownAmount = (displayData.capital * config.dailyDrawdown) / 100
+
 
   // Calculate performance metrics using tracked data
   const calculatePerformance = () => {
@@ -156,24 +250,7 @@ const AnalyticsView = ({ config, onBack, accountData }) => {
 
   const targetProgress = calculateTargetProgress()
 
-  // Calculate drawdown status
-  const calculateDrawdownStatus = () => {
-    const maxDrawdown = (displayData.capital * config.maxDrawdown) / 100
-    const dailyDrawdown = (displayData.capital * config.dailyDrawdown) / 100
-    const realizedPnL = displayData.realizedPnL || 0
-    
-    const status = {
-      maxDrawdownRemaining: maxDrawdown + (realizedPnL < 0 ? realizedPnL : 0),
-      dailyDrawdownRemaining: dailyDrawdown,
-      isAtRisk: realizedPnL < -maxDrawdown * 0.8, // Warning at 80% of max drawdown
-      isBreached: realizedPnL < -maxDrawdown // Breached max drawdown
-    }
-    
-    console.log('Drawdown status:', status)
-    return status
-  }
 
-  const drawdownStatus = calculateDrawdownStatus()
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -195,6 +272,65 @@ const AnalyticsView = ({ config, onBack, accountData }) => {
     return 'text-gray-600'
   }
 
+  // Load data for a specific session
+  const loadSessionData = (sessionId) => {
+    try {
+      const sessionKey = `tradeAnalytics_session_${sessionId}`
+      const sessionData = localStorage.getItem(sessionKey)
+      if (sessionData) {
+        const parsed = JSON.parse(sessionData)
+        setStorageData(parsed)
+        setExtractedTrades(parsed.trades || [])
+        setSelectedSessionId(sessionId)
+        console.log(`Loaded session data for ${sessionId}:`, parsed)
+      }
+    } catch (error) {
+      console.error('Error loading session data:', error)
+    }
+  }
+
+  // Handle session selection
+  const handleSessionSelect = (sessionId) => {
+    loadSessionData(sessionId)
+  }
+
+  // Check if viewing historical session
+  const isViewingHistoricalSession = selectedSessionId && selectedSessionId !== currentSessionId
+
+  // Save current session data
+  const saveCurrentSessionData = (data) => {
+    if (!currentSessionId) {
+      console.log('No current session ID, creating default session')
+      // Create a default session ID if none exists
+      const defaultSessionId = `session_${Date.now()}`
+      localStorage.setItem('lastSelectedSessionID', defaultSessionId)
+      setCurrentSessionId(defaultSessionId)
+      setSelectedSessionId(defaultSessionId)
+    }
+    
+    const sessionIdToUse = currentSessionId || `session_${Date.now()}`
+    
+    try {
+      const sessionKey = `tradeAnalytics_session_${sessionIdToUse}`
+      const sessionData = {
+        ...data,
+        lastUpdated: Date.now(),
+        sessionId: sessionIdToUse
+      }
+      localStorage.setItem(sessionKey, JSON.stringify(sessionData))
+      console.log(`Saved session data for ${sessionIdToUse}`)
+    } catch (error) {
+      console.error('Error saving session data:', error)
+    }
+  }
+
+  // Save session data when storage data changes
+  useEffect(() => {
+    if (storageData && currentSessionId) {
+      saveCurrentSessionData(storageData)
+    }
+  }, [storageData, currentSessionId])
+
   const getStatusBadge = (value) => {
     if (value > 0) return 'default'
     if (value < 0) return 'destructive'
@@ -202,241 +338,318 @@ const AnalyticsView = ({ config, onBack, accountData }) => {
   }
 
   return (
-    <Card className="w-full max-w-sm bg-[var(--gray-1)] dark:bg-[var(--gray-11)] border-[var(--gray-6)] dark:border-[var(--gray-8)] shadow-lg dark:shadow-[var(--gray-12)]/20">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center justify-between text-[var(--gray-12)] dark:text-[var(--gray-1)]">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            Challenge Analytics
-          </div>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                setLoading(true)
-                await handleRefresh()
-                setLoading(false)
-              }}
-              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="Refresh data"
-              disabled={loading}
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-[var(--gray-12)] dark:text-[var(--gray-1)]">
-        {/* Live Account Status */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Initial Capital:</span>
-            </div>
-            <span className="text-sm font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(displayData.capital)}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Account Balance:</span>
-            </div>
-            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-              {formatCurrency(displayData.balance)}
-            </span>
-          </div>
-
-          {/* Realized P&L Section */}
-          <div className="flex justify-center">
-            <div className="flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-              <div className="flex items-center gap-1 mb-1">
-                {displayData.realizedPnL >= 0 ? (
-                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                ) : (
-                  <TrendingUp className="h-4 w-4 text-red-500 dark:text-red-400 transform rotate-180" />
-                )}
-                <span className={`text-xs ${displayData.realizedPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                  Realized P&L
-                </span>
-              </div>
-              <span className={`text-sm font-bold ${getStatusColor(displayData.realizedPnL || 0)}`}>
-                {formatCurrency(displayData.realizedPnL || 0)}
-              </span>
-            </div>
-          </div>
-
-          {/* Performance Summary */}
-          <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Performance:</span>
-            <div className="flex items-center gap-2">
-              <Badge variant={getStatusBadge(performancePercentage)}>
-                {performancePercentage >= 0 ? "+" : ""}{performancePercentage.toFixed(2)}%
-              </Badge>
-              <span className={`text-sm font-bold ${getStatusColor(displayData.realizedPnL || 0)}`}>
-                {formatCurrency(displayData.realizedPnL || 0)}
-              </span>
-            </div>
-          </div>
-
-          {/* Drawdown Warning */}
-          {drawdownStatus.isBreached && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-              <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
-              <span className="text-sm text-red-500 dark:text-red-400 font-medium">
-                Max drawdown limit breached! Evaluation failed.
-              </span>
-            </div>
-          )}
-          {drawdownStatus.isAtRisk && !drawdownStatus.isBreached && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-              <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
-                Approaching max drawdown limit!
-              </span>
-            </div>
-          )}
+    <div className="space-y-6">
+      {/* Header with Actions */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Configuration
+          </Button>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Funded Trading Challenge Dashboard
+          </h2>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={toggleTheme}
+            className="flex items-center gap-2"
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDark ? "Light" : "Dark"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setLoading(true)
+              await handleRefresh()
+              setLoading(false)
+            }}
+            className="flex items-center gap-2"
+            title="Refresh data"
+            disabled={loading}
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Refresh
+          </Button>
+        </div>
+      </div>
 
-        {/* Challenge Configuration */}
-        <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Challenge Type:</span>
-            <Badge variant="secondary">{config.phases} Phase{config.phases > 1 ? 's' : ''}</Badge>
+      {/* Session Selector */}
+      {sessions.length > 0 && (
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Trading Session
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {isViewingHistoricalSession ? 'Viewing historical session' : 'Current active session'}
+                  {sessions.length > 1 && ` • ${sessions.length} sessions available`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedSessionId || ''}
+                  onChange={(e) => handleSessionSelect(e.target.value)}
+                  className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {sessions.map((session) => (
+                    <option key={session.id} value={session.id}>
+                      {session.name} {session.id === currentSessionId ? '(Current)' : ''}
+                    </option>
+                  ))}
+                </select>
+                {isViewingHistoricalSession && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSessionSelect(currentSessionId)}
+                    className="text-xs"
+                  >
+                    Back to Current
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Challenge Summary Banner - FTMO Style */}
+      <Card className={`bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-800 border-slate-200 dark:border-slate-700 ${isViewingHistoricalSession ? 'border-orange-300 dark:border-orange-600' : ''}`}>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Funded Trading Challenge
+                </h3>
+                {isViewingHistoricalSession && (
+                  <Badge variant="outline" className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-600">
+                    Historical Session
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {config.phases} Phase{config.phases > 1 ? 's' : ''} • {Object.values(config.profitTargets).reduce((sum, target) => sum + target, 0)}% Total Target
+                {isViewingHistoricalSession && ` • Session ${selectedSessionId}`}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Current Progress</p>
+              <p className={`text-2xl font-bold ${performancePercentage >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                {performancePercentage >= 0 ? "+" : ""}{performancePercentage.toFixed(2)}%
+              </p>
+            </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="space-y-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Profit Targets:</span>
-            {Object.entries(config.profitTargets).map(([phase, target]) => (
-              <div key={phase} className="space-y-1">
-                <div className="flex justify-between items-center pl-4">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {phase.charAt(0).toUpperCase() + phase.slice(1).replace(/(\d)/, " $1")}:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{target}%</Badge>
-                    <span className="text-sm text-green-600 dark:text-green-400 font-medium">
-                      {formatCurrency(targetAmounts[phase])}
-                    </span>
+      {/* Account Overview Section - FTMO Style */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Account Size */}
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Account Size</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  {formatCurrency(displayData.capital)}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Current Balance */}
+        <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border-emerald-200 dark:border-emerald-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Current Balance</p>
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                  {formatCurrency(displayData.balance)}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-emerald-100 dark:bg-emerald-800 rounded-lg flex items-center justify-center">
+                <Activity className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Realized P&L */}
+        <Card className={`bg-gradient-to-br ${displayData.realizedPnL >= 0 ? 'from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border-emerald-200 dark:border-emerald-800' : 'from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200 dark:border-red-800'}`}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Realized P&L</p>
+                <p className={`text-2xl font-bold ${getStatusColor(displayData.realizedPnL || 0)}`}>
+                  {formatCurrency(displayData.realizedPnL || 0)}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {performancePercentage >= 0 ? "+" : ""}{performancePercentage.toFixed(2)}%
+                </p>
+              </div>
+              <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${displayData.realizedPnL >= 0 ? 'bg-emerald-100 dark:bg-emerald-800' : 'bg-red-100 dark:bg-red-800'}`}>
+                <TrendingUp className={`h-6 w-6 ${displayData.realizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'} ${displayData.realizedPnL < 0 ? 'transform rotate-180' : ''}`} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Account Stage */}
+        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border-purple-200 dark:border-purple-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Account Stage</p>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                  Phase {config.phases > 1 ? '1' : '1'}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {config.phases > 1 ? `${config.phases} Phase Challenge` : 'Single Phase'}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center">
+                <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Objectives Section - FTMO Style */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Objectives</h3>
+          <Badge variant="outline" className="text-sm">
+            {Object.values(config.profitTargets).reduce((sum, target) => sum + target, 0)}% Total Target
+          </Badge>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Profit Targets */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Profit Targets
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {Object.entries(config.profitTargets).map(([phase, target]) => (
+                <div key={phase} className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {phase.charAt(0).toUpperCase() + phase.slice(1).replace(/(\d)/, " $1")}
+                      </span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Target: {target}% ({formatCurrency(targetAmounts[phase])})
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className="mb-1">{target}%</Badge>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {targetProgress[phase].toFixed(1)}% complete
+                      </p>
+                    </div>
                   </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4">
+                      <div 
+                        className="bg-gradient-to-r from-emerald-500 to-green-500 h-4 rounded-full transition-all duration-300 shadow-sm"
+                        style={{ width: `${Math.min(100, targetProgress[phase])}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Challenge Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Challenge Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Challenge Type:</span>
+                  <Badge variant="secondary">{config.phases} Phase{config.phases > 1 ? 's' : ''}</Badge>
                 </div>
                 
-                {/* Progress Bar */}
-                <div className="pl-4">
-                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                    <div 
-                      className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(100, targetProgress[phase])}%` }}
-                    />
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {targetProgress[phase].toFixed(1)}% complete
-                  </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Profit Target:</span>
+                  <Badge variant="outline">
+                    {Object.values(config.profitTargets).reduce((sum, target) => sum + target, 0)}%
+                  </Badge>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-2">
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Max Drawdown:</span>
-                <div className="flex items-center gap-2">
-                  <Badge variant="destructive">{config.maxDrawdown}%</Badge>
-                  <span className="text-sm text-red-500 dark:text-red-400 font-medium">
-                    {formatCurrency(maxDrawdownAmount)}
-                  </span>
+                
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Current Progress:</span>
+                  <Badge variant={performancePercentage >= 0 ? 'default' : 'destructive'}>
+                    {performancePercentage >= 0 ? "+" : ""}{performancePercentage.toFixed(2)}%
+                  </Badge>
                 </div>
               </div>
               
-              {/* Max Drawdown Progress Bar */}
-              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    Math.abs(displayData.realizedPnL || 0) / maxDrawdownAmount >= 1 
-                      ? 'bg-red-500' 
-                      : Math.abs(displayData.realizedPnL || 0) / maxDrawdownAmount >= 0.8 
-                        ? 'bg-yellow-500' 
-                        : 'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min(100, (Math.abs(displayData.realizedPnL || 0) / maxDrawdownAmount) * 100)}%` }}
-                />
+              <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div>Last updated: {formatLastUpdated(displayData.lastUpdated)}</div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {((Math.abs(displayData.realizedPnL || 0) / maxDrawdownAmount) * 100).toFixed(1)}% used
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Daily Drawdown:</span>
-                <div className="flex items-center gap-2">
-                  <Badge variant="destructive">{config.dailyDrawdown}%</Badge>
-                  <span className="text-sm text-red-500 dark:text-red-400 font-medium">
-                    {formatCurrency(dailyDrawdownAmount)}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Daily Drawdown Progress Bar */}
-              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    Math.abs(displayData.realizedPnL || 0) / dailyDrawdownAmount >= 1 
-                      ? 'bg-red-500' 
-                      : Math.abs(displayData.realizedPnL || 0) / dailyDrawdownAmount >= 0.8 
-                        ? 'bg-yellow-500' 
-                        : 'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min(100, (Math.abs(displayData.realizedPnL || 0) / dailyDrawdownAmount) * 100)}%` }}
-                />
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {((Math.abs(displayData.realizedPnL || 0) / dailyDrawdownAmount) * 100).toFixed(1)}% used
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Drawdown Type:</span>
-            <Badge variant="outline">
-              {config.isTrailing ? "Trailing" : "Static"}
-            </Badge>
-          </div>
+            </CardContent>
+          </Card>
         </div>
+      </div>
 
-        {/* Data Status */}
-        <div className="text-xs text-gray-500 dark:text-gray-400 text-center border-t border-gray-200 dark:border-gray-700 pt-2">
-          <div>Data last updated: {formatLastUpdated(displayData.lastUpdated)}</div>
-          <div className="mt-1">
-            Initial Capital: {formatCurrency(displayData.capital)}
-          </div>
+      {/* Trading Performance Section */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          Trading Performance
+        </h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TradingStatsTable tradesData={extractedTrades} />
         </div>
+        
+        {/* Trade Data Table */}
+                        <TradeDataTable tradesData={extractedTrades} accountSize={displayData?.capital || 0} />
+      </div>
 
-        <Button onClick={onBack} variant="outline" className="w-full hover:bg-gray-100 dark:hover:bg-gray-700">
-          Modify Configuration
-        </Button>
-      </CardContent>
-    </Card>
+      {/* Equity Curve Analysis */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          Equity Curve & Performance Tracking
+        </h3>
+        <EquityCurve tradesData={extractedTrades} />
+      </div>
+
+      {/* Daily Analysis */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          Daily Trading Analysis
+        </h3>
+        <DailyAnalysis tradesData={extractedTrades} />
+      </div>
+    </div>
   )
 }
 

@@ -17,6 +17,13 @@
     "default_popup": "dist/index.html"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "tabs"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["dist/index.html", "dist/*"],
+      "matches": ["<all_urls>"]
+    }
   ]
 }
