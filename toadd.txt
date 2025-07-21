@@ -5,22 +5,7 @@ https://www.goatfundedtrader.com/start-goat
 
 HANDLE UI FIRST 
 
-HEADER
-ACCOUNT SELECTOR (visible in analytics only)
-mere dropdown that contains prev challenges overview
 
-ui changes
--ANALYTICS-
-equity curve will contain account size, balance and realized pnl and account phase whether phase 1,2,3 or funded
-Presets for trade history
--CONFIGURATION-
-PRESETS for configuration page
-
--miscellaneous-
-Analytics is the default page but if it’s a brand new challenge it will redirect to configuration page
-configuration buttion would change the challenge selected only
-
- 
 -html trade table-
 
 <div _ngcontent-ng-c1248786696="" role="tabpanel" aria-labelledby="tab-2" id="tab-4-content-1" class="w-full overflow-auto dark:text-white !transition-none p-4 ng-star-inserted">

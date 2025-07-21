@@ -20,6 +20,7 @@ import {
   TradingPerformanceSection
 } from "./components/analytics"
 
+
 const AnalyticsView = ({ config, accountData }) => {
   const { isDark, toggleTheme } = useTheme()
   // Read data directly from Chrome extension storage or localStorage
@@ -178,10 +179,12 @@ const AnalyticsView = ({ config, accountData }) => {
     )
   }
 
+
+
   return (
     <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2/3: Objectives + Equity Curve */}
+        {/* Left 2/3: Objectives + Equity Curve + Trade History */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <ObjectivesSection
             config={config || { profitTargets: { phase1: 10 }, maxDrawdown: 5, dailyDrawdown: 2 }}
@@ -195,20 +198,11 @@ const AnalyticsView = ({ config, accountData }) => {
             profitableDays={profitableDays}
           />
           <EquityCurveSection displayData={displayData} extractedTrades={extractedTrades} />
-        </div>
-        {/* Right 1/3: Trading Performance Metrics */}
-        <div className="lg:col-span-1">
-          <TradingPerformanceSection extractedTrades={extractedTrades} displayData={displayData} config={config} />
-        </div>
-      </div>
-      {/* Below the main grid: Trade Data Table and Daily Analysis */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Trade History (2/3) */}
-        <div className="lg:col-span-2">
           <TradeDataSection extractedTrades={extractedTrades} displayData={displayData} />
         </div>
-        {/* Daily Trading Calendar (1/3) */}
-        <div className="lg:col-span-1">
+        {/* Right 1/3: Trading Performance Metrics + Daily Analysis */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          <TradingPerformanceSection extractedTrades={extractedTrades} displayData={displayData} config={config} />
           <DailyAnalysisSection extractedTrades={extractedTrades} />
         </div>
       </div>
