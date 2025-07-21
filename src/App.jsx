@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 import ConfigurationView from "./configuration"
 import AnalyticsView from "./analytics"
-import { ThemeProvider } from "./ThemeContext"
+import { ThemeProvider, useTheme } from "./ThemeContext"
 
-const App = () => {
+const AppContent = () => {
   const [view, setView] = useState("analytics") // "config" or "analytics"
   const [challengeConfig, setChallengeConfig] = useState({
     phases: 1,
@@ -16,6 +18,8 @@ const App = () => {
     capital: 5000, // Default fallback
     lastUpdated: null
   })
+
+  const { isDark, toggleTheme } = useTheme()
 
   // Function to load and update account data
   const loadAndUpdateAccountData = () => {
@@ -143,47 +147,90 @@ useEffect(() => {
     setView("config")
   }
 
+  // Add a refresh handler that works globally
+  const handleRefresh = () => {
+    // If in analytics view, trigger refresh on the analytics page
+    if (view === "analytics") {
+      // Use a custom event to trigger refresh in analytics
+      window.dispatchEvent(new CustomEvent("analyticsRefresh"))
+    }
+  }
+
   return (
-    <ThemeProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-        {/* Header */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  📊 FxReplay Funded Analytics
-                </h1>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {view === "analytics" ? "Dashboard" : "Configuration"}
-                </span>
-              </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                📊 FxReplay Funded Analytics
+              </h1>
+              {view === "analytics" && (
+                <div className="flex items-center gap-4 ml-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleBack}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </Button>
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">Analytics Dashboard</span>
+                </div>
+              )}
+              {view === "analytics" && (
+                <select className="ml-4 px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200" disabled>
+                  <option value="" disabled>Select Challenge</option>
+                </select>
+              )}
+              {/* Real Refresh and Theme Toggle Buttons */}
+              <button
+                className="ml-4 px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                onClick={handleRefresh}
+                title="Refresh"
+              >
+                &#x21bb; Refresh
+              </button>
+              <button
+                className="ml-2 px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                onClick={toggleTheme}
+                title="Toggle Dark/Light"
+              >
+                {isDark ? "🌙" : "☀️"}
+              </button>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {view === "config" ? (
-            <div className="max-w-2xl mx-auto">
-              <ConfigurationView
-                config={challengeConfig}
-                onSave={handleSave}
-                onConfigChange={setChallengeConfig}
-                accountData={accountData}
-              />
-            </div>
-          ) : (
-            <AnalyticsView 
-              config={challengeConfig} 
-              onBack={handleBack}
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {view === "config" ? (
+          <div className="max-w-2xl mx-auto">
+            <ConfigurationView
+              config={challengeConfig}
+              onSave={handleSave}
+              onConfigChange={setChallengeConfig}
               accountData={accountData}
             />
-          )}
-        </main>
-      </div>
+          </div>
+        ) : (
+          <AnalyticsView 
+            config={challengeConfig} 
+            onBack={handleBack}
+            accountData={accountData}
+          />
+        )}
+      </main>
+    </div>
+  )
+}
+
+const App = () => {
+  return (
+    <ThemeProvider>
+      <AppContent />
     </ThemeProvider>
   )
 }

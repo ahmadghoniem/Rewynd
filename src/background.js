@@ -73,27 +73,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     sendResponse({ success: true })
   }
-
-  if (message.type === 'SESSION_DATA_UPDATE') {
-    // Store the session data in extension storage
-    const sessionKey = `session_${message.data.sessionId}`
-    chrome.storage.local.set({ 
-      [sessionKey]: message.data 
-    }, () => {
-      console.log('Session data stored in extension storage:', message.data)
-      
-      // Broadcast to all popup windows
-      chrome.runtime.sendMessage({
-        type: 'SESSION_DATA_UPDATED',
-        data: message.data
-      }).catch(() => {
-        // Popup might not be open, that's okay
-        console.log('Popup not open, session data stored for later')
-      })
-    })
-    
-    sendResponse({ success: true })
-  }
   
   if (message.type === 'GET_TRADE_DATA') {
     // Retrieve trade data from extension storage

@@ -134,16 +134,22 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
   const renderProfitTargets = () => {
     const targets = []
     for (let i = 1; i <= config.phases; i++) {
+      const phaseKey = `phase${i}`
+      const targetValue = config.profitTargets[phaseKey] || 2
+      const requiredAmount = accountData.capital * (targetValue / 100)
       targets.push(
         <div key={i} className="space-y-2">
           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phase {i} Profit Target</Label>
           <NumberInput
-            value={config.profitTargets[`phase${i}`] || 2}
-            onChange={(value) => handleProfitTargetChange(`phase${i}`, value)}
+            value={targetValue}
+            onChange={(value) => handleProfitTargetChange(phaseKey, value)}
             min={1}
             max={50}
             step={1}
           />
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Target: {targetValue}% ({formatCurrency(requiredAmount)})
+          </div>
         </div>
       )
     }
@@ -184,6 +190,54 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                 <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Profit Targets</Label>
                 {renderProfitTargets()}
               </div>
+              {/* Daily Drawdown Input */}
+              <div className="space-y-2 mt-4">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Daily Drawdown</Label>
+                <NumberInput
+                  value={config.dailyDrawdown || 2}
+                  onChange={value => onConfigChange({ ...config, dailyDrawdown: value })}
+                  min={1}
+                  max={50}
+                  step={0.1}
+                  suffix="%"
+                />
+              </div>
+              {/* Max Drawdown Input */}
+              <div className="space-y-2 mt-2">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Max Drawdown</Label>
+                <NumberInput
+                  value={config.maxDrawdown || 5}
+                  onChange={value => onConfigChange({ ...config, maxDrawdown: value })}
+                  min={1}
+                  max={50}
+                  step={0.1}
+                  suffix="%"
+                />
+              </div>
+              {/* Minimum Profitable Days Input */}
+              <div className="space-y-2 mt-4">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Minimum Profitable Days</Label>
+                <NumberInput
+                  value={config.requireProfitableDays || 0}
+                  onChange={value => onConfigChange({ ...config, requireProfitableDays: Math.max(0, value) })}
+                  min={0}
+                  max={30}
+                  step={1}
+                />
+                <div className="text-xs text-gray-500 dark:text-gray-400">Set to 0 to disable this requirement</div>
+              </div>
+              {/* Minimum Trading Days Input */}
+              <div className="space-y-2 mt-2">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Minimum Trading Days</Label>
+                <NumberInput
+                  value={config.minTradingDays || 0}
+                  onChange={value => onConfigChange({ ...config, minTradingDays: Math.max(0, value) })}
+                  min={0}
+                  max={30}
+                  step={1}
+                />
+                <div className="text-xs text-gray-500 dark:text-gray-400">Set to 0 to disable this requirement</div>
+              </div>
             </CardContent>
           </Card>
 
@@ -202,7 +256,6 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                   {formatCurrency(accountData.capital)}
                 </span>
               </div>
-              
               <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 Last updated: {accountData.lastUpdated ? new Date(accountData.lastUpdated).toLocaleString() : 'Never'}
               </div>
@@ -211,30 +264,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
         </div>
 
         {/* Right Column - Summary */}
-        <div className="space-y-6">
-          {/* Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Challenge Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Challenge Type:</span>
-                <Badge variant="secondary">{config.phases} Phase{config.phases > 1 ? 's' : ''}</Badge>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Total Profit Target:</span>
-                <Badge variant="outline">
-                  {Object.values(config.profitTargets).reduce((sum, target) => sum + target, 0)}%
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Challenge Summary card removed here */}
       </div>
 
       {/* Action Buttons */}

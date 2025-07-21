@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, Clock, Calendar, DollarSign, Target, AlertTriangle } from "lucide-react"
+import { TrendingUp, Clock, Calendar, DollarSign, Target, AlertTriangle, TrendingDown } from "lucide-react"
 
 const TradingStatsTable = ({ tradesData = [] }) => {
   const [stats, setStats] = useState({
@@ -177,148 +177,56 @@ const TradingStatsTable = ({ tradesData = [] }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">Metric</th>
-                <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">Value</th>
-                <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Average RR</td>
-                <td className="p-3 text-sm font-medium text-gray-900 dark:text-white">
-                  {stats.averageRR.toFixed(2)}
-                </td>
-                <td className="p-3">
-                  <Badge variant={stats.averageRR >= 1 ? 'default' : 'secondary'}>
-                    {stats.averageRR >= 1 ? 'Good' : 'Low'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Average Profit</td>
-                <td className={`p-3 text-sm font-medium ${getStatusColor(stats.averageProfit)}`}>
-                  {formatCurrency(stats.averageProfit)}
-                </td>
-                <td className="p-3">
-                  <Badge variant={getStatusBadge(stats.averageProfit)}>
-                    {stats.averageProfit > 0 ? 'Positive' : 'Zero'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Average Loss</td>
-                <td className={`p-3 text-sm font-medium ${getStatusColor(stats.averageLoss)}`}>
-                  {formatCurrency(stats.averageLoss)}
-                </td>
-                <td className="p-3">
-                  <Badge variant={getStatusBadge(stats.averageLoss)}>
-                    {stats.averageLoss < 0 ? 'Loss' : 'Zero'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Best Win</td>
-                <td className={`p-3 text-sm font-medium ${getStatusColor(stats.bestWin)}`}>
-                  {formatCurrency(stats.bestWin)}
-                </td>
-                <td className="p-3">
-                  <Badge variant={stats.bestWin > 0 ? 'default' : 'secondary'}>
-                    {stats.bestWin > 0 ? 'Record' : 'None'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Trades per Day</td>
-                <td className="p-3 text-sm font-medium text-gray-900 dark:text-white">
-                  {stats.tradesPerDay.toFixed(1)}
-                </td>
-                <td className="p-3">
-                  <Badge variant={stats.tradesPerDay > 0 ? 'outline' : 'secondary'}>
-                    {stats.tradesPerDay > 0 ? 'Active' : 'None'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Max Daily Loss</td>
-                <td className={`p-3 text-sm font-medium ${getStatusColor(-stats.maxDailyLoss)}`}>
-                  {formatCurrency(stats.maxDailyLoss)}
-                </td>
-                <td className="p-3">
-                  <Badge variant={stats.maxDailyLoss > 0 ? 'destructive' : 'secondary'}>
-                    {stats.maxDailyLoss > 0 ? 'Risk' : 'Safe'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Avg Hold Time</td>
-                <td className="p-3 text-sm font-medium text-gray-900 dark:text-white">
-                  {formatDuration(stats.averageDuration)}
-                </td>
-                <td className="p-3">
-                  <Badge variant="outline">
-                    {stats.averageDuration < 30 ? 'Quick' : 'Long'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Profit Factor</td>
-                <td className="p-3 text-sm font-medium text-gray-900 dark:text-white">
-                  {stats.profitFactor.toFixed(2)}
-                </td>
-                <td className="p-3">
-                  <Badge variant={stats.profitFactor >= 1 ? 'default' : 'secondary'}>
-                    {stats.profitFactor >= 1 ? 'Good' : 'Low'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-3 text-sm text-gray-600 dark:text-gray-400">Sharpe Ratio</td>
-                <td className="p-3 text-sm font-medium text-gray-900 dark:text-white">
-                  {stats.sharpeRatio.toFixed(2)}
-                </td>
-                <td className="p-3">
-                  <Badge variant={stats.sharpeRatio >= 0 ? 'default' : 'secondary'}>
-                    {stats.sharpeRatio >= 0 ? 'Good' : 'Low'}
-                  </Badge>
-                </td>
-              </tr>
-              
-              <tr className="bg-gray-50 dark:bg-gray-800">
-                <td className="p-3 text-sm font-medium text-gray-700 dark:text-gray-300">Win Rate</td>
-                <td className="p-3 text-sm font-medium text-gray-900 dark:text-white">
-                  {stats.winRate.toFixed(1)}% ({stats.winningTrades}/{stats.totalTrades})
-                </td>
-                <td className="p-3">
-                  <Badge variant={stats.winRate >= 50 ? 'default' : 'destructive'}>
-                    {stats.winRate >= 50 ? 'Good' : 'Poor'}
-                  </Badge>
-                </td>
-              </tr>
+        <div className="w-full">
+          <div className="flex flex-col gap-6 items-stretch w-full">
+            {/* <div className="flex flex-col items-center justify-center bg-gradient-to-br from-red-100 to-green-100 dark:from-red-900/20 dark:to-green-900/20 rounded-lg p-6 w-full md:w-48 max-w-xs mx-auto md:mx-0 min-w-[180px]">
+              <div className="relative flex items-center justify-center w-full">
+                <svg width="120" height="60" viewBox="0 0 120 60" className="block mx-auto">
+                 
+                  <path d="M20,60 A40,40 0 0,1 100,60" fill="none" stroke="#ef4444" strokeWidth="10" strokeDasharray="62.8 62.8" strokeDashoffset="0" />
+                  <path d="M20,60 A40,40 0 0,1 100,60" fill="none" stroke="#22c55e" strokeWidth="10" strokeDasharray="62.8 62.8" strokeDashoffset="62.8" />
+                </svg>
+                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 text-4xl font-bold text-gray-900 dark:text-white text-center pointer-events-none">
+                  {stats.totalTrades}
+                </div>
+              </div>
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 text-center">Trades</div>
+            </div>  */}
 
+            {/* Wins Section */}
+            <div className=" min-w-0 bg-gray-900/5 dark:bg-gray-800/40 rounded-lg p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="h-3 w-3 rounded-full bg-green-500 inline-block"></span>
+                <span className="font-semibold text-green-600 dark:text-green-400">Wins</span>
+              </div>
+              <div className="flex flex-col gap-1 text-sm">
+                <div className="flex justify-between"><span>Total Wins</span><span>{stats.winningTrades}</span></div>
+                <div className="flex justify-between"><span>Best Win</span><span className="text-green-600 dark:text-green-400">{formatCurrency(stats.bestWin)}</span></div>
+                <div className="flex justify-between"><span>Average Win</span><span className="text-green-600 dark:text-green-400">{formatCurrency(stats.averageProfit)}</span></div>
+                <div className="flex justify-between"><span>Average RR</span><span className="text-green-600 dark:text-green-400">{stats.averageRR.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Win Rate</span><span>{stats.winRate.toFixed(1)}%</span></div>
+                <div className="flex justify-between"><span>Sharpe Ratio</span><span>{stats.sharpeRatio.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Profit Factor</span><span>{stats.profitFactor.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Avg Win Duration</span><span>{formatDuration(stats.averageDuration)}</span></div>
+              </div>
+            </div>
 
-            </tbody>
-          </table>
-        </div>
-        
-        {stats.totalTrades === 0 && (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No trading data available</p>
-            <p className="text-sm">Trading statistics will appear here once trades are detected</p>
+            {/* Losses Section */}
+            <div className=" min-w-0 bg-gray-900/5 dark:bg-gray-800/40 rounded-lg p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="h-3 w-3 rounded-full bg-red-500 inline-block"></span>
+                <span className="font-semibold text-red-600 dark:text-red-400">Losses</span>
+              </div>
+              <div className="flex flex-col gap-1 text-sm">
+                <div className="flex justify-between"><span>Total Losses</span><span>{stats.losingTrades}</span></div>
+                <div className="flex justify-between"><span>Worst Loss</span><span className="text-red-600 dark:text-red-400">{formatCurrency(stats.averageLoss)}</span></div>
+                <div className="flex justify-between"><span>Average Loss</span><span className="text-red-600 dark:text-red-400">{formatCurrency(stats.averageLoss)}</span></div>
+                <div className="flex justify-between"><span>Max Daily Loss</span><span>{formatCurrency(stats.maxDailyLoss)}</span></div>
+                <div className="flex justify-between"><span>Avg Loss Duration</span><span>{formatDuration(stats.averageDuration)}</span></div>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   )

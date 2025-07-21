@@ -71,19 +71,14 @@
   }
 
   function saveAccountData(data) {
-    if (!data.balance) {
-      console.log("No valid account data to save")
-      return
-    }
-
     try {
-      // Send to background script
+      // Send to background script for storage
       chrome.runtime.sendMessage({
         type: 'ACCOUNT_DATA_UPDATE',
         data: data
       }, (response) => {
         if (response && response.success) {
-          console.log("Account data saved:", data)
+          console.log("Account data sent to background script")
         }
       })
       
@@ -92,207 +87,6 @@
     } catch (error) {
       console.error('Error saving account data:', error)
     }
-  }
-
-  // Extract session ID from URL
-  function extractSessionId() {
-    try {
-      const url = window.location.href
-      console.log('Current URL:', url)
-      
-      // Look for session ID in URL patterns like:
-      // https://fxreplay.com/sessions/[sessionId]/...
-      // or other patterns that might contain session ID
-      const sessionMatch = url.match(/\/sessions\/([^\/]+)/)
-      if (sessionMatch) {
-        const sessionId = sessionMatch[1]
-        console.log('Session ID extracted from URL:', sessionId)
-        return sessionId
-      }
-      
-      // Fallback: look for any ID-like pattern in the URL
-      const idMatch = url.match(/[a-zA-Z0-9]{8,}/)
-      if (idMatch) {
-        console.log('Using fallback session ID from URL:', idMatch[0])
-        return idMatch[0]
-      }
-      
-      console.log('No session ID found in URL')
-      return null
-    } catch (error) {
-      console.error('Error extracting session ID:', error)
-      return null
-    }
-  }
-
-  // Save session data with session ID
-  function saveSessionData(data, sessionId) {
-    if (!sessionId) {
-      console.log('No session ID provided, skipping session save')
-      return
-    }
-
-    try {
-      const sessionKey = `tradeAnalytics_session_${sessionId}`
-      const sessionData = {
-        ...data,
-        sessionId: sessionId,
-        lastUpdated: Date.now(),
-        url: window.location.href
-      }
-      
-      // Save to localStorage
-      localStorage.setItem(sessionKey, JSON.stringify(sessionData))
-      
-      // Update current session ID
-      localStorage.setItem('lastSelectedSessionID', sessionId)
-      
-      console.log(`Session data saved for ${sessionId}:`, sessionData)
-      
-      // Also send to background script
-      chrome.runtime.sendMessage({
-        type: 'SESSION_DATA_UPDATE',
-        data: sessionData
-      }, (response) => {
-        if (response && response.success) {
-          console.log("Session data sent to background script")
-        }
-      })
-    } catch (error) {
-      console.error('Error saving session data:', error)
-    }
-  }
-
-  function trackAccountData() {
-    const data = extractAccountData()
-    if (data) {
-      // Extract session ID from URL
-      const sessionId = extractSessionId()
-      
-      // Save account data normally
-      saveAccountData(data)
-      
-      // Also save as session data if we have a session ID
-      if (sessionId) {
-        saveSessionData(data, sessionId)
-      }
-    }
-  }
-
-  // Global flag to prevent multiple button creation
-  if (window.fxreplayButtonCreated) {
-    console.log('Button already created in this session, skipping')
-    return
-  }
-
-  // Function to create and inject the extension button
-  function createExtensionButton() {
-    // Check if button already exists
-    if (document.getElementById('fxreplay-extension-button')) {
-      console.log('Extension button already exists, skipping creation')
-      return
-    }
-
-    console.log('Creating extension button...')
-
-    const button = document.createElement('button')
-    button.id = 'fxreplay-extension-button'
-    button.textContent = '📊 Open Analytics'
-    button.title = 'Open Trade Analytics in Full Screen'
-    
-    // Style the button
-    Object.assign(button.style, {
-      position: 'fixed',
-      top: '20px',
-      right: '20px',
-      zIndex: '10000',
-      padding: '10px 15px',
-      backgroundColor: '#2563eb',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: '600',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      transition: 'all 0.2s ease-in-out'
-    })
-
-    // Add hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.backgroundColor = '#1d4ed8'
-      button.style.transform = 'translateY(-2px)'
-      button.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-    })
-
-    button.addEventListener('mouseleave', () => {
-      button.style.backgroundColor = '#2563eb'
-      button.style.transform = 'translateY(0)'
-      button.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-    })
-
-    // Add click handler
-    button.addEventListener('click', (event) => {
-      event.preventDefault()
-      event.stopPropagation()
-      
-      console.log('Open Analytics button clicked')
-      
-      // Disable button temporarily to prevent multiple clicks
-      button.disabled = true
-      button.style.opacity = '0.6'
-      button.textContent = '📊 Opening...'
-      
-      // Add timeout to prevent hanging
-      const messageTimeout = setTimeout(() => {
-        console.log('Message timeout, trying fallback method')
-        try {
-          const extensionUrl = chrome.runtime.getURL('dist/index.html')
-          window.open(extensionUrl, '_blank')
-        } catch (fallbackError) {
-          console.error('Fallback method failed:', fallbackError)
-        }
-        
-        // Re-enable button
-        button.disabled = false
-        button.style.opacity = '1'
-        button.textContent = '📊 Open Analytics'
-      }, 3000) // 3 second timeout
-
-      chrome.runtime.sendMessage({
-        type: 'OPEN_EXTENSION_TAB'
-      }, (response) => {
-        clearTimeout(messageTimeout) // Clear timeout if we get a response
-        console.log('Response from background script:', response)
-        
-        if (response && response.success) {
-          console.log('Extension opened in new tab successfully')
-        } else {
-          console.error('Failed to open extension tab:', response)
-          
-          // Fallback: try to open the extension URL directly
-          try {
-            const extensionUrl = chrome.runtime.getURL('dist/index.html')
-            console.log('Trying fallback method with URL:', extensionUrl)
-            window.open(extensionUrl, '_blank')
-          } catch (fallbackError) {
-            console.error('Fallback method also failed:', fallbackError)
-          }
-        }
-        
-        // Re-enable button after a short delay
-        setTimeout(() => {
-          button.disabled = false
-          button.style.opacity = '1'
-          button.textContent = '📊 Open Analytics'
-        }, 1000)
-      })
-    })
-
-    // Add to page
-    document.body.appendChild(button)
-    window.fxreplayButtonCreated = true
-    console.log('Extension button created and added to page')
   }
 
   // Trade data extraction functionality
@@ -430,53 +224,27 @@
   }
 
   function saveTradeData(trades) {
-    if (!trades || trades.length === 0) {
-      console.log("No valid trade data to save")
-      return
-    }
-
     try {
-      // Extract session ID
-      const sessionId = extractSessionId()
+      const data = {
+        trades: trades,
+        lastUpdated: Date.now(),
+        url: window.location.href
+      }
       
-      // Send to background script
+      // Send to background script for storage
       chrome.runtime.sendMessage({
         type: 'TRADE_DATA_UPDATE',
-        data: {
-          trades,
-          extractedAt: Date.now(),
-          sessionId: sessionId
-        }
+        data: data
       }, (response) => {
         if (response && response.success) {
-          console.log("Trade data saved:", trades.length, "trades")
+          console.log("Trade data sent to background script")
         }
       })
       
       // Backup to localStorage
-      localStorage.setItem('fxreplay_extracted_trades', JSON.stringify({
-        trades,
-        extractedAt: new Date().toISOString(),
-        sessionId: sessionId
-      }))
+      localStorage.setItem('fxreplay_trade_data', JSON.stringify(data))
       
-      // Also save trade data to session if we have a session ID
-      if (sessionId) {
-        const sessionKey = `tradeAnalytics_session_${sessionId}`
-        const existingSessionData = localStorage.getItem(sessionKey)
-        
-        if (existingSessionData) {
-          try {
-            const sessionData = JSON.parse(existingSessionData)
-            sessionData.trades = trades
-            sessionData.lastUpdated = Date.now()
-            localStorage.setItem(sessionKey, JSON.stringify(sessionData))
-            console.log(`Trade data saved to session ${sessionId}`)
-          } catch (error) {
-            console.error('Error updating session with trade data:', error)
-          }
-        }
-      }
+      console.log('Trade data saved:', data)
     } catch (error) {
       console.error('Error saving trade data:', error)
     }
@@ -694,6 +462,130 @@
       })
     }
     startObserver()
+  }
+
+  function trackAccountData() {
+    const data = extractAccountData()
+    if (data) {
+      // Save account data normally
+      saveAccountData(data)
+    }
+  }
+
+  // Global flag to prevent multiple button creation
+  if (window.fxreplayButtonCreated) {
+    console.log('Button already created, skipping')
+    return
+  }
+
+  // Function to create and inject the extension button
+  function createExtensionButton() {
+    // Check if button already exists
+    if (document.getElementById('fxreplay-extension-button')) {
+      console.log('Extension button already exists, skipping creation')
+      return
+    }
+
+    console.log('Creating extension button...')
+
+    const button = document.createElement('button')
+    button.id = 'fxreplay-extension-button'
+    button.textContent = '📊 Open Analytics'
+    button.title = 'Open Trade Analytics in Full Screen'
+    
+    // Style the button
+    Object.assign(button.style, {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      zIndex: '10000',
+      padding: '10px 15px',
+      backgroundColor: '#2563eb',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: '600',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      transition: 'all 0.2s ease-in-out'
+    })
+
+    // Add hover effects
+    button.addEventListener('mouseenter', () => {
+      button.style.backgroundColor = '#1d4ed8'
+      button.style.transform = 'translateY(-2px)'
+      button.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+    })
+
+    button.addEventListener('mouseleave', () => {
+      button.style.backgroundColor = '#2563eb'
+      button.style.transform = 'translateY(0)'
+      button.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+    })
+
+    // Add click handler
+    button.addEventListener('click', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      
+      console.log('Open Analytics button clicked')
+      
+      // Disable button temporarily to prevent multiple clicks
+      button.disabled = true
+      button.style.opacity = '0.6'
+      button.textContent = '📊 Opening...'
+      
+      // Add timeout to prevent hanging
+      const messageTimeout = setTimeout(() => {
+        console.log('Message timeout, trying fallback method')
+        try {
+          const extensionUrl = chrome.runtime.getURL('dist/index.html')
+          window.open(extensionUrl, '_blank')
+        } catch (fallbackError) {
+          console.error('Fallback method failed:', fallbackError)
+        }
+        
+        // Re-enable button
+        button.disabled = false
+        button.style.opacity = '1'
+        button.textContent = '📊 Open Analytics'
+      }, 3000) // 3 second timeout
+
+      chrome.runtime.sendMessage({
+        type: 'OPEN_EXTENSION_TAB'
+      }, (response) => {
+        clearTimeout(messageTimeout) // Clear timeout if we get a response
+        console.log('Response from background script:', response)
+        
+        if (response && response.success) {
+          console.log('Extension opened in new tab successfully')
+        } else {
+          console.error('Failed to open extension tab:', response)
+          
+          // Fallback: try to open the extension URL directly
+          try {
+            const extensionUrl = chrome.runtime.getURL('dist/index.html')
+            console.log('Trying fallback method with URL:', extensionUrl)
+            window.open(extensionUrl, '_blank')
+          } catch (fallbackError) {
+            console.error('Fallback method also failed:', fallbackError)
+          }
+        }
+        
+        // Re-enable button after a short delay
+        setTimeout(() => {
+          button.disabled = false
+          button.style.opacity = '1'
+          button.textContent = '📊 Open Analytics'
+        }, 1000)
+      })
+    })
+
+    // Add to page
+    document.body.appendChild(button)
+    window.fxreplayButtonCreated = true
+    console.log('Extension button created and added to page')
   }
 
   function init() {

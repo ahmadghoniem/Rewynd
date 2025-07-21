@@ -162,59 +162,6 @@ const EquityCurve = ({ tradesData = [] }) => {
               </div>
             </div>
 
-
-
-            {/* Daily Breakdown */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900 dark:text-white">Daily Breakdown</h4>
-              <div className="max-h-64 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white dark:bg-gray-900">
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left p-2">Day</th>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Trade</th>
-                      <th className="text-left p-2">Daily P&L</th>
-                      <th className="text-left p-2">Cumulative</th>
-
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {equityData.map((point, index) => {
-                      const dailyPnL = index === 0 ? point.cumulativePnL : point.cumulativePnL - equityData[index - 1].cumulativePnL
-                      
-                      return (
-                        <tr key={index} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <td className="p-2 font-medium">{point.dayNumber}</td>
-                          <td className="p-2 text-gray-600 dark:text-gray-400">
-                            {formatDate(point.date)}
-                          </td>
-                          <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{point.trade.asset}</span>
-                              <Badge variant={point.trade.side?.toLowerCase() === 'buy' ? 'default' : 'secondary'} className="text-xs">
-                                {point.trade.side?.toUpperCase()}
-                              </Badge>
-                            </div>
-                          </td>
-                          <td className="p-2">
-                            <span className={`font-medium ${getPnLColor(dailyPnL)}`}>
-                              {formatCurrency(dailyPnL)}
-                            </span>
-                          </td>
-                          <td className="p-2">
-                            <span className={`font-medium ${getPnLColor(point.cumulativePnL)}`}>
-                              {formatCurrency(point.cumulativePnL)}
-                            </span>
-                          </td>
-
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">

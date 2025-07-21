@@ -1,19 +1,23 @@
-
 TODO:
-BUY USDT USING CREDITCARD 7trades using 21usdt 3usdt/trade
-orange cash
+WITHDRAW THE $2 FROM KUCOIN
+BUY THE $1 ACCOUNT using vpn
+https://www.goatfundedtrader.com/start-goat
 
-days trackers
-news tracker
+HANDLE UI FIRST 
 
-average win
-average loss
-max daily lost 
-you/ve won challenge 
+HEADER
+ACCOUNT SELECTOR (visible in analytics only)
+mere dropdown that contains prev challenges overview
 
-avg hold time instead of average duration
-sharpe ratio!l
-Objectives
-ACCOUNT SIZE
-ACCOUNT STAGE?
-accounts instead of sessions
+ui changes
+-ANALYTICS-
+equity curve will contain account size, balance and realized pnl and account phase whether phase 1,2,3 or funded
+Presets for trade history
+-CONFIGURATION-
+PRESETS for configuration page
+
+-miscellaneous-
+Analytics is the default page but if it’s a brand new challenge it will redirect to configuration page
+configuration buttion would change the challenge selected only
+
+ 

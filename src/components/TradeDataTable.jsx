@@ -20,8 +20,35 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
     realized: true,
     duration: true
   })
-
   const [showFilter, setShowFilter] = useState(false)
+  // Preset state
+  const [presets, setPresets] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('columnVisibilityPresets') || '[]')
+    } catch {
+      return []
+    }
+  })
+  const [presetName, setPresetName] = useState("")
+  // Save preset
+  const savePreset = () => {
+    if (!presetName.trim()) return
+    const newPresets = presets.filter(p => p.name !== presetName.trim())
+    newPresets.push({ name: presetName.trim(), columns: visibleColumns })
+    setPresets(newPresets)
+    localStorage.setItem('columnVisibilityPresets', JSON.stringify(newPresets))
+    setPresetName("")
+  }
+  // Load preset
+  const loadPreset = (columns) => {
+    setVisibleColumns(columns)
+  }
+  // Delete preset
+  const deletePreset = (name) => {
+    const newPresets = presets.filter(p => p.name !== name)
+    setPresets(newPresets)
+    localStorage.setItem('columnVisibilityPresets', JSON.stringify(newPresets))
+  }
 
   const formatCurrency = (amount) => {
     if (!amount) return '$0.00'
@@ -310,7 +337,7 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
                 {Object.values(visibleColumns).every(v => v) ? 'Hide All' : 'Show All'}
               </Button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
               {columnDefinitions.map(({ key, label }) => (
                 <div key={key} className="flex items-center space-x-2">
                   <Checkbox
@@ -327,6 +354,50 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
                 </div>
               ))}
             </div>
+            {/* Preset Management UI */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+              <input
+                type="text"
+                placeholder="Preset name"
+                value={presetName}
+                onChange={e => setPresetName(e.target.value)}
+                className="border rounded px-2 py-1 text-sm"
+              />
+              <Button size="sm" variant="outline" onClick={savePreset} disabled={!presetName.trim()}>
+                Save Preset
+              </Button>
+              {presets.length > 0 && (
+                <select
+                  className="border rounded px-2 py-1 text-sm"
+                  onChange={e => {
+                    const preset = presets.find(p => p.name === e.target.value)
+                    if (preset) loadPreset(preset.columns)
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Load Preset...</option>
+                  {presets.map(p => (
+                    <option key={p.name} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            {presets.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                {presets.map(p => (
+                  <span key={p.name} className="flex items-center bg-gray-200 dark:bg-gray-700 rounded px-2 py-1 text-xs">
+                    {p.name}
+                    <button
+                      className="ml-1 text-red-500 hover:text-red-700"
+                      title="Delete preset"
+                      onClick={() => deletePreset(p.name)}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardHeader>
