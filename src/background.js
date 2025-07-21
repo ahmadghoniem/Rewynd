@@ -36,23 +36,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true // Keep the message channel open for async response
   }
   
-  if (message.type === 'OPEN_EXTENSION_TAB') {
-    console.log('Opening extension tab...')
-    
-    // Open the extension in a new tab
-    chrome.tabs.create({
-      url: chrome.runtime.getURL('dist/index.html')
-    }, (tab) => {
-      if (chrome.runtime.lastError) {
-        console.error('Error opening tab:', chrome.runtime.lastError)
-        sendResponse({ success: false, error: chrome.runtime.lastError.message })
-      } else {
-        console.log('Extension opened in new tab:', tab.id)
-        sendResponse({ success: true, tabId: tab.id })
-      }
-    })
-    return true // Keep the message channel open for async response
-  }
+
   
   if (message.type === 'TRADE_DATA_UPDATE') {
     // Store the trade data in extension storage
@@ -88,3 +72,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Extension installed/updated')
 }) 
+
+chrome.action.onClicked.addListener(() => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('dist/index.html') });
+}); 

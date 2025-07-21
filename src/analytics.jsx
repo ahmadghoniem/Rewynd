@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, TrendingUp, DollarSign, Activity, RefreshCw, Sun, Moon, Loader2, Target, Calendar, TrendingDown } from "lucide-react"
+import { Activity, RefreshCw,  Loader2,  } from "lucide-react"
 import { useTheme } from "./ThemeContext"
 
 // Import utility functions
@@ -18,7 +16,6 @@ import {
   ObjectivesSection,
   TradeDataSection,
   DailyAnalysisSection,
-  AnalyticsOverviewSection,
   EquityCurveSection,
   TradingPerformanceSection
 } from "./components/analytics"
@@ -116,17 +113,12 @@ const AnalyticsView = ({ config, accountData }) => {
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener(handleTradeDataUpdate)
     }
-    // Listen for global refresh event
-    const handleGlobalRefresh = () => {
-      handleRefresh()
-    }
-    window.addEventListener('analyticsRefresh', handleGlobalRefresh)
+
     return () => {
       try {
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
           chrome.runtime.onMessage.removeListener(handleTradeDataUpdate)
         }
-        window.removeEventListener('analyticsRefresh', handleGlobalRefresh)
       } catch (error) {
         console.error('Error during cleanup:', error)
       }
@@ -139,41 +131,6 @@ const AnalyticsView = ({ config, accountData }) => {
   console.log('Analytics: Using display data:', displayData)
   console.log('Analytics: Props accountData:', accountData)
 
-  const handleRefresh = async () => {
-    console.log('Manual refresh triggered')
-    
-    try {
-      // Force the content script to re-extract data
-      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-          if (tabs[0] && tabs[0].url && tabs[0].url.includes('fxreplay.com')) {
-            chrome.tabs.sendMessage(tabs[0].id, {type: 'FORCE_REFRESH'}, function(response) {
-              console.log('Force refresh sent to content script')
-            })
-          }
-        })
-      }
-      
-      // Also refresh data from storage
-      const data = await getStorageData()
-      setStorageData({...data, lastUpdated: Date.now()})
-      // Also refresh trades from localStorage
-      try {
-        const tradeDataRaw = localStorage.getItem('fxreplay_trade_data')
-        if (tradeDataRaw) {
-          const tradeData = JSON.parse(tradeDataRaw)
-          if (tradeData && Array.isArray(tradeData.trades)) {
-            setExtractedTrades(tradeData.trades)
-          }
-        }
-      } catch (e) {
-        console.error('Error loading fxreplay_trade_data:', e)
-      }
-      console.log('Data refreshed from storage:', data)
-    } catch (error) {
-      console.error('Error during refresh:', error)
-    }
-  }
 
   const targetAmounts = getTargetAmounts(config?.profitTargets || { phase1: 10 }, displayData.capital)
 
@@ -188,13 +145,9 @@ const AnalyticsView = ({ config, accountData }) => {
 
   // Calculate drawdown metrics using utility function
   const {
-    maxDrawdownUsed,
-    dailyDrawdownUsed,
-    dailyPnLMap,
     maxDrawdownProgress,
     dailyDrawdownProgress,
     profitableDays,
-    profitableDaysProgress,
     tradingDays
   } = calculateDrawdownMetrics(extractedTrades, initialCapital, maxDrawdown, dailyDrawdown)
 
@@ -220,10 +173,6 @@ const AnalyticsView = ({ config, accountData }) => {
             <h3 className="text-lg font-semibold mb-2">No Trading Data Available</h3>
             <p className="text-sm">Please ensure you're on the FxReplay website and have trading data loaded.</p>
           </div>
-          <Button onClick={handleRefresh} className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Refresh Data
-          </Button>
         </div>
       </div>
     )

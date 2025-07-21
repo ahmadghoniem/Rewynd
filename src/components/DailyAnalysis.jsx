@@ -69,7 +69,7 @@ const DailyAnalysis = ({ tradesData = [] }) => {
           <>
             <div className="flex gap-4 mb-4">
               {paginatedData.map((day, idx) => (
-                <div key={day.dateKey} className="trading-summary-card flex-1 min-w-0 rounded-lg p-4 shadow flex flex-col justify-between">
+                <div key={day.dateKey} className="bg-background flex-1 min-w-0 rounded-lg p-4 shadow flex flex-col justify-between">
                   <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
                     <Clock className="h-4 w-4 opacity-60" />
                     {day.date.toLocaleDateString('en-US')}
@@ -83,13 +83,19 @@ const DailyAnalysis = ({ tradesData = [] }) => {
             {/* Pagination Controls */}
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
               <div>
-                {`0${(currentPage - 1) * pageSize + 1} - 0${Math.min(currentPage * pageSize, dailyData.length)} items of ${dailyData.length}`}
+                {`${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, dailyData.length)} items of ${dailyData.length}`}
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}>
-                  1
-                </Button>
-                {currentPage > 2 && <span>...</span>}
+                {/* First page button */}
+                {currentPage > 2 && (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => setCurrentPage(1)}>
+                      1
+                    </Button>
+                    {currentPage > 3 && <span>...</span>}
+                  </>
+                )}
+                {/* Dynamic page buttons */}
                 {Array.from({ length: totalPages }, (_, i) => i + 1)
                   .filter(page => Math.abs(page - currentPage) <= 1)
                   .map(page => (
@@ -102,10 +108,15 @@ const DailyAnalysis = ({ tradesData = [] }) => {
                       {page}
                     </Button>
                   ))}
-                {currentPage < totalPages - 1 && <span>...</span>}
-                <Button variant="ghost" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}>
-                  Last
-                </Button>
+                {/* Last page button */}
+                {currentPage < totalPages - 1 && (
+                  <>
+                    {currentPage < totalPages - 2 && <span>...</span>}
+                    <Button variant="ghost" size="sm" onClick={() => setCurrentPage(totalPages)}>
+                      Last
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </>

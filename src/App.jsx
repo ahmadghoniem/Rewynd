@@ -103,12 +103,6 @@ const AppContent = () => {
       }
     }
 
-    // Set up manual refresh event listener
-    const handleManualRefresh = () => {
-      console.log("Manual refresh triggered")
-      loadAndUpdateAccountData()
-    }
-
     // Set up Chrome extension message listener
     const handleExtensionMessage = (message, sender, sendResponse) => {
       console.log("Extension message received:", message)
@@ -125,7 +119,6 @@ const AppContent = () => {
     // Add event listeners
     window.addEventListener("accountDataUpdated", handleAccountUpdate)
     window.addEventListener("storage", handleStorageChange)
-    window.addEventListener("manualRefresh", handleManualRefresh)
 
     // Add Chrome extension message listener if available
     if (chrome && chrome.runtime && chrome.runtime.onMessage) {
@@ -136,7 +129,6 @@ const AppContent = () => {
     return () => {
       window.removeEventListener("accountDataUpdated", handleAccountUpdate)
       window.removeEventListener("storage", handleStorageChange)
-      window.removeEventListener("manualRefresh", handleManualRefresh)
 
       // Remove Chrome extension message listener if available
       if (chrome && chrome.runtime && chrome.runtime.onMessage) {
@@ -156,15 +148,6 @@ const AppContent = () => {
 
   const handleBack = () => {
     setView("config")
-  }
-
-  // Add a refresh handler that works globally
-  const handleRefresh = () => {
-    // If in analytics view, trigger refresh on the analytics page
-    if (view === "analytics") {
-      // Use a custom event to trigger refresh in analytics
-      window.dispatchEvent(new CustomEvent("analyticsRefresh"))
-    }
   }
 
   // Handler for fetching all trades from all pages
@@ -236,14 +219,6 @@ const AppContent = () => {
                   </option>
                 </select>
               )}
-              {/* Real Refresh and Theme Toggle Buttons */}
-              <button
-                className="ml-4 px-3 py-2 rounded bg-background text-muted-foreground hover:bg-muted"
-                onClick={handleRefresh}
-                title="Refresh"
-              >
-                &#x21bb; Refresh
-              </button>
               <button
                 className="ml-2 px-3 py-2 rounded bg-background text-muted-foreground hover:bg-muted"
                 onClick={toggleTheme}

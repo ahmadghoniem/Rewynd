@@ -2,8 +2,6 @@
 // Requires: utils.js
 
 ;(function () {
-  console.clear()
-  console.log("Trade Duration Calculator & Account Tracker")
 
   // Account tracking functionality
   function extractAccountData() {
@@ -110,7 +108,6 @@
           rows.forEach((row, rowIndex) => {
             const cells = row.querySelectorAll('td')
             
-            if (cells.length >= 14) {
               const trade = {
                 rowIndex: rowIndex, // Add row index for navigation
                 asset: cells[1]?.textContent?.trim() || '',
@@ -125,18 +122,9 @@
                 closeAvg: cells[10]?.textContent?.trim() || '',
                 realized: cells[11]?.textContent?.trim() || '',
                 commission: cells[12]?.textContent?.trim() || '$0.00',
-                duration: cells[13]?.textContent?.trim() || ''
               }
-              
-              if (trade.asset && trade.realized && trade.realized !== '$0.00') {
-                trades.push(trade)
-                console.log(`✅ Added trade: ${trade.asset} - ${trade.realized}`)
-              } else {
-                console.log(`❌ Skipped row ${rowIndex}: missing asset or realized P&L`)
-              }
-            } else {
-              console.log(`❌ Row ${rowIndex} has insufficient cells: ${cells.length}`)
-            }
+              trades.push(trade)
+
           })
           
           return trades
@@ -244,49 +232,6 @@
   }
 
 
-  // Duration calculation functionality (existing)
-  // Remove addDurationColumn and all its usages
-  // Remove code blocks at lines 294-295, 305-306, 378-379, 630-631, 710-711 and related logic
-
-  function observeClosedPositionsTable() {
-    let lastTableHtml = ''
-    let observer = null
-
-    function startObserver() {
-      const closedPositionTable = document.querySelector('lib-closed-position-table')
-      if (!closedPositionTable) {
-        // Retry after a short delay if the table isn't present yet
-        setTimeout(startObserver, 1000)
-        return
-      }
-      
-      // Observe changes in the closed positions table
-      observer = new MutationObserver(() => {
-        const table = closedPositionTable.querySelector('table[fxr-ui-table]')
-        if (table) {
-          const html = table.innerHTML
-          if (html !== lastTableHtml) {
-            lastTableHtml = html
-            // Extract and save trades automatically
-            extractTradeData().then(trades => {
-              if (trades) {
-                saveTradeData(trades)
-              }
-            })
-          }
-        }
-      })
-      observer.observe(closedPositionTable, { childList: true, subtree: true, characterData: true })
-      // Initial extraction
-      extractTradeData().then(trades => {
-        if (trades) {
-          saveTradeData(trades)
-        }
-      })
-    }
-    startObserver()
-  }
-
   function trackAccountData() {
     const data = extractAccountData()
     if (data) {
@@ -301,101 +246,12 @@
     return
   }
 
-  // Function to create and inject the extension button
-  function createExtensionButton() {
-    // Check if button already exists
-    if (document.getElementById('fxreplay-extension-button')) {
-      console.log('Extension button already exists, skipping creation')
-      return
-    }
-
-    console.log('Creating extension button...')
-
-    const button = document.createElement('button')
-    button.id = 'fxreplay-extension-button'
-    button.textContent = '📊 Open Analytics'
-    button.title = 'Open Trade Analytics in Full Screen'
-    
-    // Style the button
-    Object.assign(button.style, {
-      position: 'fixed',
-      top: '20px',
-      right: '20px',
-      zIndex: '10000',
-      padding: '10px 15px',
-      backgroundColor: '#2563eb',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: '600',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      transition: 'all 0.2s ease-in-out'
-    })
-
-    // Removed hover effects for efficiency
-
-    // Add click handler
-    button.addEventListener('click', (event) => {
-      event.preventDefault()
-      event.stopPropagation()
-      console.log('Open Analytics button clicked')
-      button.disabled = true
-      button.style.opacity = '0.6'
-      button.textContent = '📊 Opening...'
-      const messageTimeout = setTimeout(() => {
-        console.log('Message timeout, trying fallback method')
-        try {
-          const extensionUrl = chrome.runtime.getURL('dist/index.html')
-          window.open(extensionUrl, '_blank')
-        } catch (fallbackError) {
-          console.error('Fallback method failed:', fallbackError)
-        }
-        button.disabled = false
-        button.style.opacity = '1'
-        button.textContent = '📊 Open Analytics'
-      }, 3000)
-      chrome.runtime.sendMessage({
-        type: 'OPEN_EXTENSION_TAB'
-      }, (response) => {
-        clearTimeout(messageTimeout)
-        console.log('Response from background script:', response)
-        if (response && response.success) {
-          console.log('Extension opened in new tab successfully')
-        } else {
-          console.error('Failed to open extension tab:', response)
-          try {
-            const extensionUrl = chrome.runtime.getURL('dist/index.html')
-            console.log('Trying fallback method with URL:', extensionUrl)
-            window.open(extensionUrl, '_blank')
-          } catch (fallbackError) {
-            console.error('Fallback method also failed:', fallbackError)
-          }
-        }
-        setTimeout(() => {
-          button.disabled = false
-          button.style.opacity = '1'
-          button.textContent = '📊 Open Analytics'
-        }, 1000)
-      })
-    })
-
-    // Add to page
-    document.body.appendChild(button)
-    window.fxreplayButtonCreated = true
-    console.log('Extension button created and added to page')
-  }
-
   function init() {
     // Initial account tracking
     trackAccountData()
 
-    // Create and inject the extension button
-    createExtensionButton()
+    // Removed: Create and inject the extension button
 
-    // Remove: observeClosedPositionsTable();
-    // Instead, run extractTradeData once when the table is fully loaded
     function waitForTradeTableAndExtract() {
       const closedPositionTable = document.querySelector('lib-closed-position-table')
       if (!closedPositionTable) {
@@ -418,13 +274,6 @@
 
     // Listen for messages from the popup
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.type === 'FORCE_REFRESH') {
-        trackAccountData()
-        sendResponse({success: true})
-      }
-      
-
-      
       if (message.type === 'EXTRACT_TRADES') {
         extractTradeData().then(trades => {
           if (trades) {
@@ -434,8 +283,6 @@
         })
         return true // Keep message channel open for async response
       }
-      
-  
     })
 
     // Watch for DOM changes
@@ -455,9 +302,7 @@
       })
 
       if (hasAccountChanges) {
-        // Debounce account tracking
-        clearTimeout(window.accountTrackingTimeout)
-        window.accountTrackingTimeout = setTimeout(trackAccountData, 500)
+        trackAccountData()
       }
     })
 
