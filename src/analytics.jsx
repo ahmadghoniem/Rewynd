@@ -18,7 +18,9 @@ import {
   ObjectivesSection,
   TradeDataSection,
   DailyAnalysisSection,
-  AnalyticsOverviewSection
+  AnalyticsOverviewSection,
+  EquityCurveSection,
+  TradingPerformanceSection
 } from "./components/analytics"
 
 const AnalyticsView = ({ config, accountData }) => {
@@ -206,31 +208,39 @@ const AnalyticsView = ({ config, accountData }) => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Objectives Section */}
-      <ObjectivesSection
-        config={config || { profitTargets: { phase1: 10 }, maxDrawdown: 5, dailyDrawdown: 2 }}
-        targetAmounts={targetAmounts}
-        targetProgress={targetProgress}
-        dailyDrawdown={dailyDrawdown}
-        dailyDrawdownProgress={dailyDrawdownProgress}
-        maxDrawdown={maxDrawdown}
-        maxDrawdownProgress={maxDrawdownProgress}
-        tradingDays={tradingDays}
-        profitableDays={profitableDays}
-      />
-
-      {/* Equity Curve & Trading Performance Overview */}
-      <AnalyticsOverviewSection
-        displayData={displayData}
-        extractedTrades={extractedTrades}
-      />
-
-      {/* Trading Performance Section */}
-      <TradeDataSection extractedTrades={extractedTrades} displayData={displayData} />
-
-      {/* Daily Analysis */}
-      <DailyAnalysisSection extractedTrades={extractedTrades} />
+    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2/3: Objectives + Equity Curve */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <ObjectivesSection
+            config={config || { profitTargets: { phase1: 10 }, maxDrawdown: 5, dailyDrawdown: 2 }}
+            targetAmounts={targetAmounts}
+            targetProgress={targetProgress}
+            dailyDrawdown={dailyDrawdown}
+            dailyDrawdownProgress={dailyDrawdownProgress}
+            maxDrawdown={maxDrawdown}
+            maxDrawdownProgress={maxDrawdownProgress}
+            tradingDays={tradingDays}
+            profitableDays={profitableDays}
+          />
+          <EquityCurveSection displayData={displayData} extractedTrades={extractedTrades} />
+        </div>
+        {/* Right 1/3: Trading Performance Metrics */}
+        <div className="lg:col-span-1">
+          <TradingPerformanceSection extractedTrades={extractedTrades} />
+        </div>
+      </div>
+      {/* Below the main grid: Trade Data Table and Daily Analysis */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Trade History (2/3) */}
+        <div className="lg:col-span-2">
+          <TradeDataSection extractedTrades={extractedTrades} displayData={displayData} />
+        </div>
+        {/* Daily Trading Calendar (1/3) */}
+        <div className="lg:col-span-1">
+          <DailyAnalysisSection extractedTrades={extractedTrades} />
+        </div>
+      </div>
     </div>
   )
 }

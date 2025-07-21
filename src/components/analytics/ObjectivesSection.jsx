@@ -1,5 +1,5 @@
 import React from "react"
-import PhasesCard from "../cards/ProfitTargetsCard"
+import ProfitTargetsCard from "../cards/ProfitTargetsCard"
 import DrawdownRulesCard from "../cards/DrawdownRulesCard"
 import TradingActivityCard from "../cards/TradingActivityCard"
 import { formatCurrency } from "@/lib/utils"
@@ -21,7 +21,7 @@ const ObjectivesSection = ({
       <div className="grid grid-cols-6 gap-4 w-full">
         {/* Profit Targets Card - spans 2 columns */}
         <div className="col-span-2">
-          <PhasesCard
+          <ProfitTargetsCard
             profitTargets={config.profitTargets}
             targetAmounts={targetAmounts}
             targetProgress={targetProgress}

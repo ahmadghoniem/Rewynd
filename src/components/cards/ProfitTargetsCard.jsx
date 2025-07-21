@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Target } from "lucide-react"
 
-const PhasesCard = ({
+const ProfitTargetsCard = ({
   profitTargets,
   targetAmounts,
   targetProgress,
@@ -13,7 +13,7 @@ const PhasesCard = ({
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Target className="h-5 w-5" />
-        Phases
+        Profit Targets
       </CardTitle>
     </CardHeader>
     <CardContent className="space-y-6">
@@ -50,4 +50,4 @@ const PhasesCard = ({
   </Card>
 )
 
-export default PhasesCard 
+export default ProfitTargetsCard 
