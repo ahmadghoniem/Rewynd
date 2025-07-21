@@ -11,17 +11,6 @@
     let accountSection = document.querySelector('div.hidden.lg\\:\\!flex.justify-end.items-center.gap-4.w-full.grow')
     
     if (!accountSection) {
-      // Fallback: find any div containing account balance text
-      const divs = document.querySelectorAll('div')
-      for (let div of divs) {
-        if (div.textContent.includes('Account Balance:')) {
-          accountSection = div
-          break
-        }
-      }
-    }
-    
-    if (!accountSection) {
       console.log("Account section not found")
       return null
     }
@@ -81,9 +70,7 @@
           console.log("Account data sent to background script")
         }
       })
-      
-      // Backup to localStorage
-      localStorage.setItem('tradeAnalytics_accountData', JSON.stringify(data))
+
     } catch (error) {
       console.error('Error saving account data:', error)
     }
@@ -179,36 +166,39 @@
         async function extractAllTrades() {
           const allTrades = []
           const totalPages = getPaginationInfo()
-          
+          let lastFirstRowKey = null
           console.log(`Starting extraction of ${totalPages} pages...`)
-          
           for (let page = 1; page <= totalPages; page++) {
             console.log(`Extracting page ${page}/${totalPages}...`)
-            
-            // Wait for page to load
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            
-            // Extract trades from current page
-            const pageTrades = extractTradesFromCurrentPage()
-            console.log(`Page ${page}: Found ${pageTrades.length} trades`)
-            
-            // Add page number to each trade
-            pageTrades.forEach(trade => {
-              trade.page = page
-            })
-            
-            allTrades.push(...pageTrades)
-            
-            // Go to next page if not on last page
-            if (page < totalPages) {
+            // Wait for page to load (on first page, just wait 1s)
+            if (page > 1) {
+              // Click next and wait for table to update
+              const tableBody = closedPositionTable.querySelector('table[fxr-ui-table] tbody')
+              const oldRows = tableBody ? Array.from(tableBody.querySelectorAll('tr')).map(row => row.innerText).join('|') : ''
               const hasNext = goToNextPage()
               if (!hasNext) {
                 console.log(`❌ Could not navigate to next page. Stopping at page ${page}`)
                 break
               }
+              // Wait for table body to change
+              let tries = 0
+              while (tries < 20) { // up to 2s
+                await new Promise(resolve => setTimeout(resolve, 100))
+                const newRows = tableBody ? Array.from(tableBody.querySelectorAll('tr')).map(row => row.innerText).join('|') : ''
+                if (newRows !== oldRows) break
+                tries++
+              }
+            } else {
+              await new Promise(resolve => setTimeout(resolve, 1000))
             }
+            // Extract trades from current page
+            const pageTrades = extractTradesFromCurrentPage()
+            console.log(`Page ${page}: Found ${pageTrades.length} trades`)
+            pageTrades.forEach(trade => {
+              trade.page = page
+            })
+            allTrades.push(...pageTrades)
           }
-          
           return allTrades
         }
         
@@ -230,7 +220,6 @@
         lastUpdated: Date.now(),
         url: window.location.href
       }
-      
       // Send to background script for storage
       chrome.runtime.sendMessage({
         type: 'TRADE_DATA_UPDATE',
@@ -240,190 +229,24 @@
           console.log("Trade data sent to background script")
         }
       })
-      
-      // Backup to localStorage
-      localStorage.setItem('fxreplay_trade_data', JSON.stringify(data))
-      
+      // Save to chrome.storage.local (main source of truth)
+      if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ fxreplay_trade_data: data }, () => {
+          console.log('Trade data saved to chrome.storage.local:', data)
+          // Notify all extension UIs
+          chrome.runtime.sendMessage({ type: 'TRADE_DATA_UPDATED', data })
+        })
+      }
       console.log('Trade data saved:', data)
     } catch (error) {
       console.error('Error saving trade data:', error)
     }
   }
 
-  // Navigation functions for trade links
-  async function navigateToTrade(tradeData) {
-    try {
-      const { trade, dateType, rowIndex } = tradeData
-      console.log(`Attempting to navigate to trade: ${trade.asset} at ${trade[dateType]}`)
-      
-      // Find the closed position table
-      const closedPositionTable = document.querySelector('lib-closed-position-table')
-      if (!closedPositionTable) {
-        console.log('❌ No closed position table found')
-        return false
-      }
-      
-      // Find the table
-      const table = closedPositionTable.querySelector('table[fxr-ui-table]')
-      if (!table) {
-        console.log('❌ No table found')
-        return false
-      }
-      
-      // Find the specific row by matching trade data
-      const rows = table.querySelectorAll('tbody tr')
-      let targetRow = null
-      
-      for (let i = 0; i < rows.length; i++) {
-        const cells = rows[i].querySelectorAll('td')
-        if (cells.length >= 14) {
-          const rowAsset = cells[1]?.textContent?.trim()
-          const rowDateStart = cells[3]?.textContent?.trim()
-          const rowDateEnd = cells[4]?.textContent?.trim()
-          const rowRealized = cells[11]?.textContent?.trim()
-          
-          // Match by asset and date
-          if (rowAsset === trade.asset && 
-              (rowDateStart === trade.dateStart || rowDateEnd === trade.dateEnd) &&
-              rowRealized === trade.realized) {
-            targetRow = rows[i]
-            console.log(`✅ Found matching row at index ${i}`)
-            break
-          }
-        }
-      }
-      
-      if (!targetRow) {
-        console.log('❌ Could not find matching row for trade')
-        return false
-      }
-      
-      // Try to find and click the "Show on chart" button in the first column
-      const firstCell = targetRow.querySelector('td:first-child')
-      if (firstCell) {
-        const showButton = firstCell.querySelector('button, input[type="checkbox"], [role="button"]')
-        if (showButton) {
-          console.log('✅ Found show on chart button, clicking...')
-          showButton.click()
-          return true
-        }
-      }
-      
-      // Alternative: try to find any clickable element in the row
-      const clickableElements = targetRow.querySelectorAll('button, [role="button"], .cursor-pointer')
-      if (clickableElements.length > 0) {
-        console.log('✅ Found clickable element, clicking...')
-        clickableElements[0].click()
-        return true
-      }
-      
-      console.log('❌ No clickable elements found in row')
-      return false
-      
-    } catch (error) {
-      console.error('Error navigating to trade:', error)
-      return false
-    }
-  }
-
-  async function clickShowOnChart(rowIndex) {
-    try {
-      console.log(`Attempting to click "Show on chart" for row ${rowIndex}`)
-      
-      // Find the closed position table
-      const closedPositionTable = document.querySelector('lib-closed-position-table')
-      if (!closedPositionTable) {
-        console.log('❌ No closed position table found')
-        return false
-      }
-      
-      // Find the table
-      const table = closedPositionTable.querySelector('table[fxr-ui-table]')
-      if (!table) {
-        console.log('❌ No table found')
-        return false
-      }
-      
-      // Get the specific row
-      const rows = table.querySelectorAll('tbody tr')
-      if (rowIndex >= rows.length) {
-        console.log(`❌ Row index ${rowIndex} out of bounds (${rows.length} rows)`)
-        return false
-      }
-      
-      const targetRow = rows[rowIndex]
-      console.log(`✅ Found row ${rowIndex}`)
-      
-      // Try to find and click the "Show on chart" button in the first column
-      const firstCell = targetRow.querySelector('td:first-child')
-      if (firstCell) {
-        const showButton = firstCell.querySelector('button, input[type="checkbox"], [role="button"]')
-        if (showButton) {
-          console.log('✅ Found show on chart button, clicking...')
-          showButton.click()
-          return true
-        }
-      }
-      
-      // Alternative: try to find any clickable element in the row
-      const clickableElements = targetRow.querySelectorAll('button, [role="button"], .cursor-pointer')
-      if (clickableElements.length > 0) {
-        console.log('✅ Found clickable element, clicking...')
-        clickableElements[0].click()
-        return true
-      }
-      
-      console.log('❌ No clickable elements found in row')
-      return false
-      
-    } catch (error) {
-      console.error('Error clicking show on chart:', error)
-      return false
-    }
-  }
 
   // Duration calculation functionality (existing)
-  function addDurationColumn() {
-    document.querySelectorAll("table").forEach((table) => {
-      const headerRow = table.querySelector("thead tr")
-      if (!headerRow) return
-
-      const headers = Array.from(headerRow.querySelectorAll("th")).map((th) =>
-        th.textContent.trim()
-      )
-
-      if (!headers.includes("Date Start") || !headers.includes("Date End"))
-        return
-
-      const startIdx = headers.findIndex((h) => h.includes("Date Start"))
-      const endIdx = headers.findIndex((h) => h.includes("Date End"))
-      let durationIdx = headers.findIndex((h) => h.includes("Duration"))
-
-      // Add header if not exists
-      if (durationIdx === -1) {
-        headerRow.appendChild(createDurationHeader())
-        durationIdx = headers.length // New index after adding header
-      }
-
-      // Add duration cells to rows that don't have them
-      table.querySelectorAll("tbody tr").forEach((row) => {
-        const cells = row.querySelectorAll("td")
-
-        // Skip if duration cell already exists or insufficient cells
-        if (
-          cells.length > durationIdx ||
-          cells.length <= Math.max(startIdx, endIdx)
-        )
-          return
-
-        const startDate = getCellText(cells[startIdx])
-        const endDate = getCellText(cells[endIdx])
-        const duration = calculateDuration(startDate, endDate)
-
-        row.appendChild(createDurationCell(duration))
-      })
-    })
-  }
+  // Remove addDurationColumn and all its usages
+  // Remove code blocks at lines 294-295, 305-306, 378-379, 630-631, 710-711 and related logic
 
   function observeClosedPositionsTable() {
     let lastTableHtml = ''
@@ -511,32 +334,16 @@
       transition: 'all 0.2s ease-in-out'
     })
 
-    // Add hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.backgroundColor = '#1d4ed8'
-      button.style.transform = 'translateY(-2px)'
-      button.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-    })
-
-    button.addEventListener('mouseleave', () => {
-      button.style.backgroundColor = '#2563eb'
-      button.style.transform = 'translateY(0)'
-      button.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-    })
+    // Removed hover effects for efficiency
 
     // Add click handler
     button.addEventListener('click', (event) => {
       event.preventDefault()
       event.stopPropagation()
-      
       console.log('Open Analytics button clicked')
-      
-      // Disable button temporarily to prevent multiple clicks
       button.disabled = true
       button.style.opacity = '0.6'
       button.textContent = '📊 Opening...'
-      
-      // Add timeout to prevent hanging
       const messageTimeout = setTimeout(() => {
         console.log('Message timeout, trying fallback method')
         try {
@@ -545,25 +352,19 @@
         } catch (fallbackError) {
           console.error('Fallback method failed:', fallbackError)
         }
-        
-        // Re-enable button
         button.disabled = false
         button.style.opacity = '1'
         button.textContent = '📊 Open Analytics'
-      }, 3000) // 3 second timeout
-
+      }, 3000)
       chrome.runtime.sendMessage({
         type: 'OPEN_EXTENSION_TAB'
       }, (response) => {
-        clearTimeout(messageTimeout) // Clear timeout if we get a response
+        clearTimeout(messageTimeout)
         console.log('Response from background script:', response)
-        
         if (response && response.success) {
           console.log('Extension opened in new tab successfully')
         } else {
           console.error('Failed to open extension tab:', response)
-          
-          // Fallback: try to open the extension URL directly
           try {
             const extensionUrl = chrome.runtime.getURL('dist/index.html')
             console.log('Trying fallback method with URL:', extensionUrl)
@@ -572,8 +373,6 @@
             console.error('Fallback method also failed:', fallbackError)
           }
         }
-        
-        // Re-enable button after a short delay
         setTimeout(() => {
           button.disabled = false
           button.style.opacity = '1'
@@ -589,17 +388,33 @@
   }
 
   function init() {
-    // Initialize duration column functionality
-    addDurationColumn()
-    
     // Initial account tracking
     trackAccountData()
 
     // Create and inject the extension button
     createExtensionButton()
 
-    // Observe closed positions table for automatic trade extraction
-    observeClosedPositionsTable()
+    // Remove: observeClosedPositionsTable();
+    // Instead, run extractTradeData once when the table is fully loaded
+    function waitForTradeTableAndExtract() {
+      const closedPositionTable = document.querySelector('lib-closed-position-table')
+      if (!closedPositionTable) {
+        setTimeout(waitForTradeTableAndExtract, 1000)
+        return
+      }
+      const table = closedPositionTable.querySelector('table[fxr-ui-table]')
+      if (!table) {
+        setTimeout(waitForTradeTableAndExtract, 1000)
+        return
+      }
+      // Table is present, extract trades once
+      extractTradeData().then(trades => {
+        if (trades) {
+          saveTradeData(trades)
+        }
+      })
+    }
+    waitForTradeTableAndExtract()
 
     // Listen for messages from the popup
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -608,10 +423,7 @@
         sendResponse({success: true})
       }
       
-      if (message.type === 'DEBUG_EXTRACT') {
-        const data = extractAccountData()
-        sendResponse({data: data})
-      }
+
       
       if (message.type === 'EXTRACT_TRADES') {
         extractTradeData().then(trades => {
@@ -623,92 +435,15 @@
         return true // Keep message channel open for async response
       }
       
-      if (message.type === 'NAVIGATE_TO_TRADE') {
-        console.log('Navigate to trade requested:', message.data)
-        navigateToTrade(message.data).then(success => {
-          sendResponse({ success })
-        })
-        return true
-      }
-      
-      if (message.type === 'CLICK_SHOW_ON_CHART') {
-        console.log('Click show on chart requested:', message.data)
-        clickShowOnChart(message.data.rowIndex).then(success => {
-          sendResponse({ success })
-        })
-        return true
-      }
-      
-      if (message.type === 'DEBUG_EXTRACT') {
-        console.log('=== DEBUG EXTRACTION ===')
-        
-        // Simple direct extraction and console logging
-        const tables = document.querySelectorAll('table')
-        console.log('Total tables found:', tables.length)
-        
-        // Look for lib-closed-position-table
-        const closedPositionTable = document.querySelector('lib-closed-position-table')
-        console.log('lib-closed-position-table found:', !!closedPositionTable)
-        
-        if (closedPositionTable) {
-          const table = closedPositionTable.querySelector('table[fxr-ui-table]')
-          console.log('table[fxr-ui-table] found:', !!table)
-          
-          if (table) {
-            const rows = table.querySelectorAll('tbody tr')
-            console.log('Data rows found:', rows.length)
-            
-            const extractedData = []
-            
-            rows.forEach((row, index) => {
-              const cells = row.querySelectorAll('td')
-              console.log(`Row ${index}: ${cells.length} cells`)
-              
-              if (cells.length >= 10) {
-                const rowData = {
-                  rowIndex: index,
-                  cellCount: cells.length,
-                  cells: Array.from(cells).map((cell, cellIndex) => ({
-                    index: cellIndex,
-                    text: cell.textContent?.trim() || '',
-                    html: cell.innerHTML?.substring(0, 100) + '...'
-                  }))
-                }
-                extractedData.push(rowData)
-              }
-            })
-            
-            console.log('=== EXTRACTED DATA AS JSON ===')
-            console.log(JSON.stringify(extractedData, null, 2))
-            
-            sendResponse({success: true, data: extractedData, debug: true})
-          } else {
-            console.log('No table[fxr-ui-table] found inside lib-closed-position-table')
-            sendResponse({success: false, error: 'No table found'})
-          }
-        } else {
-          console.log('No lib-closed-position-table found')
-          sendResponse({success: false, error: 'No closed position table found'})
-        }
-        
-        return true // Keep message channel open for async response
-      }
+  
     })
 
     // Watch for DOM changes
     const observer = new MutationObserver((mutations) => {
-      let hasTableChanges = false
       let hasAccountChanges = false
 
       mutations.forEach((mutation) => {
         if (mutation.type === "childList") {
-          // Check for table changes
-          if (mutation.target.tagName === "TABLE" ||
-              mutation.target.tagName === "TBODY" ||
-              mutation.target.closest("table")) {
-            hasTableChanges = true
-          }
-          
           // Check for account section changes
           if (mutation.target.classList?.contains('select-none') ||
               mutation.target.closest('.select-none') ||
@@ -719,10 +454,6 @@
         }
       })
 
-      if (hasTableChanges) {
-        addDurationColumn()
-      }
-      
       if (hasAccountChanges) {
         // Debounce account tracking
         clearTimeout(window.accountTrackingTimeout)

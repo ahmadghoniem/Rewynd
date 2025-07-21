@@ -219,7 +219,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                   }
                   min={1}
                   max={50}
-                  step={0.1}
+                  step={1}
                   suffix="%"
                 />
               </div>
@@ -235,7 +235,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                   }
                   min={1}
                   max={50}
-                  step={0.1}
+                  step={1}
                   suffix="%"
                 />
               </div>

@@ -167,6 +167,33 @@ const AppContent = () => {
     }
   }
 
+  // Handler for fetching all trades from all pages
+  const handleFetchAllTrades = () => {
+    if (window.chrome && chrome.tabs) {
+      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        const fxReplayTab = tabs[0];
+        if (fxReplayTab && fxReplayTab.url && fxReplayTab.url.includes('fxreplay.com')) {
+          chrome.tabs.sendMessage(
+            fxReplayTab.id,
+            { type: 'EXTRACT_TRADES' },
+            (response) => {
+              console.log('Fetch All Trades response:', response);
+              if (response && response.success) {
+                alert('All trades fetched and saved!');
+              } else {
+                alert('Failed to fetch trades. Make sure you are on the FxReplay site.');
+              }
+            }
+          );
+        } else {
+          alert('Please open this extension while on fxreplay.com to fetch trades.');
+        }
+      });
+    } else {
+      alert('Chrome extension messaging not available.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-200">
       {/* Header */}
@@ -186,6 +213,13 @@ const AppContent = () => {
                   >
                     <ArrowLeft className="h-4 w-4" />
                     Back
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={handleFetchAllTrades}
+                    className="flex items-center gap-2"
+                  >
+                    Fetch All Trades
                   </Button>
                   <span className="text-lg font-bold text-foreground dark:text-white">
                     Analytics Dashboard

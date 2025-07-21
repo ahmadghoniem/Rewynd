@@ -88,19 +88,34 @@ const AnalyticsView = ({ config, accountData }) => {
     getStorageData().then(data => {
       setStorageData(data)
     })
-    
+    // Load trades from chrome.storage.local (main source of truth)
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get('fxreplay_trade_data', (result) => {
+        if (result && result.fxreplay_trade_data && Array.isArray(result.fxreplay_trade_data.trades)) {
+          setExtractedTrades(result.fxreplay_trade_data.trades)
+        } else {
+          setExtractedTrades([])
+        }
+      })
+    }
     // Set up Chrome extension message listener for trade data
     const handleTradeDataUpdate = (message, sender, sendResponse) => {
       if (message.type === 'TRADE_DATA_UPDATED') {
         console.log('Trade data updated via extension:', message.data)
-        setExtractedTrades(message.data.trades || [])
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.get('fxreplay_trade_data', (result) => {
+            if (result && result.fxreplay_trade_data && Array.isArray(result.fxreplay_trade_data.trades)) {
+              setExtractedTrades(result.fxreplay_trade_data.trades)
+            } else {
+              setExtractedTrades([])
+            }
+          })
+        }
       }
     }
-    
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener(handleTradeDataUpdate)
     }
-    
     // Listen for global refresh event
     const handleGlobalRefresh = () => {
       handleRefresh()
@@ -119,12 +134,7 @@ const AnalyticsView = ({ config, accountData }) => {
   }, [])
   
   // Use storage data if available, otherwise fall back to props
-  const displayData = storageData || accountData || {
-    balance: 5000,
-    realizedPnL: 0,
-    capital: 5000,
-    lastUpdated: null
-  }
+  const displayData = storageData || accountData
   
   console.log('Analytics: Using display data:', displayData)
   console.log('Analytics: Props accountData:', accountData)
@@ -147,6 +157,18 @@ const AnalyticsView = ({ config, accountData }) => {
       // Also refresh data from storage
       const data = await getStorageData()
       setStorageData({...data, lastUpdated: Date.now()})
+      // Also refresh trades from localStorage
+      try {
+        const tradeDataRaw = localStorage.getItem('fxreplay_trade_data')
+        if (tradeDataRaw) {
+          const tradeData = JSON.parse(tradeDataRaw)
+          if (tradeData && Array.isArray(tradeData.trades)) {
+            setExtractedTrades(tradeData.trades)
+          }
+        }
+      } catch (e) {
+        console.error('Error loading fxreplay_trade_data:', e)
+      }
       console.log('Data refreshed from storage:', data)
     } catch (error) {
       console.error('Error during refresh:', error)
@@ -227,7 +249,7 @@ const AnalyticsView = ({ config, accountData }) => {
         </div>
         {/* Right 1/3: Trading Performance Metrics */}
         <div className="lg:col-span-1">
-          <TradingPerformanceSection extractedTrades={extractedTrades} />
+          <TradingPerformanceSection extractedTrades={extractedTrades} displayData={displayData} config={config} />
         </div>
       </div>
       {/* Below the main grid: Trade Data Table and Daily Analysis */}

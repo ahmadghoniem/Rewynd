@@ -13,7 +13,7 @@ import {
   EyeOff
 } from "lucide-react"
 
-const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
+const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }) => {
   const [visibleColumns, setVisibleColumns] = useState({
     asset: true,
     side: true,
@@ -24,6 +24,7 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
     tp: true,
     rr: true,
     size: true,
+    risk: true, // Add risk column
     close: true,
     realized: true,
     duration: true
@@ -89,7 +90,8 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
   }
 
   const getSideBadge = (side) => {
-    return side?.toLowerCase() === "buy" ? "default" : "secondary"
+    if (!side) return "secondary"
+    return side.toLowerCase() === "buy" ? "buy" : "sell"
   }
 
   const getPnLBadge = (realized) => {
@@ -102,7 +104,16 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
     if (!dateStr) return ""
     try {
       const date = new Date(dateStr)
-      return date.toLocaleString()
+      // Format: DD/MM/YY - HH:mm:ss (24h, 2-digit year)
+      return date.toLocaleString("en-GB", {
+        year: "2-digit",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }).replace(",", "")
     } catch {
       return dateStr
     }
@@ -126,32 +137,39 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
     return percentage.toFixed(2)
   }
 
-  // Calculate risk percentage based on position size and account size
+  // Helper to clean and parse numbers from strings
+  const cleanNumber = (val) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    return parseFloat(val.toString().replace(/[^\d.-]/g, ''));
+  };
+
+  const CONTRACT_SIZE = 100000; // Standard forex contract size
+
+  // Calculate risk percentage based on entry, sl, lot size, and current account balance
   const calculateRiskPercentage = (trade) => {
-    if (!accountSize || !trade.size || !trade.entry || !trade.initialSL)
-      return null
+    if (!trade.size || !trade.entry || !trade.initialSL || !accountBalance) return null;
 
-    const sizeNum = parseFloat(trade.size)
-    const entryNum = parseFloat(trade.entry)
-    const slNum = parseFloat(trade.initialSL)
+    const sizeNum = cleanNumber(trade.size);
+    const entryNum = cleanNumber(trade.entry);
+    const slNum = cleanNumber(trade.initialSL);
+    if (isNaN(sizeNum) || isNaN(entryNum) || isNaN(slNum)) return null;
 
-    if (isNaN(sizeNum) || isNaN(entryNum) || isNaN(slNum)) return null
-
-    // Calculate the risk per pip/point
-    const riskPerPoint = Math.abs(entryNum - slNum)
-
-    // Calculate total risk amount
-    // For forex: 1 lot = 100,000 units, 1 pip = 0.0001 for most pairs
-    // Risk amount = lot size * pips risk * pip value
-    const pipsRisk = riskPerPoint * 10000 // Convert to pips (multiply by 10000 for 4-decimal pairs)
-    const pipValue = 10 // Standard pip value for 1 lot (varies by pair but using standard)
-    const totalRiskAmount = sizeNum * pipsRisk * pipValue
-
-    // Calculate risk as percentage of account size
-    const riskPercentage = (totalRiskAmount / accountSize) * 100
-
-    return riskPercentage.toFixed(2)
-  }
+    // Risk per trade = (Entry − Stop Loss) × Lot Size
+    let riskPerTrade = 0;
+    if (trade.side?.toLowerCase() === "sell") {
+      riskPerTrade = (slNum - entryNum) * sizeNum;
+    } else {
+      riskPerTrade = (entryNum - slNum) * sizeNum;
+    }
+    if (riskPerTrade < 0) riskPerTrade = Math.abs(riskPerTrade);
+    // Risk % = (Risk per trade ÷ Current Balance) × 100
+    const riskPercentage = (riskPerTrade / accountBalance) * 100;
+    return {
+      percent: riskPercentage.toFixed(2),
+      amount: riskPerTrade
+    };
+  };
 
   // Get risk level color based on percentage
   const getRiskLevelColor = (riskPercentage) => {
@@ -248,47 +266,6 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
     [tradesData]
   )
 
-  const handleDateClick = (trade, dateType) => {
-    console.log(
-      `Navigating to trade: ${trade.asset} - ${dateType} date: ${trade[dateType]}`
-    )
-
-    // Send message to content script to navigate to the trade
-    if (chrome && chrome.tabs && chrome.tabs.query) {
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        if (tabs[0] && tabs[0].url && tabs[0].url.includes("fxreplay.com")) {
-          chrome.tabs.sendMessage(
-            tabs[0].id,
-            {
-              type: "NAVIGATE_TO_TRADE",
-              data: {
-                trade,
-                dateType,
-                rowIndex: trade.rowIndex || 0
-              }
-            },
-            function (response) {
-              if (response && response.success) {
-                console.log("Successfully navigated to trade")
-              } else {
-                console.log(
-                  "Failed to navigate to trade, trying alternative method"
-                )
-                // Fallback: try to find and click the "Show on chart" button for this trade
-                chrome.tabs.sendMessage(tabs[0].id, {
-                  type: "CLICK_SHOW_ON_CHART",
-                  data: { rowIndex: trade.rowIndex || 0 }
-                })
-              }
-            }
-          )
-        } else {
-          console.log("Not on FxReplay page, cannot navigate to trade")
-        }
-      })
-    }
-  }
-
   const toggleColumn = (column) => {
     setVisibleColumns((prev) => ({
       ...prev,
@@ -308,6 +285,7 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
       tp: !allVisible,
       rr: !allVisible,
       size: !allVisible,
+      risk: !allVisible, // Add risk column
       close: !allVisible,
       realized: !allVisible,
       duration: !allVisible
@@ -323,11 +301,18 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
     { key: "sl", label: "SL" },
     { key: "tp", label: "TP" },
     { key: "rr", label: "RR" },
-    { key: "size", label: "Risk %" },
+    { key: "size", label: "Size (Lots)" },
+    { key: "risk", label: "Risk %" },
     { key: "close", label: "Close" },
     { key: "realized", label: "Realized" },
     { key: "duration", label: "Avg Hold Time" }
   ]
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 5
+  const totalPages = Math.ceil(tradesData.length / pageSize)
+  const paginatedTrades = tradesData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   return (
     <Card>
@@ -496,6 +481,11 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
                   )}
                   {visibleColumns.size && (
                     <th className="text-left p-3 text-sm font-medium text-muted-foreground">
+                      Size (Lots)
+                    </th>
+                  )}
+                  {visibleColumns.risk && (
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
                       Risk %
                     </th>
                   )}
@@ -517,9 +507,9 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {tradesData.map((trade, index) => (
+                {paginatedTrades.map((trade, index) => (
                   <tr
-                    key={index}
+                    key={index + (currentPage - 1) * pageSize}
                     className="hover:bg-muted-foreground dark:hover:bg-gray-800"
                   >
                     {visibleColumns.asset && (
@@ -533,30 +523,20 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
                           variant={getSideBadge(trade.side)}
                           className="text-xs"
                         >
-                          {trade.side?.toUpperCase()}
+                          {trade.side?.charAt(0).toUpperCase() + trade.side?.slice(1).toLowerCase()}
                         </Badge>
                       </td>
                     )}
                     {visibleColumns.dateStart && (
                       <td className="p-3 text-sm">
-                        <button
-                          onClick={() => handleDateClick(trade, "dateStart")}
-                          className="text-info hover:text-info-dark underline cursor-pointer transition-colors"
-                          title="Click to view trade on chart"
-                        >
-                          {formatDate(trade.dateStart)}
-                        </button>
+                        {/* Remove clickable link, just show text */}
+                        {formatDate(trade.dateStart)}
                       </td>
                     )}
                     {visibleColumns.dateEnd && (
                       <td className="p-3 text-sm">
-                        <button
-                          onClick={() => handleDateClick(trade, "dateEnd")}
-                          className="text-info hover:text-info-dark underline cursor-pointer transition-colors"
-                          title="Click to view trade on chart"
-                        >
-                          {formatDate(trade.dateEnd)}
-                        </button>
+                        {/* Remove clickable link, just show text */}
+                        {formatDate(trade.dateEnd)}
                       </td>
                     )}
                     {visibleColumns.entry && (
@@ -616,21 +596,28 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
                     {visibleColumns.size && (
                       <td className="p-3 text-sm">
                         <div>
-                          <div
-                            className={`font-medium ${getRiskLevelColor(
-                              calculateRiskPercentage(trade)
-                            )}`}
-                          >
-                            {calculateRiskPercentage(trade)
-                              ? `${calculateRiskPercentage(trade)}%`
-                              : trade.size}
+                          <div className="font-medium text-foreground dark:text-white">
+                            {trade.size}
                           </div>
-                          {calculateRiskPercentage(trade) && (
-                            <div className="text-xs text-muted-foreground">
-                              {trade.size} lot
-                            </div>
-                          )}
                         </div>
+                      </td>
+                    )}
+                    {visibleColumns.risk && (
+                      <td className="p-3 text-sm">
+                        {(() => {
+                          const risk = calculateRiskPercentage(trade);
+                          if (!risk) return "-";
+                          return (
+                            <div>
+                              <span className={`font-medium ${getRiskLevelColor(risk.percent)}`}>
+                                {risk.percent}%
+                              </span>
+                              <div className="text-xs text-muted-foreground">
+                                (${formatNumber(risk.amount)})
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
                     )}
                     {visibleColumns.close && (
@@ -648,18 +635,6 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
                           >
                             {formatCurrency(trade.realized)}
                           </span>
-                          <Badge
-                            variant={getPnLBadge(trade.realized)}
-                            className="text-xs"
-                          >
-                            {parseFloat(
-                              trade.realized?.replace(/[$,]/g, "") || "0"
-                            ) > 0 ? (
-                              <TrendingUp className="h-3 w-3" />
-                            ) : (
-                              <TrendingDown className="h-3 w-3" />
-                            )}
-                          </Badge>
                         </div>
                       </td>
                     )}
@@ -681,6 +656,35 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0 }) => {
                 ))}
               </tbody>
             </table>
+            {/* Pagination Controls */}
+            <div className="flex justify-center items-center gap-2 mt-4">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Button
+                  key={i}
+                  size="sm"
+                  variant={currentPage === i + 1 ? "default" : "outline"}
+                  onClick={() => setCurrentPage(i + 1)}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground dark:text-gray-400">

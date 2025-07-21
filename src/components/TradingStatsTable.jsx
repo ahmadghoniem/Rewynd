@@ -11,7 +11,7 @@ import {
   TrendingDown
 } from "lucide-react"
 
-const TradingStatsTable = ({ tradesData = [] }) => {
+const TradingStatsTable = ({ tradesData = [], displayData = {}, config = {} }) => {
   const [stats, setStats] = useState({
     averageRR: 0,
     averageProfit: 0,
@@ -202,6 +202,39 @@ const TradingStatsTable = ({ tradesData = [] }) => {
     }
   }
 
+  // --- Summary Section Calculations ---
+  const totalTrades = tradesData.length
+  const buyTrades = tradesData.filter(t => t.side?.toLowerCase() === "buy").length
+  const sellTrades = tradesData.filter(t => t.side?.toLowerCase() === "sell").length
+  const buyPct = totalTrades > 0 ? (buyTrades / totalTrades) * 100 : 0
+  const sellPct = totalTrades > 0 ? (sellTrades / totalTrades) * 100 : 0
+
+  // Phase status
+  let currentPhase = 1
+  let funded = false
+  if (config && config.profitTargets && displayData && typeof displayData.realizedPnL === "number") {
+    let realized = displayData.realizedPnL
+    let phasePassed = 0
+    for (let i = 1; i <= (config.phases || 1); i++) {
+      const targetPct = config.profitTargets[`phase${i}`]
+      const target = displayData.capital * (targetPct / 100)
+      if (realized >= target) {
+        phasePassed = i
+      } else {
+        break
+      }
+    }
+    if (phasePassed === config.phases) {
+      funded = true
+      currentPhase = "Funded"
+    } else {
+      currentPhase = phasePassed + 1
+      if (currentPhase > config.phases) currentPhase = config.phases
+    }
+  }
+
+  // --- End Summary Section Calculations ---
+
   return (
     <Card>
       <CardHeader>
@@ -211,21 +244,44 @@ const TradingStatsTable = ({ tradesData = [] }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Summary Section */}
+        <div className="mb-4 min-w-0 bg-background/50 dark:bg-gray-800/40 rounded-lg p-4 flex flex-wrap gap-4 items-center text-sm">
+          <div className="flex flex-col min-w-[120px]">
+            <span className="text-muted-foreground">Capital</span>
+            <span className="font-bold">{formatCurrency(displayData.capital)}</span>
+          </div>
+          <div className="flex flex-col min-w-[120px]">
+            <span className="text-muted-foreground">Balance</span>
+            <span className="font-bold">{formatCurrency(displayData.balance)}</span>
+          </div>
+          <div className="flex flex-col min-w-[120px]">
+            <span className="text-muted-foreground">Realized PnL</span>
+            <span className={`font-bold ${getStatusColor(displayData.realizedPnL)}`}>{formatCurrency(displayData.realizedPnL)}</span>
+          </div>
+          <div className="flex flex-col min-w-[120px]">
+            <span className="text-muted-foreground">Avg RR</span>
+            <span className="font-bold text-success">{stats.averageRR.toFixed(2)}</span>
+          </div>
+          <div className="flex flex-col min-w-[120px]">
+            <span className="text-muted-foreground">Win Rate</span>
+            <span className="font-bold text-success">{stats.winRate.toFixed(1)}%</span>
+          </div>
+          <div className="flex flex-col min-w-[120px]">
+            <span className="text-muted-foreground">Buy Trades</span>
+            <span className="font-bold">{buyTrades} ({buyPct.toFixed(1)}%)</span>
+          </div>
+          <div className="flex flex-col min-w-[120px]">
+            <span className="text-muted-foreground">Sell Trades</span>
+            <span className="font-bold">{sellTrades} ({sellPct.toFixed(1)}%)</span>
+          </div>
+          <div className="flex flex-col min-w-[120px]">
+            <span className="text-muted-foreground">Status</span>
+            <span className={`font-bold ${funded ? 'text-success' : ''}`}>{funded ? 'Funded' : `Phase ${currentPhase}`}</span>
+          </div>
+        </div>
         <div className="w-full">
           <div className="flex flex-col gap-6 items-stretch w-full">
-            {/* <div className="flex flex-col items-center justify-center bg-gradient-to-br from-red-100 to-green-100 dark:from-red-900/20 dark:to-green-900/20 rounded-lg p-6 w-full md:w-48 max-w-xs mx-auto md:mx-0 min-w-[180px]">
-              <div className="relative flex items-center justify-center w-full">
-                <svg width="120" height="60" viewBox="0 0 120 60" className="block mx-auto">
-                 
-                  <path d="M20,60 A40,40 0 0,1 100,60" fill="none" stroke="#ef4444" strokeWidth="10" strokeDasharray="62.8 62.8" strokeDashoffset="0" />
-                  <path d="M20,60 A40,40 0 0,1 100,60" fill="none" stroke="#22c55e" strokeWidth="10" strokeDasharray="62.8 62.8" strokeDashoffset="62.8" />
-                </svg>
-                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 text-4xl font-bold text-foreground dark:text-white text-center pointer-events-none">
-                  {stats.totalTrades}
-                </div>
-              </div>
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 text-center">Trades</div>
-            </div>  */}
+
 
             {/* Wins Section */}
             <div className=" min-w-0 bg-background/50 dark:bg-gray-800/40 rounded-lg p-4 flex flex-col gap-2">
