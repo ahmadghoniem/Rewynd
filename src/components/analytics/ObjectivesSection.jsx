@@ -17,7 +17,7 @@ const ObjectivesSection = ({
 }) => {
   return (
     <div className="w-full">
-      {/* <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Objectives</h2> */}
+      {/* <h2 className="text-2xl font-bold mb-4 text-foreground dark:text-white">Objectives</h2> */}
       <div className="grid grid-cols-6 gap-4 w-full">
         {/* Profit Targets Card - spans 2 columns */}
         <div className="col-span-2">
@@ -28,7 +28,7 @@ const ObjectivesSection = ({
             formatCurrency={formatCurrency}
           />
         </div>
-        
+
         {/* Drawdown Rules Card - spans 2 columns */}
         <div className="col-span-2">
           <DrawdownRulesCard
@@ -38,7 +38,7 @@ const ObjectivesSection = ({
             maxDrawdownProgress={maxDrawdownProgress}
           />
         </div>
-        
+
         {/* Trading Activity Card - spans 2 columns */}
         <div className="col-span-2">
           <TradingActivityCard
@@ -53,4 +53,4 @@ const ObjectivesSection = ({
   )
 }
 
-export default ObjectivesSection 
+export default ObjectivesSection

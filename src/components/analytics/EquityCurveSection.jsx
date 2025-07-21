@@ -3,16 +3,13 @@ import AccountInfoCard from "../cards/AccountInfoCard"
 import EquityCurve from "../EquityCurve"
 import { formatCurrency, getStatusColor } from "@/lib/utils"
 
-const EquityCurveSection = ({
-  displayData,
-  extractedTrades
-}) => {
+const EquityCurveSection = ({ displayData, extractedTrades }) => {
   return (
     <div className="w-full">
-      {/* <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
+      {/* <h2 className="text-2xl font-bold mb-4 text-foreground dark:text-white">
         Equity Curve & Performance Tracking
       </h2> */}
-      <div >
+      <div>
         {/* Account Info Card - spans 2 columns */}
         {/* <div className="col-span-2">
           <AccountInfoCard
@@ -23,12 +20,12 @@ const EquityCurveSection = ({
             getStatusColor={getStatusColor}
           />
         </div> */}
-        
+
         {/* Equity Curve - spans 4 columns */}
-          <EquityCurve tradesData={extractedTrades} />
+        <EquityCurve tradesData={extractedTrades} />
       </div>
     </div>
   )
 }
 
-export default EquityCurveSection 
+export default EquityCurveSection

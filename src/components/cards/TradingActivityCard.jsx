@@ -7,7 +7,7 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
   <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
-        <Calendar className="h-5 w-5 text-blue-500" />
+        <Calendar className="h-5 w-5 text-info" />
         Trading Activity
       </CardTitle>
     </CardHeader>
@@ -17,8 +17,8 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Minimum Trading Days</span>
+              <Calendar className="h-5 w-5 text-info" />
+              <span className="text-sm font-medium text-muted-foreground">Minimum Trading Days</span>
             </div>
             <div className="text-right">
               <Badge variant={tradingDays >= minTradingDays ? 'default' : 'secondary'} className="mb-1">
@@ -27,9 +27,9 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
             </div>
           </div>
           <div className="space-y-1">
-            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4">
+            <div className="w-full bg-background dark:bg-gray-600 rounded-full h-4">
               <div
-                className="bg-gradient-to-r from-blue-400 to-blue-600 h-4 rounded-full transition-all duration-300 shadow-sm"
+                className="bg-info-gradient h-4 rounded-full transition-all duration-300 shadow-sm"
                 style={{ width: `${Math.min(100, (tradingDays / minTradingDays) * 100)}%` }}
               />
             </div>
@@ -41,22 +41,22 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Minimum Profitable Days</span>
+              <TrendingUp className="h-5 w-5 text-success" />
+              <span className="text-sm font-medium text-muted-foreground">Minimum Profitable Days</span>
             </div>
             <div className="text-right">
               <Badge variant={profitableDays >= minProfitableDays ? 'default' : 'secondary'} className="mb-1">
                 {profitableDays}/{minProfitableDays}
               </Badge>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Days with ≥ 0.5% profit
               </p>
             </div>
           </div>
           <div className="space-y-1">
-            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4">
+            <div className="w-full bg-background dark:bg-gray-600 rounded-full h-4">
               <div
-                className="bg-gradient-to-r from-green-400 to-green-600 h-4 rounded-full transition-all duration-300 shadow-sm"
+                className="bg-success-gradient h-4 rounded-full transition-all duration-300 shadow-sm"
                 style={{ width: `${Math.min(100, (profitableDays / minProfitableDays) * 100)}%` }}
               />
             </div>

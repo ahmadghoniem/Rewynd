@@ -9,13 +9,13 @@ const AccountInfoCard = ({ capital, balance, realizedPnL, formatCurrency, getSta
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Account Size</p>
-            <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+            <p className="text-sm font-medium text-info">Account Size</p>
+            <p className="text-2xl font-bold text-info">
               {formatCurrency(capital)}
             </p>
           </div>
-          <div className="h-12 w-12 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center">
-            <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          <div className="h-12 w-12 bg-info rounded-lg flex items-center justify-center">
+            <DollarSign className="h-6 w-6 text-info" />
           </div>
         </div>
       </CardContent>
@@ -25,13 +25,13 @@ const AccountInfoCard = ({ capital, balance, realizedPnL, formatCurrency, getSta
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Current Balance</p>
-            <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+            <p className="text-sm font-medium text-success">Current Balance</p>
+            <p className="text-2xl font-bold text-success">
               {formatCurrency(balance)}
             </p>
           </div>
-          <div className="h-12 w-12 bg-emerald-100 dark:bg-emerald-800 rounded-lg flex items-center justify-center">
-            <Activity className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+          <div className="h-12 w-12 bg-success rounded-lg flex items-center justify-center">
+            <Activity className="h-6 w-6 text-success" />
           </div>
         </div>
       </CardContent>
@@ -41,13 +41,13 @@ const AccountInfoCard = ({ capital, balance, realizedPnL, formatCurrency, getSta
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Realized P&L</p>
+            <p className="text-sm font-medium text-muted-foreground">Realized P&L</p>
             <p className={`text-2xl font-bold ${getStatusColor(realizedPnL)}`}>
               {formatCurrency(realizedPnL)}
             </p>
           </div>
-          <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${realizedPnL >= 0 ? 'bg-emerald-100 dark:bg-emerald-800' : 'bg-red-100 dark:bg-red-800'}`}>
-            <TrendingUp className={`h-6 w-6 ${realizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} />
+          <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${realizedPnL >= 0 ? 'bg-success' : 'bg-danger'}`}>
+            <TrendingUp className={`h-6 w-6 ${realizedPnL >= 0 ? 'text-success' : 'text-danger'}`} />
           </div>
         </div>
       </CardContent>

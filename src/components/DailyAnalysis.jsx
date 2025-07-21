@@ -50,9 +50,9 @@ const DailyAnalysis = ({ tradesData = [] }) => {
   }
 
   const getPnLColor = (pnl) => {
-    if (pnl > 0) return 'text-green-600 dark:text-green-400'
-    if (pnl < 0) return 'text-red-600 dark:text-red-400'
-    return 'text-gray-600 dark:text-gray-400'
+    if (pnl > 0) return 'text-success'
+    if (pnl < 0) return 'text-danger'
+    return 'text-muted-foreground'
   }
 
   // Pagination logic
@@ -69,19 +69,19 @@ const DailyAnalysis = ({ tradesData = [] }) => {
           <>
             <div className="flex gap-4 mb-4">
               {paginatedData.map((day, idx) => (
-                <div key={day.dateKey} className="flex-1 min-w-0 bg-gray-900/40 dark:bg-gray-800/60 rounded-lg p-4 shadow border border-gray-700 flex flex-col justify-between">
-                  <div className="text-sm text-gray-300 mb-2 flex items-center gap-2">
+                <div key={day.dateKey} className="trading-summary-card flex-1 min-w-0 rounded-lg p-4 shadow flex flex-col justify-between">
+                  <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
                     <Clock className="h-4 w-4 opacity-60" />
                     {day.date.toLocaleDateString('en-US')}
                   </div>
                   <div className={`text-lg font-bold mb-2 ${getPnLColor(day.totalPnL)}`}>{formatCurrency(day.totalPnL)}</div>
-                  <div className="text-xs text-gray-400 mb-1">Trade: <span className="text-white font-semibold">{day.trades.length}</span></div>
-                  <div className="text-xs text-gray-400">Lots: <span className="text-white font-semibold">{day.totalVolume.toFixed(2)}</span></div>
+                  <div className="text-xs text-muted-foreground mb-1">Trade: <span className="text-white font-semibold">{day.trades.length}</span></div>
+                  <div className="text-xs text-muted-foreground">Lots: <span className="text-white font-semibold">{day.totalVolume.toFixed(2)}</span></div>
                 </div>
               ))}
             </div>
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between text-xs text-gray-400 mt-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
               <div>
                 {`0${(currentPage - 1) * pageSize + 1} - 0${Math.min(currentPage * pageSize, dailyData.length)} items of ${dailyData.length}`}
               </div>
@@ -110,7 +110,7 @@ const DailyAnalysis = ({ tradesData = [] }) => {
             </div>
           </>
         ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-8 text-muted-foreground">
             <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No trading data available</p>
             <p className="text-sm">Extract trades from FxReplay to see daily summaries</p>

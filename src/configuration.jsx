@@ -5,7 +5,15 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Minus, Sun, Moon, Settings, Target, Calendar } from "lucide-react"
+import {
+  Plus,
+  Minus,
+  Sun,
+  Moon,
+  Settings,
+  Target,
+  Calendar
+} from "lucide-react"
 import { useTheme } from "./ThemeContext"
 import "./hideNumberArrows.css"
 
@@ -34,7 +42,7 @@ const NumberInput = ({
         size="sm"
         onClick={handleDecrement}
         disabled={value <= min}
-        className="h-8 w-8 p-0 bg-transparent border-none shadow-none hover:bg-gray-100 dark:hover:bg-gray-700"
+        className="h-8 w-8 p-0 bg-transparent border-none shadow-none hover:bg-muted-foreground"
       >
         <Minus className="h-4 w-4" />
       </Button>
@@ -54,7 +62,7 @@ const NumberInput = ({
           max={max}
           step={step}
         />
-        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400">
+        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
           {suffix}
         </span>
       </div>
@@ -63,7 +71,7 @@ const NumberInput = ({
         size="sm"
         onClick={handleIncrement}
         disabled={value >= max}
-        className="h-8 w-8 p-0 bg-transparent border-none shadow-none hover:bg-gray-100 dark:hover:bg-gray-700"
+        className="h-8 w-8 p-0 bg-transparent border-none shadow-none hover:bg-muted-foreground"
       >
         <Plus className="h-4 w-4" />
       </Button>
@@ -124,9 +132,9 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
   }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 2
     }).format(amount)
   }
@@ -139,7 +147,9 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
       const requiredAmount = accountData.capital * (targetValue / 100)
       targets.push(
         <div key={i} className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phase {i} Profit Target</Label>
+          <Label className="text-sm font-medium text-muted-foreground">
+            Phase {i} Profit Target
+          </Label>
           <NumberInput
             value={targetValue}
             onChange={(value) => handleProfitTargetChange(phaseKey, value)}
@@ -147,7 +157,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
             max={50}
             step={1}
           />
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-muted-foreground">
             Target: {targetValue}% ({formatCurrency(requiredAmount)})
           </div>
         </div>
@@ -160,10 +170,10 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h2 className="text-3xl font-bold text-foreground dark:text-white">
           Challenge Configuration
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground dark:text-gray-400">
           Configure your funded trading challenge parameters
         </p>
       </div>
@@ -182,20 +192,31 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Number of Phases</Label>
-                <PhaseSelector phases={config.phases} onChange={handlePhasesChange} />
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Number of Phases
+                </Label>
+                <PhaseSelector
+                  phases={config.phases}
+                  onChange={handlePhasesChange}
+                />
               </div>
 
               <div className="space-y-3">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Profit Targets</Label>
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Profit Targets
+                </Label>
                 {renderProfitTargets()}
               </div>
               {/* Daily Drawdown Input */}
               <div className="space-y-2 mt-4">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Daily Drawdown</Label>
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Daily Drawdown
+                </Label>
                 <NumberInput
                   value={config.dailyDrawdown || 2}
-                  onChange={value => onConfigChange({ ...config, dailyDrawdown: value })}
+                  onChange={(value) =>
+                    onConfigChange({ ...config, dailyDrawdown: value })
+                  }
                   min={1}
                   max={50}
                   step={0.1}
@@ -204,10 +225,14 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
               </div>
               {/* Max Drawdown Input */}
               <div className="space-y-2 mt-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Max Drawdown</Label>
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Max Drawdown
+                </Label>
                 <NumberInput
                   value={config.maxDrawdown || 5}
-                  onChange={value => onConfigChange({ ...config, maxDrawdown: value })}
+                  onChange={(value) =>
+                    onConfigChange({ ...config, maxDrawdown: value })
+                  }
                   min={1}
                   max={50}
                   step={0.1}
@@ -216,27 +241,45 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
               </div>
               {/* Minimum Profitable Days Input */}
               <div className="space-y-2 mt-4">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Minimum Profitable Days</Label>
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Minimum Profitable Days
+                </Label>
                 <NumberInput
                   value={config.requireProfitableDays || 0}
-                  onChange={value => onConfigChange({ ...config, requireProfitableDays: Math.max(0, value) })}
+                  onChange={(value) =>
+                    onConfigChange({
+                      ...config,
+                      requireProfitableDays: Math.max(0, value)
+                    })
+                  }
                   min={0}
                   max={30}
                   step={1}
                 />
-                <div className="text-xs text-gray-500 dark:text-gray-400">Set to 0 to disable this requirement</div>
+                <div className="text-xs text-muted-foreground">
+                  Set to 0 to disable this requirement
+                </div>
               </div>
               {/* Minimum Trading Days Input */}
               <div className="space-y-2 mt-2">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Minimum Trading Days</Label>
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Minimum Trading Days
+                </Label>
                 <NumberInput
                   value={config.minTradingDays || 0}
-                  onChange={value => onConfigChange({ ...config, minTradingDays: Math.max(0, value) })}
+                  onChange={(value) =>
+                    onConfigChange({
+                      ...config,
+                      minTradingDays: Math.max(0, value)
+                    })
+                  }
                   min={0}
                   max={30}
                   step={1}
                 />
-                <div className="text-xs text-gray-500 dark:text-gray-400">Set to 0 to disable this requirement</div>
+                <div className="text-xs text-muted-foreground">
+                  Set to 0 to disable this requirement
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -251,13 +294,18 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Account Size:</span>
-                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                <span className="text-sm text-muted-foreground">
+                  Account Size:
+                </span>
+                <span className="text-sm font-bold text-info">
                   {formatCurrency(accountData.capital)}
                 </span>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Last updated: {accountData.lastUpdated ? new Date(accountData.lastUpdated).toLocaleString() : 'Never'}
+              <div className="text-xs text-muted-foreground text-center">
+                Last updated:{" "}
+                {accountData.lastUpdated
+                  ? new Date(accountData.lastUpdated).toLocaleString()
+                  : "Never"}
               </div>
             </CardContent>
           </Card>
@@ -269,9 +317,9 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
 
       {/* Action Buttons */}
       <div className="flex justify-center pt-6">
-        <Button 
-          onClick={onSave} 
-          className="px-8 py-3 text-lg font-semibold hover:bg-gray-100 dark:hover:bg-gray-700"
+        <Button
+          onClick={onSave}
+          className="px-8 py-3 text-lg font-semibold hover:bg-muted-foreground"
         >
           Save & View Analytics Dashboard
         </Button>

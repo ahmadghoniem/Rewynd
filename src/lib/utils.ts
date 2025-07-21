@@ -72,9 +72,9 @@ export const formatLastUpdated = (timestamp: number | null) => {
 }
 
 export const getStatusColor = (value: number) => {
-  if (value > 0) return 'text-green-600'
-  if (value < 0) return 'text-red-600'
-  return 'text-gray-600'
+  if (value > 0) return 'text-success'
+  if (value < 0) return 'text-danger'
+  return 'text-muted-foreground'
 }
 
 export const calculateDrawdownMetrics = (extractedTrades: any[], initialCapital: number, maxDrawdown: number, dailyDrawdown: number) => {

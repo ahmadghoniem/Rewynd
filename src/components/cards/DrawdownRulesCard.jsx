@@ -7,7 +7,7 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
   <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
-        <TrendingDown className="h-5 w-5 text-red-500" />
+        <TrendingDown className="h-5 w-5 text-danger" />
         Drawdown Rules
       </CardTitle>
     </CardHeader>
@@ -16,20 +16,20 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-orange-500" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Daily Drawdown</span>
+            <TrendingUp className="h-5 w-5 text-warning" />
+            <span className="text-sm font-medium text-muted-foreground">Daily Drawdown</span>
           </div>
           <div className="text-right">
             <Badge variant="outline" className="mb-1">{dailyDrawdown}%</Badge>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground">
               {dailyDrawdownProgress.toFixed(1)}% used
             </p>
           </div>
         </div>
         <div className="space-y-1">
-          <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4">
+          <div className="w-full bg-background rounded-full h-4">
             <div 
-              className="bg-gradient-to-r from-orange-400 to-orange-600 h-4 rounded-full transition-all duration-300 shadow-sm"
+              className="bg-warning-gradient h-4 rounded-full transition-all duration-300 shadow-sm"
               style={{ width: `${Math.min(100, dailyDrawdownProgress)}%` }}
             />
           </div>
@@ -39,20 +39,20 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-red-500" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Max Drawdown</span>
+            <TrendingDown className="h-5 w-5 text-danger" />
+            <span className="text-sm font-medium text-muted-foreground">Max Drawdown</span>
           </div>
           <div className="text-right">
             <Badge variant="outline" className="mb-1">{maxDrawdown}%</Badge>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground">
               {maxDrawdownProgress.toFixed(1)}% used
             </p>
           </div>
         </div>
         <div className="space-y-1">
-          <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4">
+          <div className="w-full bg-background rounded-full h-4">
             <div 
-              className="bg-gradient-to-r from-red-400 to-red-600 h-4 rounded-full transition-all duration-300 shadow-sm"
+              className="bg-danger-gradient h-4 rounded-full transition-all duration-300 shadow-sm"
               style={{ width: `${Math.min(100, maxDrawdownProgress)}%` }}
             />
           </div>

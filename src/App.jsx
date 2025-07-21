@@ -11,7 +11,7 @@ const AppContent = () => {
     phases: 1,
     profitTargets: { phase1: 10 }
   })
-  
+
   const [accountData, setAccountData] = useState({
     balance: 5000, // Default fallback
     realizedPnL: 0,
@@ -26,113 +26,124 @@ const AppContent = () => {
     try {
       // Try to get data from Chrome extension storage first
       if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage({ type: 'GET_ACCOUNT_DATA' }, (response) => {
+        chrome.runtime.sendMessage({ type: "GET_ACCOUNT_DATA" }, (response) => {
           if (response && response.data) {
-            console.log('Loading/updating account data from extension storage:', response.data)
+            console.log(
+              "Loading/updating account data from extension storage:",
+              response.data
+            )
             setAccountData(response.data)
           } else {
-            console.log('No account data found in extension storage, trying localStorage')
+            console.log(
+              "No account data found in extension storage, trying localStorage"
+            )
             // Fallback to localStorage
-            const stored = localStorage.getItem('tradeAnalytics_accountData')
+            const stored = localStorage.getItem("tradeAnalytics_accountData")
             if (stored) {
               const parsedData = JSON.parse(stored)
-              console.log('Loading/updating account data from localStorage:', parsedData)
+              console.log(
+                "Loading/updating account data from localStorage:",
+                parsedData
+              )
               setAccountData(parsedData)
             } else {
-              console.log('No account data found anywhere')
+              console.log("No account data found anywhere")
             }
           }
         })
       } else {
         // Fallback to localStorage if not in extension context
-        const stored = localStorage.getItem('tradeAnalytics_accountData')
-        console.log('Raw localStorage data:', stored)
-        
+        const stored = localStorage.getItem("tradeAnalytics_accountData")
+        console.log("Raw localStorage data:", stored)
+
         if (stored) {
           const parsedData = JSON.parse(stored)
-          console.log('Loading/updating account data from localStorage:', parsedData)
+          console.log(
+            "Loading/updating account data from localStorage:",
+            parsedData
+          )
           setAccountData(parsedData)
         } else {
-          console.log('No account data found in localStorage')
+          console.log("No account data found in localStorage")
         }
       }
     } catch (error) {
-      console.error('Error loading account data:', error)
+      console.error("Error loading account data:", error)
     }
   }
 
-// Load saved configuration and account data on mount
-useEffect(() => {
-  // Load challenge configuration
-  const savedConfig = localStorage.getItem("challengeConfig")
-  if (savedConfig) {
-    try {
-      const parsed = JSON.parse(savedConfig)
-      setChallengeConfig(parsed)
-    } catch (error) {
-      console.error("Error loading saved config:", error)
+  // Load saved configuration and account data on mount
+  useEffect(() => {
+    // Load challenge configuration
+    const savedConfig = localStorage.getItem("challengeConfig")
+    if (savedConfig) {
+      try {
+        const parsed = JSON.parse(savedConfig)
+        setChallengeConfig(parsed)
+      } catch (error) {
+        console.error("Error loading saved config:", error)
+      }
     }
-  }
 
-  // Initial load
-  loadAndUpdateAccountData()
+    // Initial load
+    loadAndUpdateAccountData()
 
-  // Set up event listener for real-time updates from website
-  const handleAccountUpdate = (event) => {
-    const newData = event.detail
-    console.log('Event-triggered account update:', newData)
-    setAccountData(newData)
-  }
+    // Set up event listener for real-time updates from website
+    const handleAccountUpdate = (event) => {
+      const newData = event.detail
+      console.log("Event-triggered account update:", newData)
+      setAccountData(newData)
+    }
 
-  // Set up storage event listener for cross-tab updates
-  const handleStorageChange = (event) => {
-    if (event.key === 'tradeAnalytics_accountData') {
-      console.log('Storage change detected, reloading account data')
+    // Set up storage event listener for cross-tab updates
+    const handleStorageChange = (event) => {
+      if (event.key === "tradeAnalytics_accountData") {
+        console.log("Storage change detected, reloading account data")
+        loadAndUpdateAccountData()
+      }
+    }
+
+    // Set up manual refresh event listener
+    const handleManualRefresh = () => {
+      console.log("Manual refresh triggered")
       loadAndUpdateAccountData()
     }
-  }
 
-  // Set up manual refresh event listener
-  const handleManualRefresh = () => {
-    console.log('Manual refresh triggered')
-    loadAndUpdateAccountData()
-  }
-
-  // Set up Chrome extension message listener
-  const handleExtensionMessage = (message, sender, sendResponse) => {
-    console.log('Extension message received:', message)
-    if (message.type === 'ACCOUNT_DATA_UPDATED') {
-      console.log('Account data updated via extension:', message.data)
-      setAccountData(message.data)
+    // Set up Chrome extension message listener
+    const handleExtensionMessage = (message, sender, sendResponse) => {
+      console.log("Extension message received:", message)
+      if (message.type === "ACCOUNT_DATA_UPDATED") {
+        console.log("Account data updated via extension:", message.data)
+        setAccountData(message.data)
+      }
+      if (message.type === "TRADE_DATA_UPDATED") {
+        console.log("Trade data updated via extension:", message.data)
+        // This will be handled by the analytics component
+      }
     }
-    if (message.type === 'TRADE_DATA_UPDATED') {
-      console.log('Trade data updated via extension:', message.data)
-      // This will be handled by the analytics component
-    }
-  }
 
-  // Add event listeners
-  window.addEventListener('accountDataUpdated', handleAccountUpdate)
-  window.addEventListener('storage', handleStorageChange)
-  window.addEventListener('manualRefresh', handleManualRefresh)
-  
-  // Add Chrome extension message listener if available
-  if (chrome && chrome.runtime && chrome.runtime.onMessage) {
-    chrome.runtime.onMessage.addListener(handleExtensionMessage)
-  }
+    // Add event listeners
+    window.addEventListener("accountDataUpdated", handleAccountUpdate)
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("manualRefresh", handleManualRefresh)
 
-  // Cleanup
-  return () => {
-    window.removeEventListener('accountDataUpdated', handleAccountUpdate)
-    window.removeEventListener('storage', handleStorageChange)
-    window.removeEventListener('manualRefresh', handleManualRefresh)
-    
-    // Remove Chrome extension message listener if available
+    // Add Chrome extension message listener if available
     if (chrome && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.removeListener(handleExtensionMessage)
+      chrome.runtime.onMessage.addListener(handleExtensionMessage)
     }
-  }
-}, [])
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("accountDataUpdated", handleAccountUpdate)
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("manualRefresh", handleManualRefresh)
+
+      // Remove Chrome extension message listener if available
+      if (chrome && chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleExtensionMessage)
+      }
+    }
+  }, [])
 
   const handleSave = () => {
     try {
@@ -157,13 +168,13 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-background transition-colors duration-200">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <header className="bg-card border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl font-bold text-foreground dark:text-white">
                 📊 FxReplay Funded Analytics
               </h1>
               {view === "analytics" && (
@@ -176,24 +187,31 @@ useEffect(() => {
                     <ArrowLeft className="h-4 w-4" />
                     Back
                   </Button>
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">Analytics Dashboard</span>
+                  <span className="text-lg font-bold text-foreground dark:text-white">
+                    Analytics Dashboard
+                  </span>
                 </div>
               )}
               {view === "analytics" && (
-                <select className="ml-4 px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200" disabled>
-                  <option value="" disabled>Select Challenge</option>
+                <select
+                  className="ml-4 px-3 py-2 rounded bg-background text-muted-foreground"
+                  disabled
+                >
+                  <option value="" disabled>
+                    Select Challenge
+                  </option>
                 </select>
               )}
               {/* Real Refresh and Theme Toggle Buttons */}
               <button
-                className="ml-4 px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                className="ml-4 px-3 py-2 rounded bg-background text-muted-foreground hover:bg-muted"
                 onClick={handleRefresh}
                 title="Refresh"
               >
                 &#x21bb; Refresh
               </button>
               <button
-                className="ml-2 px-3 py-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                className="ml-2 px-3 py-2 rounded bg-background text-muted-foreground hover:bg-muted"
                 onClick={toggleTheme}
                 title="Toggle Dark/Light"
               >
@@ -216,8 +234,8 @@ useEffect(() => {
             />
           </div>
         ) : (
-          <AnalyticsView 
-            config={challengeConfig} 
+          <AnalyticsView
+            config={challengeConfig}
             onBack={handleBack}
             accountData={accountData}
           />

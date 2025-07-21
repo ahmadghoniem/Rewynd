@@ -13,17 +13,17 @@ const ProfitableDaysCard = ({ profitableDays, requiredDays, progress }) => (
     </CardHeader>
     <CardContent>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-2xl font-bold text-green-600 dark:text-green-400">{profitableDays}/{requiredDays}</span>
+        <span className="text-2xl font-bold text-success">{profitableDays}/{requiredDays}</span>
         <Badge variant={profitableDays >= requiredDays ? 'default' : 'secondary'}>
           {profitableDays >= requiredDays ? 'Met' : 'Not Met'}
         </Badge>
       </div>
-      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+      <div className="text-sm text-muted-foreground mb-2">
         Days with ≥ 0.5% profit
       </div>
-      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4">
+      <div className="w-full bg-background dark:bg-gray-600 rounded-full h-4">
         <div
-          className="bg-gradient-to-r from-green-400 to-green-600 h-4 rounded-full transition-all duration-300 shadow-sm"
+          className="bg-success-gradient h-4 rounded-full transition-all duration-300 shadow-sm"
           style={{ width: `${Math.min(100, progress)}%` }}
         />
       </div>

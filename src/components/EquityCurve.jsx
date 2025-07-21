@@ -63,7 +63,7 @@ const EquityCurve = ({ tradesData = [] }) => {
   }
 
   const getPnLColor = (pnl) => {
-    return pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+    return pnl >= 0 ? 'text-success' : 'text-danger'
   }
 
   // Calculate statistics
@@ -83,7 +83,7 @@ const EquityCurve = ({ tradesData = [] }) => {
         {equityData.length > 0 ? (
           <div className="space-y-6">
             {/* Equity Curve Chart Only */}
-            <div className="h-64 bg-white dark:bg-gray-800 rounded-lg p-4">
+            <div className="h-64 bg-background rounded-lg p-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={equityData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <defs>
@@ -130,7 +130,7 @@ const EquityCurve = ({ tradesData = [] }) => {
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-8 text-muted-foreground">
             <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>No trade data available</p>
             <p className="text-sm">Extract trades from FxReplay to see equity curve analysis</p>
