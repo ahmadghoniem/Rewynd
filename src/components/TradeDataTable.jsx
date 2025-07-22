@@ -21,14 +21,14 @@ const TradeDataTable = ({
   const [visibleColumns, setVisibleColumns] = useState({
     asset: true,
     side: true,
-    dateStart: false,
-    dateEnd: false,
-    sl: true,
-    tp: true,
+    dateStart: true,
+    dateEnd: true,
+    sl: false,
+    tp: false,
     rr: true,
     risk: true, // Risk % column visible by default
     realized: true,
-    duration: true
+    duration: false
   })
   const [showFilter, setShowFilter] = useState(false)
   // Preset filter button handler

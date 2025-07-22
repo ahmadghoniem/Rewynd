@@ -1,17 +1,12 @@
 import React from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, TrendingUp } from "lucide-react"
+import { Calendar, TrendingUp, Info } from "lucide-react"
 import DashedProgressBar from "../ui/DashedProgressBar"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, profitableDays }) => (
   <Card>
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Calendar className="h-5 w-5 text-info" />
-        Trading Activity
-      </CardTitle>
-    </CardHeader>
     <CardContent className="space-y-6">
       {/* Minimum Trading Days Objective */}
       {minTradingDays > 0 && (
@@ -43,15 +38,25 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-success" />
-              <span className="text-sm font-medium text-muted-foreground">Minimum Profitable Days</span>
+              <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Tooltip>
+                <span className="text-muted-foreground cursor-help" style={{display: 'inline-flex', alignItems: 'center'}}>
+                <TooltipTrigger asChild>
+                  <span className="border-b border-dashed border-muted-foreground/50" style={{display: 'inline-block'}}>
+                    Minimum Profitable Days
+                  </span>
+              </TooltipTrigger>
+              </span>
+                  <TooltipContent side="top" sideOffset={0} align="center">
+                    Days with ≥ 0.5% profit
+                  </TooltipContent>
+                </Tooltip>
+              </span>
             </div>
             <div className="text-right">
               <Badge variant={profitableDays >= minProfitableDays ? 'default' : 'secondary'} className="mb-1">
                 {profitableDays}/{minProfitableDays}
               </Badge>
-              <p className="text-xs text-muted-foreground">
-                Days with ≥ 0.5% profit
-              </p>
             </div>
           </div>
           <DashedProgressBar
