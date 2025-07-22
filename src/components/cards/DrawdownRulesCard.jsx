@@ -2,6 +2,7 @@ import React from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown } from "lucide-react"
+import DashedProgressBar from "../ui/DashedProgressBar"
 
 const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, maxDrawdownProgress }) => (
   <Card>
@@ -27,12 +28,14 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
           </div>
         </div>
         <div className="space-y-1">
-          <div className="w-full bg-background rounded-full h-4">
-            <div 
-              className="bg-warning-gradient h-4 rounded-full transition-all duration-300 shadow-sm"
-              style={{ width: `${Math.min(100, dailyDrawdownProgress)}%` }}
-            />
-          </div>
+          <DashedProgressBar
+            progress={dailyDrawdownProgress / 100}
+            numDashes={10}
+            filledColor="var(--tw-bg-primary, #2563eb)"
+            emptyColor="var(--tw-bg-accent, #f1f5f9)"
+            height={12}
+            radius={4}
+          />
         </div>
       </div>
       {/* Max Drawdown Objective */}
@@ -50,12 +53,14 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
           </div>
         </div>
         <div className="space-y-1">
-          <div className="w-full bg-background rounded-full h-4">
-            <div 
-              className="bg-danger-gradient h-4 rounded-full transition-all duration-300 shadow-sm"
-              style={{ width: `${Math.min(100, maxDrawdownProgress)}%` }}
-            />
-          </div>
+          <DashedProgressBar
+            progress={maxDrawdownProgress / 100}
+            numDashes={10}
+            filledColor="var(--tw-bg-primary, #2563eb)"
+            emptyColor="var(--tw-bg-accent, #f1f5f9)"
+            height={12}
+            radius={4}
+          />
         </div>
       </div>
     </CardContent>

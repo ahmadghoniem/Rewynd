@@ -20,6 +20,8 @@ import {
   TradingPerformanceSection
 } from "./components/analytics"
 
+import TradingActivityCard from "./components/cards/TradingActivityCard"
+
 
 const AnalyticsView = React.forwardRef(({ config, accountData }, ref) => {
   const { isDark, toggleTheme } = useTheme()
@@ -209,8 +211,14 @@ const AnalyticsView = React.forwardRef(({ config, accountData }, ref) => {
           <EquityCurveSection displayData={displayData} extractedTrades={extractedTrades} />
           <TradeDataSection extractedTrades={extractedTrades} displayData={displayData} />
         </div>
-        {/* Right 1/3: Trading Performance Metrics + Daily Analysis */}
+        {/* Right 1/3: Trading Activity on top, then Trading Performance Metrics, then Daily Analysis */}
         <div className="lg:col-span-1 flex flex-col gap-6">
+          <TradingActivityCard
+            minTradingDays={config.minTradingDays || 0}
+            tradingDays={tradingDays}
+            minProfitableDays={config.requireProfitableDays || 0}
+            profitableDays={profitableDays}
+          />
           <TradingPerformanceSection extractedTrades={extractedTrades} displayData={displayData} config={config} />
           <DailyAnalysisSection extractedTrades={extractedTrades} />
         </div>

@@ -153,7 +153,7 @@ const DailyAnalysis = ({ tradesData = [] }) => {
                     <span className="font-semibold">{day.date.toLocaleDateString('en-US')}</span>
                   </div>
                   <div className={`text-2xl font-extrabold ${getPnLColor(day.totalPnL)}`}>{formatCurrency(day.totalPnL)}</div>
-                  <div className="flex gap-4 text-xs mt-2">
+                  <div className="flex justify-between text-xs mt-2">
                     <span>
                       <span className="font-semibold">{day.trades.length}</span> Trades
                     </span>
@@ -167,7 +167,7 @@ const DailyAnalysis = ({ tradesData = [] }) => {
                           }).length
                           return day.trades.length > 0 ? ((wins / day.trades.length) * 100).toFixed(0) : '-'
                         })()}
-                      </span>% Winrate
+                      </span>%
                     </span>
                     {/* Avg RR */}
                     <span>
@@ -176,7 +176,7 @@ const DailyAnalysis = ({ tradesData = [] }) => {
                           const validRRs = day.trades.map(t => parseFloat(t.maxRR)).filter(rr => !isNaN(rr))
                           return validRRs.length > 0 ? (validRRs.reduce((a, b) => a + b, 0) / validRRs.length).toFixed(2) : '-'
                         })()}
-                      </span> Avg RR
+                      </span> RR
                     </span>
                   </div>
                 </div>

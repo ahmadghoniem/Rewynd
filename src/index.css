@@ -109,7 +109,7 @@
   --primary: #a78bfa;               
 
   /* Accent: Use for secondary actions, supporting info, and decorative highlights */
-  --accent: #31314a;                    /* Accent: dark indigo/blue for badges/info */
+  --accent: #444444;                    /* Accent: dark indigo/blue for badges/info */
   --accent-foreground: #bcbcc4;         /* Text on accent */
 
   /* Accent: Use for success and danger badges */
@@ -119,7 +119,7 @@
   --accent-danger-foreground: #d65964;         /* Text on accent */
 
   /* Secondary backgrounds and text */
-  --secondary: #23232a;                 /* Secondary background: dark gray */
+  --secondary: #444444;                 /* Secondary background: dark gray */
   --secondary-foreground: #e0e0e6;      /* Text on secondary */
 
   /* Muted/disabled backgrounds and text */

@@ -347,8 +347,25 @@ const   TradingStatsTable = ({
           </div>
           <div className="flex flex-col min-w-[120px]">
             <span className="text-muted-foreground">Total Trades</span>
-            <span className="font-bold">
-              {totalTrades} (Buy: {buyTrades}, Sell: {sellTrades})
+            <span className="font-bold flex items-baseline gap-1">
+              {totalTrades}
+              {buyTrades > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-accent-success-foreground text-xs cursor-help">({buyTrades})</span>
+                  </TooltipTrigger>
+                  <TooltipContent>Buy Trades</TooltipContent>
+                </Tooltip>
+              )}
+              {buyTrades > 0 && sellTrades > 0 && <span className="text-xs text-muted-foreground">/</span>}
+              {sellTrades > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-accent-danger-foreground text-xs cursor-help">({sellTrades})</span>
+                  </TooltipTrigger>
+                  <TooltipContent>Sell Trades</TooltipContent>
+                </Tooltip>
+              )}
             </span>
           </div>
 

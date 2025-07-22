@@ -399,7 +399,12 @@ const TradeDataTable = ({
                   <Checkbox
                     id={key}
                     checked={visibleColumns[key]}
-                    disabled
+                    disabled={Object.values(visibleColumns).every((v) => v)}
+                    onCheckedChange={() => {
+                      if (!Object.values(visibleColumns).every((v) => v)) {
+                        toggleColumn(key)
+                      }
+                    }}
                   />
                   <label
                     htmlFor={key}
