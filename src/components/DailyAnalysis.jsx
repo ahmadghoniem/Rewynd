@@ -1,19 +1,26 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Calendar, TrendingUp, TrendingDown, DollarSign, Target, Clock } from "lucide-react"
+import { Clock, History } from "lucide-react"
 
 const DailyAnalysis = ({ tradesData = [] }) => {
   const [dailyData, setDailyData] = useState([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 3
+  const [currentPage, setCurrentPage] = useState(0)
+  const scrollRef = useRef(null)
 
   useEffect(() => {
     if (tradesData && tradesData.length > 0) {
       calculateDailyAnalysis(tradesData)
+      setCurrentPage(0) // Reset carousel on new data
     }
   }, [tradesData])
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      const scrollTo = currentPage * scrollRef.current.offsetWidth
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' })
+    }
+  }, [currentPage, dailyData.length])
 
   const calculateDailyAnalysis = (trades) => {
     const dailyGroups = {}
@@ -26,14 +33,11 @@ const DailyAnalysis = ({ tradesData = [] }) => {
           dateKey: dateKey,
           trades: [],
           totalPnL: 0,
-          totalVolume: 0,
         }
       }
       const pnl = parseFloat(trade.realized?.replace(/[$,]/g, '') || '0')
-      const volume = parseFloat(trade.size?.replace(/[^\d.]/g, '') || '0')
       dailyGroups[dateKey].trades.push(trade)
       dailyGroups[dateKey].totalPnL += pnl
-      dailyGroups[dateKey].totalVolume += volume
     })
     // Convert to sorted array (descending by date)
     const dailyArray = Object.values(dailyGroups).sort((a, b) => b.date - a.date)
@@ -55,9 +59,55 @@ const DailyAnalysis = ({ tradesData = [] }) => {
     return 'text-muted-foreground'
   }
 
-  // Pagination logic
-  const totalPages = Math.ceil(dailyData.length / pageSize)
-  const paginatedData = dailyData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  // Drag-to-scroll logic
+  const isDragging = useRef(false)
+  const startX = useRef(0)
+  const scrollLeft = useRef(0)
+
+  const handlePointerDown = (e) => {
+    isDragging.current = true
+    startX.current = e.pageX || e.touches?.[0]?.pageX
+    scrollLeft.current = scrollRef.current.scrollLeft
+    scrollRef.current.style.cursor = 'grabbing'
+  }
+  const handlePointerMove = (e) => {
+    if (!isDragging.current) return
+    const x = e.pageX || e.touches?.[0]?.pageX
+    const walk = (x - startX.current) * -1
+    scrollRef.current.scrollLeft = scrollLeft.current + walk
+  }
+  const handlePointerUp = () => {
+    isDragging.current = false
+    scrollRef.current.style.cursor = ''
+  }
+
+  const totalPages = Math.ceil(dailyData.length / 2)
+
+  // Use a ref callback to always get the latest scrollRef
+  const setScrollRef = useCallback((node) => {
+    scrollRef.current = node
+  }, [])
+
+  // Debounced onScroll handler
+  const scrollTimeout = useRef()
+  const handleScroll = () => {
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
+    scrollTimeout.current = setTimeout(() => {
+      if (scrollRef.current) {
+        const page = Math.round(scrollRef.current.scrollLeft / scrollRef.current.offsetWidth)
+        if (page !== currentPage) setCurrentPage(page)
+      }
+    }, 50)
+  }
+
+  // Scroll to a page
+  const scrollToPage = (page) => {
+    setCurrentPage(page)
+    if (scrollRef.current) {
+      const scrollTo = page * scrollRef.current.offsetWidth
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' })
+    }
+  }
 
   return (
     <Card>
@@ -67,57 +117,105 @@ const DailyAnalysis = ({ tradesData = [] }) => {
       <CardContent>
         {dailyData.length > 0 ? (
           <>
-            <div className="flex gap-4 mb-4">
-              {paginatedData.map((day, idx) => (
-                <div key={day.dateKey} className="bg-background flex-1 min-w-0 rounded-lg p-4 shadow flex flex-col justify-between">
-                  <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
-                    <Clock className="h-4 w-4 opacity-60" />
-                    {day.date.toLocaleDateString('en-US')}
+            <div
+              ref={setScrollRef}
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                gap: '16px',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                width: '100%',
+                minHeight: 120,
+                scrollSnapType: 'x mandatory',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              onScroll={handleScroll}
+              onMouseDown={handlePointerDown}
+              onMouseMove={handlePointerMove}
+              onMouseUp={handlePointerUp}
+              onMouseLeave={handlePointerUp}
+              onTouchStart={handlePointerDown}
+              onTouchMove={handlePointerMove}
+              onTouchEnd={handlePointerUp}
+              className="hide-scrollbar select-none"
+            >
+              {dailyData.map((day) => (
+                <div
+                  key={day.dateKey}
+                  className={"flex flex-col justify-between flex-1 min-w-0 rounded-lg p-4 bg-muted text-muted-foreground shadow-sm transition-all duration-200"}
+                  style={{ minWidth: 'calc(50% - 8px)', maxWidth: 'calc(50% - 8px)', minHeight: 120, scrollSnapAlign: 'start' }}
+                >
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                    <span className="mr-2">
+                      <History className="h-4 w-4" />
+                    </span>
+                    <span className="font-semibold">{day.date.toLocaleDateString('en-US')}</span>
                   </div>
-                  <div className={`text-lg font-bold mb-2 ${getPnLColor(day.totalPnL)}`}>{formatCurrency(day.totalPnL)}</div>
-                  <div className="text-xs text-muted-foreground mb-1">Trade: <span className="text-white font-semibold">{day.trades.length}</span></div>
-                  <div className="text-xs text-muted-foreground">Lots: <span className="text-white font-semibold">{day.totalVolume.toFixed(2)}</span></div>
+                  <div className={`text-2xl font-extrabold ${getPnLColor(day.totalPnL)}`}>{formatCurrency(day.totalPnL)}</div>
+                  <div className="flex gap-4 text-xs mt-2">
+                    <span>
+                      <span className="font-semibold">{day.trades.length}</span> Trades
+                    </span>
+                    {/* Winrate */}
+                    <span>
+                      <span className="font-semibold">
+                        {(() => {
+                          const wins = day.trades.filter(t => {
+                            const realized = parseFloat(t.realized?.replace(/[$,]/g, '') || '0')
+                            return realized > 0
+                          }).length
+                          return day.trades.length > 0 ? ((wins / day.trades.length) * 100).toFixed(0) : '-'
+                        })()}
+                      </span>% Winrate
+                    </span>
+                    {/* Avg RR */}
+                    <span>
+                      <span className="font-semibold">
+                        {(() => {
+                          const validRRs = day.trades.map(t => parseFloat(t.maxRR)).filter(rr => !isNaN(rr))
+                          return validRRs.length > 0 ? (validRRs.reduce((a, b) => a + b, 0) / validRRs.length).toFixed(2) : '-'
+                        })()}
+                      </span> Avg RR
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-              <div>
-                {`${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, dailyData.length)} items of ${dailyData.length}`}
-              </div>
-              <div className="flex gap-1">
-                {/* First page button */}
-                {currentPage > 2 && (
-                  <>
-                    <Button variant="ghost" size="sm" onClick={() => setCurrentPage(1)}>
-                      1
-                    </Button>
-                    {currentPage > 3 && <span>...</span>}
-                  </>
-                )}
-                {/* Dynamic page buttons */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => Math.abs(page - currentPage) <= 1)
-                  .map(page => (
-                    <Button
-                      key={page}
-                      variant={page === currentPage ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </Button>
-                  ))}
-                {/* Last page button */}
-                {currentPage < totalPages - 1 && (
-                  <>
-                    {currentPage < totalPages - 2 && <span>...</span>}
-                    <Button variant="ghost" size="sm" onClick={() => setCurrentPage(totalPages)}>
-                      Last
-                    </Button>
-                  </>
-                )}
-              </div>
+            {/* Pagination controls (Trade History style) */}
+            <div className="flex justify-center items-center gap-2 mt-4">
+              {currentPage > 0 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                >
+                  Prev
+                </Button>
+              ) : (
+                <span style={{ width: 64, display: 'inline-block' }} aria-hidden="true"></span>
+              )}
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Button
+                  key={i}
+                  size="sm"
+                  variant={currentPage === i ? "default" : "outline"}
+                  onClick={() => scrollToPage(i)}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+              {currentPage < totalPages - 1 && totalPages > 0 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                >
+                  Next
+                </Button>
+              ) : (
+                <span style={{ width: 64, display: 'inline-block' }} aria-hidden="true"></span>
+              )}
             </div>
           </>
         ) : (

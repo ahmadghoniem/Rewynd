@@ -21,7 +21,7 @@ import {
 } from "./components/analytics"
 
 
-const AnalyticsView = ({ config, accountData }) => {
+const AnalyticsView = React.forwardRef(({ config, accountData }, ref) => {
   const { isDark, toggleTheme } = useTheme()
   // Read data directly from Chrome extension storage or localStorage
   const getStorageData = () => {
@@ -80,6 +80,15 @@ const AnalyticsView = ({ config, accountData }) => {
   const [storageData, setStorageData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [extractedTrades, setExtractedTrades] = useState([])
+
+  // Expose addExampleTrades via ref
+  React.useImperativeHandle(ref, () => ({
+    addExampleTrades: (data) => {
+      if (data && Array.isArray(data.trades)) {
+        setExtractedTrades(data.trades)
+      }
+    }
+  }))
 
   // Load storage data on component mount
   useEffect(() => {
@@ -208,6 +217,6 @@ const AnalyticsView = ({ config, accountData }) => {
       </div>
     </div>
   )
-}
+})
 
 export default AnalyticsView

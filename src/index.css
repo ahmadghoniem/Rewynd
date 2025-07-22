@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
@@ -41,85 +41,127 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-success: var(--success);
   --color-danger: var(--danger);
-  
+  --color-destructive: var(--destructive);
+  --color-accent-success: var(--accent-success);
+  --color-accent-success-foreground: var(--accent-success-foreground);
+  --color-accent-danger: var(--accent-danger);
+  --color-accent-danger-foreground: var(--accent-danger-foreground);  
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: #f7f8fa;
-  --foreground: #23272f;
-  --card: #fff;
-  --card-foreground: #23272f;
-  --card-border: #e5e7eb;
-  --popover: #fff;
-  --popover-foreground: #23272f;
-  --primary: #2563eb; /* blue-600 */
-  --primary-foreground: #fff;
-  --secondary: #f1f5f9; /* slate-100 */
-  --secondary-foreground: #23272f;
-  --muted: #f3f4f6; /* gray-100 */
-  --muted-foreground: #6b7280; /* gray-500 */
-  --accent: #e0e7ff; /* indigo-100 */
-  --accent-foreground: #3730a3; /* indigo-800 */
-  --destructive: #ef4444; /* red-500 */
-  --border: #e5e7eb; /* gray-200 */
-  --input: #e5e7eb;
-  --ring: #2563eb;
-  --chart-1: #2563eb; /* blue-600 */
-  --chart-2: #10b981; /* emerald-500 */
-  --chart-3: #f59e42; /* amber-400 */
-  --chart-4: #f43f5e; /* rose-500 */
-  --chart-5: #a78bfa; /* violet-400 */
-  --sidebar: #f1f5f9;
-  --sidebar-foreground: #23272f;
-  --sidebar-primary: #2563eb;
-  --sidebar-primary-foreground: #fff;
-  --sidebar-accent: #e0e7ff;
-  --sidebar-accent-foreground: #3730a3;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: #2563eb;
-  --success: #059669;
-  --danger: #dc2626;
+  /* Main background and text */
+  --background: #f7f8fa;                /* Main background */
+  --foreground: #23272f;                 /* Main text */
+
+  /* Card backgrounds and text */
+  --card: #fff;                          /* Card background */
+  --card-foreground: #23272f;            /* Card text */
+  --card-border: #e5e7eb;                /* Card border */
+
+  /* Primary: Use for main actions, key stats, and primary highlights */
+  --primary: #2563eb;                    /* Blue accent (primary, highlights) */
+  --primary-foreground: #fff;            /* Text on blue */
+
+  /* Accent: Use for secondary actions, supporting info, and decorative highlights */
+  --accent: #e0e7ff;                     /* Indigo accent (badges, info) */
+  --accent-foreground: #3730a3;          /* Text on indigo */
+
+  /* Muted/disabled backgrounds and text */
+  --muted: #242425;                      /* Muted background (tooltips, disabled) */
+  --muted-foreground: #6b7280;           /* Muted text */
+
+  /* Popover/tooltip backgrounds and text */
+  --popover: #fff;                       /* Popover background */
+  --popover-foreground: #23272f;         /* Popover text */
+
+  /* Borders and rings */
+  --border: #e5e7eb;                     /* Border color */
+  --ring: #2563eb;                       /* Focus ring (blue) */
+
+  /* Chart colors */
+  --chart-1: #2563eb;                    /* Chart blue */
+
+  /* Inputs */
+  --input: #e5e7eb;                      /* Input background */
+
+  /* Status colors */
+  --success: #059669;                    /* Success green */
+  --danger: #dc2626;                     /* Danger red */
+  --destructive: #ef4444;                /* Destructive (error) red */
+
+  /* Border radius */
+  --radius: 0.625rem;                  /* Default border radius */
 }
 
 .dark {
-  --background: #2b2b2e;
-  --foreground: #fff;
-  --card: #181818;
-  --card-foreground: #c5c3c3;
-  --card-border: #181818;
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --success: #059669;
-  --danger: #dc2626;
+  /* Main background and text */
+  --background: #101014;                /* Main background: deep neutral */
+  --foreground: #f5f6fa;                /* Main text: off-white */
+
+  /* Card backgrounds and text */
+  --card: #18181c;                      /* Card background: slightly lighter than main */
+  --card-foreground: #bcbcc4;           /* Card text: soft light gray */
+  --card-border: #23232a;               /* Card border: subtle dark gray */
+
+  /* Primary: Use for main actions, key stats, and primary highlights */
+  /* --primary: #a78bfa;                   Muted cyberpunk violet (primary, highlights) */
+  --primary-foreground: #18181c;        /* Text on violet */
+  --primary: #a78bfa;               
+
+  /* Accent: Use for secondary actions, supporting info, and decorative highlights */
+  --accent: #31314a;                    /* Accent: dark indigo/blue for badges/info */
+  --accent-foreground: #bcbcc4;         /* Text on accent */
+
+  /* Accent: Use for success and danger badges */
+  --accent-success: #1a4230;                    /* Accent: dark indigo/blue for badges/info */
+  --accent-success-foreground: #50aa83;         /* Text on accent */
+  --accent-danger: #652121;                    /* Accent: dark indigo/blue for badges/info */
+  --accent-danger-foreground: #d65964;         /* Text on accent */
+
+  /* Secondary backgrounds and text */
+  --secondary: #23232a;                 /* Secondary background: dark gray */
+  --secondary-foreground: #e0e0e6;      /* Text on secondary */
+
+  /* Muted/disabled backgrounds and text */
+  --muted: #242425;                      /* Muted background (tooltips, disabled) */
+  --muted-foreground: #f5f6fa;          /* Muted text */
+
+  /* Borders and rings */
+  --border: #23232a;                    /* Border color: subtle dark gray */
+  --ring: #a78bfa;                      /* Focus ring: muted violet */
+
+  /* Chart colors */
+  --chart-1: #059669;                   /* Chart green (profit) */
+
+  /* Divider color */
+  --divider: #23232a;                   /* Divider: subtle but visible */
+
+  /* Inputs */
+  --input: #23232a;                     /* Input background: dark gray */
+
+  /* Status colors */
+  --success: #3ee887;                   /* Success green: slightly muted neon */
+  --danger: #ff4b5c;                    /* Danger red: slightly muted neon */
+  --destructive: #ff4b5c;               /* Destructive (error) red: match danger */
+
+  /* Border radius */
+  --radius: 0.625rem;                  /* Default border radius */
 }
 
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
+}
 
+.unselectable {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+}
 
 @layer base {
   * {
@@ -131,6 +173,7 @@
 }
 
 html,
-body, * {
-  font-family: 'Inter', system-ui, sans-serif !important;
+body,
+* {
+  font-family: "Inter", system-ui, sans-serif !important;
 }

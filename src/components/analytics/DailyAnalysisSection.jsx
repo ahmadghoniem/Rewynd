@@ -5,7 +5,6 @@ const DailyAnalysisSection = ({ extractedTrades }) => {
   return (
     <div className="w-full">
       <div className="grid grid-cols-6 gap-4 w-full">
-        {/* Daily Analysis - spans all 6 columns */}
         <div className="col-span-6">
           <DailyAnalysis tradesData={extractedTrades} />
         </div>

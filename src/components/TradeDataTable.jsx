@@ -13,50 +13,38 @@ import {
   EyeOff
 } from "lucide-react"
 
-const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }) => {
+const TradeDataTable = ({
+  tradesData = [],
+  accountSize = 0,
+  accountBalance = 0
+}) => {
   const [visibleColumns, setVisibleColumns] = useState({
     asset: true,
     side: true,
-    dateStart: true,
-    dateEnd: true,
-    entry: true,
+    dateStart: false,
+    dateEnd: false,
     sl: true,
     tp: true,
     rr: true,
-    size: true,
-    risk: true, // Add risk column
-    close: true,
+    risk: true, // Risk % column visible by default
     realized: true,
     duration: true
   })
   const [showFilter, setShowFilter] = useState(false)
-  // Preset state
-  const [presets, setPresets] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("columnVisibilityPresets") || "[]")
-    } catch {
-      return []
-    }
-  })
-  const [presetName, setPresetName] = useState("")
-  // Save preset
-  const savePreset = () => {
-    if (!presetName.trim()) return
-    const newPresets = presets.filter((p) => p.name !== presetName.trim())
-    newPresets.push({ name: presetName.trim(), columns: visibleColumns })
-    setPresets(newPresets)
-    localStorage.setItem("columnVisibilityPresets", JSON.stringify(newPresets))
-    setPresetName("")
-  }
-  // Load preset
-  const loadPreset = (columns) => {
-    setVisibleColumns(columns)
-  }
-  // Delete preset
-  const deletePreset = (name) => {
-    const newPresets = presets.filter((p) => p.name !== name)
-    setPresets(newPresets)
-    localStorage.setItem("columnVisibilityPresets", JSON.stringify(newPresets))
+  // Preset filter button handler
+  const applyPresetFilter = () => {
+    setVisibleColumns({
+      asset: true,
+      side: true,
+      dateStart: true,
+      dateEnd: true,
+      sl: false,
+      tp: false,
+      rr: true,
+      risk: true,
+      realized: true,
+      duration: true // Show Hold Time in the simple preset
+    })
   }
 
   const formatCurrency = (amount) => {
@@ -84,9 +72,7 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
   const getPnLColor = (realized) => {
     if (!realized) return "text-muted-foreground"
     const amount = parseFloat(realized.replace(/[$,]/g, ""))
-    return amount > 0
-      ? "text-success"
-      : "text-danger"
+    return amount > 0 ? "text-success" : "text-danger"
   }
 
   const getSideBadge = (side) => {
@@ -104,18 +90,41 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
     if (!dateStr) return ""
     try {
       const date = new Date(dateStr)
-      // Format: DD/MM/YY - HH:mm:ss (24h, 2-digit year)
-      return date.toLocaleString("en-GB", {
-        year: "2-digit",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false
-      }).replace(",", "")
+      // Format: DD/MM/YY - HH:mm am/pm (12h, 2-digit year)
+      return date
+        .toLocaleString("en-GB", {
+          year: "2-digit",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        })
+        .replace(",", "")
     } catch {
       return dateStr
+    }
+  }
+
+  // Format combined date range as 'YY/MM/DD HH:mm → HH:mm' or 'YY/MM/DD HH:mm → YY/MM/DD HH:mm'
+  const formatDateRange = (dateStart, dateEnd) => {
+    if (!dateStart || !dateEnd) return "-"
+    try {
+      const start = new Date(dateStart)
+      const end = new Date(dateEnd)
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return "-"
+      const pad = (n) => n.toString().padStart(2, "0")
+      const startDate = `${pad(start.getFullYear() % 100)}/${pad(start.getMonth() + 1)}/${pad(start.getDate())}`
+      const startTime = `${pad(start.getHours())}:${pad(start.getMinutes())}`
+      const endDate = `${pad(end.getFullYear() % 100)}/${pad(end.getMonth() + 1)}/${pad(end.getDate())}`
+      const endTime = `${pad(end.getHours())}:${pad(end.getMinutes())}`
+      if (startDate === endDate) {
+        return `${startDate} ${startTime} → ${endTime}`
+      } else {
+        return `${startDate} ${startTime} → ${endDate} ${endTime}`
+      }
+    } catch {
+      return "-"
     }
   }
 
@@ -139,37 +148,38 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
 
   // Helper to clean and parse numbers from strings
   const cleanNumber = (val) => {
-    if (typeof val === 'number') return val;
-    if (!val) return 0;
-    return parseFloat(val.toString().replace(/[^\d.-]/g, ''));
-  };
+    if (typeof val === "number") return val
+    if (!val) return 0
+    return parseFloat(val.toString().replace(/[^\d.-]/g, ""))
+  }
 
-  const CONTRACT_SIZE = 100000; // Standard forex contract size
+  const CONTRACT_SIZE = 100000 // Standard forex contract size
 
   // Calculate risk percentage based on entry, sl, lot size, and current account balance
   const calculateRiskPercentage = (trade) => {
-    if (!trade.size || !trade.entry || !trade.initialSL || !accountBalance) return null;
+    if (!trade.size || !trade.entry || !trade.initialSL || !accountBalance)
+      return null
 
-    const sizeNum = cleanNumber(trade.size);
-    const entryNum = cleanNumber(trade.entry);
-    const slNum = cleanNumber(trade.initialSL);
-    if (isNaN(sizeNum) || isNaN(entryNum) || isNaN(slNum)) return null;
+    const sizeNum = cleanNumber(trade.size)
+    const entryNum = cleanNumber(trade.entry)
+    const slNum = cleanNumber(trade.initialSL)
+    if (isNaN(sizeNum) || isNaN(entryNum) || isNaN(slNum)) return null
 
     // Risk per trade = (Entry − Stop Loss) × Lot Size
-    let riskPerTrade = 0;
+    let riskPerTrade = 0
     if (trade.side?.toLowerCase() === "sell") {
-      riskPerTrade = (slNum - entryNum) * sizeNum;
+      riskPerTrade = (slNum - entryNum) * sizeNum
     } else {
-      riskPerTrade = (entryNum - slNum) * sizeNum;
+      riskPerTrade = (entryNum - slNum) * sizeNum
     }
-    if (riskPerTrade < 0) riskPerTrade = Math.abs(riskPerTrade);
+    if (riskPerTrade < 0) riskPerTrade = Math.abs(riskPerTrade)
     // Risk % = (Risk per trade ÷ Current Balance) × 100
-    const riskPercentage = (riskPerTrade / accountBalance) * 100;
+    const riskPercentage = (riskPerTrade / accountBalance) * 100
     return {
       percent: riskPercentage.toFixed(2),
       amount: riskPerTrade
-    };
-  };
+    }
+  }
 
   // Get risk level color based on percentage
   const getRiskLevelColor = (riskPercentage) => {
@@ -217,54 +227,54 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
   }
 
   // Calculate average hold time across all trades
-  const calculateAverageHoldTime = () => {
-    if (!tradesData || tradesData.length === 0) return null
+  // const calculateAverageHoldTime = () => {
+  //   if (!tradesData || tradesData.length === 0) return null
 
-    const validHoldTimes = tradesData
-      .map((trade) => {
-        if (!trade.dateStart || !trade.dateEnd) return null
+  //   const validHoldTimes = tradesData
+  //     .map((trade) => {
+  //       if (!trade.dateStart || !trade.dateEnd) return null
 
-        try {
-          const startDate = new Date(trade.dateStart)
-          const endDate = new Date(trade.dateEnd)
+  //       try {
+  //         const startDate = new Date(trade.dateStart)
+  //         const endDate = new Date(trade.dateEnd)
 
-          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()))
-            return null
+  //         if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()))
+  //           return null
 
-          return endDate.getTime() - startDate.getTime()
-        } catch {
-          return null
-        }
-      })
-      .filter((time) => time !== null && time > 0)
+  //         return endDate.getTime() - startDate.getTime()
+  //       } catch {
+  //         return null
+  //       }
+  //     })
+  //     .filter((time) => time !== null && time > 0)
 
-    if (validHoldTimes.length === 0) return null
+  //   if (validHoldTimes.length === 0) return null
 
-    const averageTimeMs =
-      validHoldTimes.reduce((sum, time) => sum + time, 0) /
-      validHoldTimes.length
+  //   const averageTimeMs =
+  //     validHoldTimes.reduce((sum, time) => sum + time, 0) /
+  //     validHoldTimes.length
 
-    // Format average time
-    const minutes = Math.floor(averageTimeMs / (1000 * 60))
-    const hours = Math.floor(averageTimeMs / (1000 * 60 * 60))
-    const days = Math.floor(averageTimeMs / (1000 * 60 * 60 * 24))
+  //   // Format average time
+  //   const minutes = Math.floor(averageTimeMs / (1000 * 60))
+  //   const hours = Math.floor(averageTimeMs / (1000 * 60 * 60))
+  //   const days = Math.floor(averageTimeMs / (1000 * 60 * 60 * 24))
 
-    if (days > 0) {
-      return `${days}d ${hours % 24}h`
-    } else if (hours > 0) {
-      return `${hours}h ${minutes % 60}m`
-    } else if (minutes > 0) {
-      return `${minutes}m`
-    } else {
-      return `${Math.floor(averageTimeMs / 1000)}s`
-    }
-  }
+  //   if (days > 0) {
+  //     return `${days}d ${hours % 24}h`
+  //   } else if (hours > 0) {
+  //     return `${hours}h ${minutes % 60}m`
+  //   } else if (minutes > 0) {
+  //     return `${minutes}m`
+  //   } else {
+  //     return `${Math.floor(averageTimeMs / 1000)}s`
+  //   }
+  // }
 
   // Memoize the average hold time calculation
-  const averageHoldTime = React.useMemo(
-    () => calculateAverageHoldTime(),
-    [tradesData]
-  )
+  // const averageHoldTime = React.useMemo(
+  //   () => calculateAverageHoldTime(),
+  //   [tradesData]
+  // )
 
   const toggleColumn = (column) => {
     setVisibleColumns((prev) => ({
@@ -280,13 +290,10 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
       side: !allVisible,
       dateStart: !allVisible,
       dateEnd: !allVisible,
-      entry: !allVisible,
       sl: !allVisible,
       tp: !allVisible,
       rr: !allVisible,
-      size: !allVisible,
-      risk: !allVisible, // Add risk column
-      close: !allVisible,
+      risk: !allVisible,
       realized: !allVisible,
       duration: !allVisible
     })
@@ -297,22 +304,22 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
     { key: "side", label: "Side" },
     { key: "dateStart", label: "Date Start" },
     { key: "dateEnd", label: "Date End" },
-    { key: "entry", label: "Entry" },
     { key: "sl", label: "SL" },
     { key: "tp", label: "TP" },
     { key: "rr", label: "RR" },
-    { key: "size", label: "Size (Lots)" },
     { key: "risk", label: "Risk %" },
-    { key: "close", label: "Close" },
     { key: "realized", label: "Realized" },
-    { key: "duration", label: "Avg Hold Time" }
+    { key: "duration", label: "Hold Time" }
   ]
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 5
   const totalPages = Math.ceil(tradesData.length / pageSize)
-  const paginatedTrades = tradesData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const paginatedTrades = tradesData.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  )
 
   return (
     <Card>
@@ -322,19 +329,60 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
             <Table className="h-5 w-5" />
             Trade History ({tradesData.length} trades)
           </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilter(!showFilter)}
-            className="flex items-center gap-2"
-          >
-            {showFilter ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
-            {showFilter ? "Hide" : "Show"} Filters
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilter(!showFilter)}
+              className="flex items-center gap-2"
+            >
+              {showFilter ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+              {showFilter ? "Hide" : "Show"} Filters
+            </Button>
+            <Button
+              variant={Object.values(visibleColumns).every((v) => v) ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                const isAdvanced = Object.values(visibleColumns).every((v) => v)
+                if (isAdvanced) {
+                  // Switch to simple preset: all but sl, tp, duration
+                  setVisibleColumns({
+                    asset: true,
+                    side: true,
+                    dateStart: true,
+                    dateEnd: true,
+                    sl: false,
+                    tp: false,
+                    rr: true,
+                    risk: true,
+                    realized: true,
+                    duration: false
+                  })
+                } else {
+                  // Show all columns (advanced)
+                  setVisibleColumns({
+                    asset: true,
+                    side: true,
+                    dateStart: true,
+                    dateEnd: true,
+                    sl: true,
+                    tp: true,
+                    rr: true,
+                    risk: true,
+                    realized: true,
+                    duration: true
+                  })
+                }
+              }}
+              className="flex items-center gap-2"
+            >
+              Advanced
+            </Button>
+          </div>
         </div>
 
         {/* Column Filter */}
@@ -344,16 +392,6 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
               <h4 className="text-sm font-medium text-muted-foreground">
                 Visible Columns:
               </h4>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleAllColumns}
-                className="text-xs"
-              >
-                {Object.values(visibleColumns).every((v) => v)
-                  ? "Hide All"
-                  : "Show All"}
-              </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
               {columnDefinitions.map(({ key, label }) => (
@@ -361,7 +399,7 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                   <Checkbox
                     id={key}
                     checked={visibleColumns[key]}
-                    onCheckedChange={() => toggleColumn(key)}
+                    disabled
                   />
                   <label
                     htmlFor={key}
@@ -372,70 +410,15 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                 </div>
               ))}
             </div>
-            {/* Preset Management UI */}
-            <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-              <input
-                type="text"
-                placeholder="Preset name"
-                value={presetName}
-                onChange={(e) => setPresetName(e.target.value)}
-                className="border rounded px-2 py-1 text-sm"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={savePreset}
-                disabled={!presetName.trim()}
-              >
-                Save Preset
-              </Button>
-              {presets.length > 0 && (
-                <select
-                  className="border rounded px-2 py-1 text-sm"
-                  onChange={(e) => {
-                    const preset = presets.find(
-                      (p) => p.name === e.target.value
-                    )
-                    if (preset) loadPreset(preset.columns)
-                  }}
-                  defaultValue=""
-                >
-                  <option value="" disabled>
-                    Load Preset...
-                  </option>
-                  {presets.map((p) => (
-                    <option key={p.name} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            {presets.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-1">
-                {presets.map((p) => (
-                  <span
-                    key={p.name}
-                    className="flex items-center bg-muted-foreground rounded px-2 py-1 text-xs"
-                  >
-                    {p.name}
-                    <button
-                      className="ml-1 text-red-500 hover:text-red-700"
-                      title="Delete preset"
-                      onClick={() => deletePreset(p.name)}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </CardHeader>
       <CardContent>
         {tradesData.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div
+            className="overflow-x-auto"
+            style={{ minHeight: `${pageSize * 48 + 56}px` }} // 48px per row, 56px for header
+          >
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-border">
@@ -459,11 +442,6 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                       Date End
                     </th>
                   )}
-                  {visibleColumns.entry && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Entry
-                    </th>
-                  )}
                   {visibleColumns.sl && (
                     <th className="text-left p-3 text-sm font-medium text-muted-foreground">
                       SL
@@ -479,19 +457,9 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                       RR
                     </th>
                   )}
-                  {visibleColumns.size && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Size (Lots)
-                    </th>
-                  )}
                   {visibleColumns.risk && (
                     <th className="text-left p-3 text-sm font-medium text-muted-foreground">
                       Risk %
-                    </th>
-                  )}
-                  {visibleColumns.close && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Close
                     </th>
                   )}
                   {visibleColumns.realized && (
@@ -501,7 +469,7 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                   )}
                   {visibleColumns.duration && (
                     <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Avg Hold Time
+                      Hold Time
                     </th>
                   )}
                 </tr>
@@ -510,7 +478,7 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                 {paginatedTrades.map((trade, index) => (
                   <tr
                     key={index + (currentPage - 1) * pageSize}
-                    className="hover:bg-muted-foreground dark:hover:bg-gray-800"
+                    className="hover:bg-muted hover:text-muted-foreground"
                   >
                     {visibleColumns.asset && (
                       <td className="p-3 text-sm text-foreground dark:text-white font-medium">
@@ -523,42 +491,34 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                           variant={getSideBadge(trade.side)}
                           className="text-xs"
                         >
-                          {trade.side?.charAt(0).toUpperCase() + trade.side?.slice(1).toLowerCase()}
+                          {trade.side?.charAt(0).toUpperCase() +
+                            trade.side?.slice(1).toLowerCase()}
                         </Badge>
                       </td>
                     )}
                     {visibleColumns.dateStart && (
                       <td className="p-3 text-sm">
-                        {/* Remove clickable link, just show text */}
                         {formatDate(trade.dateStart)}
                       </td>
                     )}
                     {visibleColumns.dateEnd && (
                       <td className="p-3 text-sm">
-                        {/* Remove clickable link, just show text */}
                         {formatDate(trade.dateEnd)}
-                      </td>
-                    )}
-                    {visibleColumns.entry && (
-                      <td className="p-3 text-sm text-foreground dark:text-white">
-                        {formatNumber(trade.entry)}
                       </td>
                     )}
                     {visibleColumns.sl && (
                       <td className="p-3 text-sm">
                         <div>
-                          <div className="text-foreground dark:text-white">
-                            {formatNumber(trade.initialSL)}
-                          </div>
-                          {trade.initialSL && trade.entry && (
-                            <div className="text-xs text-danger">
+                          {trade.initialSL && trade.entry ? (
+                            <span className="text-danger">
                               {calculatePercentage(
                                 trade.entry,
                                 trade.initialSL,
                                 trade.side
-                              )}
-                              %
-                            </div>
+                              )}%
+                            </span>
+                          ) : (
+                            "-"
                           )}
                         </div>
                       </td>
@@ -566,63 +526,46 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                     {visibleColumns.tp && (
                       <td className="p-3 text-sm">
                         <div>
-                          <div className="text-foreground dark:text-white">
-                            {trade.maxTP ? formatNumber(trade.maxTP) : "-"}
-                          </div>
-                          {trade.maxTP && trade.entry && (
-                            <div className="text-xs text-success">
+                          {trade.maxTP && trade.entry ? (
+                            <span className="text-success">
                               {calculatePercentage(
                                 trade.entry,
                                 trade.maxTP,
                                 trade.side
-                              )}
-                              %
-                            </div>
+                              )}%
+                            </span>
+                          ) : (
+                            "-"
                           )}
                         </div>
                       </td>
                     )}
                     {visibleColumns.rr && (
                       <td className="p-3 text-sm text-foreground dark:text-white">
-                        {trade.maxRR === "Loss" ? (
-                          <Badge variant="destructive" className="text-xs">
-                            Loss
-                          </Badge>
-                        ) : (
-                          trade.maxRR
-                        )}
-                      </td>
-                    )}
-                    {visibleColumns.size && (
-                      <td className="p-3 text-sm">
-                        <div>
-                          <div className="font-medium text-foreground dark:text-white">
-                            {trade.size}
-                          </div>
-                        </div>
+                        {(() => {
+                          if (trade.maxRR === "Loss") return <span>-1</span>;
+                          const rrNum = parseFloat(trade.maxRR);
+                          if (!isNaN(rrNum) && rrNum >= -0.1 && rrNum <= 0.1) return <span>0</span>;
+                          return trade.maxRR;
+                        })()}
                       </td>
                     )}
                     {visibleColumns.risk && (
                       <td className="p-3 text-sm">
                         {(() => {
-                          const risk = calculateRiskPercentage(trade);
-                          if (!risk) return "-";
+                          const risk = calculateRiskPercentage(trade)
+                          if (!risk) return "-"
                           return (
                             <div>
-                              <span className={`font-medium ${getRiskLevelColor(risk.percent)}`}>
+                              <span className="font-medium">
                                 {risk.percent}%
                               </span>
                               <div className="text-xs text-muted-foreground">
                                 (${formatNumber(risk.amount)})
                               </div>
                             </div>
-                          );
+                          )
                         })()}
-                      </td>
-                    )}
-                    {visibleColumns.close && (
-                      <td className="p-3 text-sm text-foreground dark:text-white">
-                        {formatNumber(trade.closeAvg)}
                       </td>
                     )}
                     {visibleColumns.realized && (
@@ -644,11 +587,6 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                           <div className="text-foreground dark:text-white">
                             {calculateHoldTime(trade) || trade.duration || "-"}
                           </div>
-                          {calculateHoldTime(trade) && averageHoldTime && (
-                            <div className="text-xs text-muted-foreground">
-                              Avg: {averageHoldTime}
-                            </div>
-                          )}
                         </div>
                       </td>
                     )}
@@ -658,14 +596,17 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
             </table>
             {/* Pagination Controls */}
             <div className="flex justify-center items-center gap-2 mt-4">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                Prev
-              </Button>
+              {currentPage > 1 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Prev
+                </Button>
+              ) : (
+                <span style={{ width: 64, display: 'inline-block' }} aria-hidden="true"></span>
+              )}
               {Array.from({ length: totalPages }, (_, i) => (
                 <Button
                   key={i}
@@ -676,14 +617,19 @@ const TradeDataTable = ({ tradesData = [], accountSize = 0, accountBalance = 0 }
                   {i + 1}
                 </Button>
               ))}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
+              {currentPage < totalPages ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                >
+                  Next
+                </Button>
+              ) : (
+                <span style={{ width: 64, display: 'inline-block' }} aria-hidden="true"></span>
+              )}
             </div>
           </div>
         ) : (

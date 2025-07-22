@@ -18,8 +18,8 @@ const badgeVariants = cva(
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         // Add buy and sell variants
-        buy: "border-transparent bg-success text-white",
-        sell: "border-transparent bg-danger text-white",
+        buy: "border-transparent bg-accent-success text-accent-success-foreground",
+        sell: "border-transparent bg-accent-danger text-accent-danger-foreground",
       },
     },
     defaultVariants: {
