@@ -1,144 +1,205 @@
-import React, { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+"use client"
+
 import { TrendingUp } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
+import { CartesianGrid, Line, LineChart, XAxis, YAxis, Area, AreaChart } from "recharts"
+import React, { useState } from "react"
 
-const EquityCurve = ({ tradesData = [] }) => {
-  const [equityData, setEquityData] = useState([])
-  const [totalPnL, setTotalPnL] = useState(0)
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
-  const [peakValue, setPeakValue] = useState(0)
+export const description = "A line chart with dots"
 
-  useEffect(() => {
-    if (tradesData && tradesData.length > 0) {
-      calculateEquityCurve(tradesData)
-    }
-  }, [tradesData])
+export default function EquityCurve({ tradesData = [] }) {
+  // Helper to get week number from a date
+  function getWeekNumber(dateObj) {
+    const d = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + yearStart.getUTCDay()+1)/7);
+    return `${d.getUTCFullYear()}-W${weekNo}`;
+  }
 
-  const calculateEquityCurve = (trades) => {
-    // Sort trades by date
-    const sortedTrades = trades
-      .map(trade => ({
-        ...trade,
-        date: new Date(trade.dateStart),
-        pnl: parseFloat(trade.realized?.replace(/[$,]/g, '') || '0')
-      }))
-      .sort((a, b) => a.date - b.date)
-
-    // Calculate cumulative equity curve
-    let cumulativePnL = 0
-    const equityPoints = []
-
-    sortedTrades.forEach((trade, index) => {
-      cumulativePnL += trade.pnl
-
-      equityPoints.push({
-        date: trade.date,
-        cumulativePnL,
-        trade: trade,
-        dayNumber: index + 1
+  // Helper to process trades into cumulative P&L chart data
+  function processTradeData(trades) {
+    if (!trades || trades.length === 0) return [];
+    // Parse and sort trades by date
+    const parsedTrades = trades
+      .map((trade) => {
+        const dateStr = trade.dateEnd || trade.date || '';
+        let dateObj;
+        if (dateStr) {
+          const [datePart, timePart] = dateStr.split(", ");
+          if (datePart && timePart) {
+            const [month, day, year] = datePart.split("/");
+            const fullYear = year && year.length === 2 ? `20${year}` : year;
+            dateObj = new Date(`${month}/${day}/${fullYear} ${timePart}`);
+          } else {
+            dateObj = new Date(dateStr);
+          }
+        } else {
+          dateObj = new Date();
+        }
+        const dayKey = dateObj.toISOString().split('T')[0];
+        let realized = 0;
+        if (typeof trade.realized === 'string') {
+          const realizedStr = trade.realized.replace("$", "").replace(/,/g, "");
+          realized = Number.parseFloat(realizedStr);
+        } else if (typeof trade.realized === 'number') {
+          realized = trade.realized;
+        }
+        return {
+          date: dayKey,
+          dateTime: dateObj,
+          cumulativePnL: 0,
+          tradePnL: realized,
+          tradeNumber: 0,
+          // week: getWeekNumber(dateObj),
+        };
       })
-    })
-
-    setEquityData(equityPoints)
-    setTotalPnL(cumulativePnL)
-    setPeakValue(cumulativePnL > 0 ? cumulativePnL : 0)
+      .sort((a, b) => a.dateTime - b.dateTime);
+    // Calculate cumulative P&L and trade number
+    let cumulativePnL = 0;
+    const chartPoints = parsedTrades.map((trade, index) => {
+      cumulativePnL += trade.tradePnL;
+      return {
+        ...trade,
+        cumulativePnL: Math.round(cumulativePnL * 100) / 100,
+        tradeNumber: index + 1,
+      };
+    });
+    // Add a zero point at the start
+    if (chartPoints.length > 0) {
+      const firstDate = new Date(chartPoints[0].dateTime);
+      firstDate.setDate(firstDate.getDate() - 1);
+      chartPoints.unshift({
+        date: firstDate.toISOString().split('T')[0],
+        dateTime: firstDate,
+        cumulativePnL: 0,
+        tradePnL: 0,
+        tradeNumber: 0,
+      });
+    }
+    return chartPoints;
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount)
-  }
+  // Use actual trades if provided, else fallback to sample data
+  const chartData = (tradesData && tradesData.length > 0)
+    ? processTradeData(tradesData)
+    : [];
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
+  // Chart config for actual data
+  const chartConfig = (tradesData && tradesData.length > 0)
+    ? {
+        cumulativePnL: {
+          label: "Cumulative P&L",
+          color: "hsl(var(--chart-1))",
+        },
+      }
+    : {
+        desktop: {
+          label: "Desktop",
+          color: "var(--chart-1)",
+        },
+        mobile: {
+          label: "Mobile",
+          color: "var(--chart-2)",
+        },
+      };
 
-  const getPnLColor = (pnl) => {
-    return pnl >= 0 ? 'text-success' : 'text-danger'
-  }
-
-  // Calculate statistics
-  const winningDays = equityData.filter(point => point.cumulativePnL > (point.dayNumber > 1 ? equityData[point.dayNumber - 2]?.cumulativePnL || 0 : 0)).length
-  const losingDays = equityData.filter(point => point.cumulativePnL < (point.dayNumber > 1 ? equityData[point.dayNumber - 2]?.cumulativePnL || 0 : 0)).length
-  const winRate = equityData.length > 0 ? (winningDays / equityData.length) * 100 : 0
+  // For actual data, calculate total P&L and trend
+  const totalPnL = (tradesData && tradesData.length > 0)
+    ? chartData[chartData.length - 1]?.cumulativePnL || 0
+    : null;
+  const isPositive = totalPnL !== null ? totalPnL >= 0 : true;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Equity Curve & Performance
-        </CardTitle>
+        <CardTitle>Equity Curve</CardTitle>
       </CardHeader>
       <CardContent>
-        {equityData.length > 0 ? (
-          <div className="space-y-6">
-            {/* Equity Curve Chart Only */}
-            <div className="h-64 bg-background rounded-lg p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={equityData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorPnL" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="dayNumber" 
-                    label={{ value: 'Trade Day', position: 'insideBottom', offset: -10 }}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis 
-                    tickFormatter={(value) => formatCurrency(value)}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value) => [formatCurrency(value), 'Cumulative P&L']}
-                    labelFormatter={(label) => `Day ${label}`}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="cumulativePnL" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={3}
-                    fill="url(#colorPnL)"
-                    dot={{
-                      fill: (entry) => entry.cumulativePnL >= 0 ? "#10b981" : "#ef4444",
-                      strokeWidth: 2,
-                      r: 4
-                    }}
-                    activeDot={{ r: 6, stroke: "#8b5cf6", strokeWidth: 2 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+        {chartData.length > 0 ? (
+          <ChartContainer config={chartConfig}>
+            <AreaChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ left: 12, right: 12 }}
+            >
+              <CartesianGrid vertical={false} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => `$${value}`}
+                domain={[0, 'auto']}
+              />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                interval={0}
+                ticks={Array.from(new Set(chartData.map(d => d.date)))}
+                tickFormatter={(value) => {
+                  if (!value) return "";
+                  const [year, month, day] = value.split("-");
+                  return `${month}/${day}`;
+                }}
+              />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  ({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-muted  rounded-lg p-3 shadow-lg">
+                          <p className="font-medium">{label}</p>
+                          <p className="text-sm text-muted-foreground">#{data.tradeNumber}</p>
+                          <p className={`font-medium ${data.tradePnL >= 0 ? "text-success" : "text-danger"}`}>
+                            Trade P&L: ${data.tradePnL}
+                          </p>
+                          <p className={`font-bold ${data.cumulativePnL >= 0 ? "text-success" : "text-danger"}`}>
+                            Cumulative: ${data.cumulativePnL}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }
+                }
+              />
+              <defs>
+                <linearGradient id="fillEquityCurve" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <Area
+                dataKey="cumulativePnL"
+                type="monotone"
+                fill="url(#fillEquityCurve)"
+                fillOpacity={0.4}
+                stroke="var(--primary)"
+                strokeWidth={2}
+                dot={{ fill: "var(--primary)" }}
+                activeDot={{ r: 6 }}
+              />
+            </AreaChart>
+          </ChartContainer>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No trade data available</p>
-            <p className="text-sm">Extract trades from FxReplay to see equity curve analysis</p>
-          </div>
+          <div className="text-center text-muted-foreground py-12">No data to display.</div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
-
-export default EquityCurve 

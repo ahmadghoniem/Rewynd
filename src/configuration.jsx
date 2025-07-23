@@ -23,7 +23,7 @@ const NumberInput = ({
   min = 0,
   max = 100,
   step = 1,
-  suffix = "%"
+  suffix = ""
 }) => {
   const handleIncrement = () => {
     const newValue = Math.min(max, value + step)
@@ -156,6 +156,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
             min={1}
             max={50}
             step={1}
+            suffix="%"
           />
           <div className="text-xs text-muted-foreground">
             Target: {targetValue}% ({formatCurrency(requiredAmount)})

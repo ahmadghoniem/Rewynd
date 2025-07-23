@@ -24,7 +24,7 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
         <div className="space-y-1">
           <DashedProgressBar
             progress={dailyDrawdownProgress / 100}
-            numDashes={10}
+            numDashes={20}
             filledColor="var(--tw-bg-primary, #2563eb)"
             emptyColor="var(--tw-bg-accent, #f1f5f9)"
             height={12}
@@ -49,11 +49,11 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
         <div className="space-y-1">
           <DashedProgressBar
             progress={maxDrawdownProgress / 100}
-            numDashes={10}
+            numDashes={50}
             filledColor="var(--tw-bg-primary, #2563eb)"
             emptyColor="var(--tw-bg-accent, #f1f5f9)"
-            height={12}
-            radius={4}
+            height={15}
+            radius={2}
           />
         </div>
       </div>
