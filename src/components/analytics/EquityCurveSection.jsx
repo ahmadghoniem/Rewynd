@@ -1,12 +1,10 @@
 import React from "react"
-import AccountInfoCard from "../cards/AccountInfoCard"
-import EquityCurve from "../EquityCurve"
-import { formatCurrency, getStatusColor } from "@/lib/utils"
+import EquityCurveCard from "../cards/EquityCurveCard"
 
-const EquityCurveSection = ({ displayData, extractedTrades }) => {
+const EquityCurveSection = ({ extractedTrades }) => {
   return (
     <div className="w-full">
-        <EquityCurve tradesData={extractedTrades} />
+      <EquityCurveCard tradesData={extractedTrades} />
     </div>
   )
 }

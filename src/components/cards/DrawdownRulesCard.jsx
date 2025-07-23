@@ -4,7 +4,12 @@ import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown } from "lucide-react"
 import DashedProgressBar from "../ui/DashedProgressBar"
 
-const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, maxDrawdownProgress }) => (
+const DrawdownRulesCard = ({
+  dailyDrawdown,
+  dailyDrawdownProgress,
+  maxDrawdown,
+  maxDrawdownProgress
+}) => (
   <Card>
     <CardContent className="space-y-6">
       {/* Daily Drawdown Objective */}
@@ -12,10 +17,14 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-warning" />
-            <span className="text-sm font-medium text-muted-foreground">Daily Drawdown</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              Daily Drawdown
+            </span>
           </div>
           <div className="text-right">
-            <Badge variant="outline" className="mb-1">{dailyDrawdown}%</Badge>
+            <Badge variant="outline" className="mb-1">
+              {dailyDrawdown}%
+            </Badge>
             <p className="text-xs text-muted-foreground">
               {dailyDrawdownProgress.toFixed(1)}% used
             </p>
@@ -37,10 +46,14 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <TrendingDown className="h-5 w-5 text-danger" />
-            <span className="text-sm font-medium text-muted-foreground">Max Drawdown</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              Max Drawdown
+            </span>
           </div>
           <div className="text-right">
-            <Badge variant="outline" className="mb-1">{maxDrawdown}%</Badge>
+            <Badge variant="outline" className="mb-1">
+              {maxDrawdown}%
+            </Badge>
             <p className="text-xs text-muted-foreground">
               {maxDrawdownProgress.toFixed(1)}% used
             </p>
@@ -61,4 +74,4 @@ const DrawdownRulesCard = ({ dailyDrawdown, dailyDrawdownProgress, maxDrawdown, 
   </Card>
 )
 
-export default DrawdownRulesCard 
+export default DrawdownRulesCard

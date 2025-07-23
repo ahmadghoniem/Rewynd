@@ -25,22 +25,32 @@ const ProfitTargetsCard = ({
     return (
       <Card>
         <CardContent>
-          <Button variant="outline" size="sm" className="mb-4" onClick={() => setSelectedPhase(null)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mb-4"
+            onClick={() => setSelectedPhase(null)}
+          >
             ← Back
           </Button>
           <div className="flex flex-col items-center justify-center min-h-[180px]">
             <div className="flex items-center gap-2 text-lg mb-2">
               <Target className="h-6 w-6" />
               <span className="font-bold">
-                {selectedPhase.charAt(0).toUpperCase() + selectedPhase.slice(1).replace(/(\d)/, " $1")}
+                {selectedPhase.charAt(0).toUpperCase() +
+                  selectedPhase.slice(1).replace(/(\d)/, " $1")}
               </span>
             </div>
-            <div className="text-3xl font-extrabold mb-2 text-foreground">{target}%</div>
+            <div className="text-3xl font-extrabold mb-2 text-foreground">
+              {target}%
+            </div>
             <div className="text-md text-muted-foreground mb-2">
               Target: {target}% ({formatCurrency(targetAmounts[selectedPhase])})
             </div>
             {isCompleted ? (
-              <Badge variant="success" className="mt-2">Completed</Badge>
+              <Badge variant="success" className="mt-2">
+                Completed
+              </Badge>
             ) : (
               <>
                 <div className="flex justify-between text-sm mt-2 mb-1">
@@ -68,13 +78,13 @@ const ProfitTargetsCard = ({
       <CardContent>
         <div
           style={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: '16px',
-            width: '100%',
+            display: "flex",
+            flexDirection: "row",
+            gap: "16px",
+            width: "100%",
             minHeight: 120,
-            justifyContent: 'space-between',
-            alignItems: 'stretch',
+            justifyContent: "space-between",
+            alignItems: "stretch"
           }}
         >
           {phaseEntries.map(([phase, target], idx) => {
@@ -92,10 +102,10 @@ const ProfitTargetsCard = ({
                   minWidth: `calc(${100 / phaseEntries.length}% - 8px)`,
                   maxWidth: `calc(${100 / phaseEntries.length}% - 8px)`,
                   minHeight: 120,
-                  scrollSnapAlign: 'start',
+                  scrollSnapAlign: "start",
                   // Remove border and transition
                   // border: isCurrent ? '2px solid #10b981' : 'none',
-                  opacity: isCompleted ? 0.7 : 1,
+                  opacity: isCompleted ? 0.7 : 1
                 }}
               >
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
@@ -103,7 +113,8 @@ const ProfitTargetsCard = ({
                     <Target className="h-4 w-4" />
                   </span>
                   <span className="font-semibold">
-                    {phase.charAt(0).toUpperCase() + phase.slice(1).replace(/(\d)/, " $1")}
+                    {phase.charAt(0).toUpperCase() +
+                      phase.slice(1).replace(/(\d)/, " $1")}
                   </span>
                 </div>
                 <div className="text-2xl font-extrabold text-foreground">
@@ -113,7 +124,9 @@ const ProfitTargetsCard = ({
                   Target: {target}% ({formatCurrency(targetAmounts[phase])})
                 </div>
                 {isCompleted ? (
-                  <Badge variant="success" className="mt-2">Completed</Badge>
+                  <Badge variant="success" className="mt-2">
+                    Completed
+                  </Badge>
                 ) : isCurrent ? (
                   <>
                     <div className="flex justify-between text-xs mt-2 mb-1">
@@ -124,7 +137,9 @@ const ProfitTargetsCard = ({
                     <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4">
                       <div
                         className="bg-gradient-to-r from-emerald-500 to-green-500 h-4 rounded-full transition-all duration-300 shadow-sm"
-                        style={{ width: `${Math.min(100, targetProgress[phase])}%` }}
+                        style={{
+                          width: `${Math.min(100, targetProgress[phase])}%`
+                        }}
                       />
                     </div>
                   </>
@@ -138,4 +153,4 @@ const ProfitTargetsCard = ({
   )
 }
 
-export default ProfitTargetsCard 
+export default ProfitTargetsCard

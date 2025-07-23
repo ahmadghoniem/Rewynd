@@ -3,9 +3,18 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, TrendingUp, Info } from "lucide-react"
 import DashedProgressBar from "../ui/DashedProgressBar"
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent
+} from "@/components/ui/tooltip"
 
-const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, profitableDays }) => (
+const TradingActivityCard = ({
+  minTradingDays,
+  tradingDays,
+  minProfitableDays,
+  profitableDays
+}) => (
   <Card>
     <CardContent className="space-y-6">
       {/* Minimum Trading Days Objective */}
@@ -14,10 +23,17 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-info" />
-              <span className="text-sm font-medium text-muted-foreground">Minimum Trading Days</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Minimum Trading Days
+              </span>
             </div>
             <div className="text-right">
-              <Badge variant={tradingDays >= minTradingDays ? 'default' : 'secondary'} className="mb-1">
+              <Badge
+                variant={
+                  tradingDays >= minTradingDays ? "default" : "secondary"
+                }
+                className="mb-1"
+              >
                 {tradingDays}/{minTradingDays}
               </Badge>
             </div>
@@ -40,13 +56,19 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
               <TrendingUp className="h-5 w-5 text-success" />
               <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                 <Tooltip>
-                <span className="text-muted-foreground cursor-help" style={{display: 'inline-flex', alignItems: 'center'}}>
-                <TooltipTrigger asChild>
-                  <span className="border-b border-dashed border-muted-foreground/50" style={{display: 'inline-block'}}>
-                    Minimum Profitable Days
+                  <span
+                    className="text-muted-foreground cursor-help"
+                    style={{ display: "inline-flex", alignItems: "center" }}
+                  >
+                    <TooltipTrigger asChild>
+                      <span
+                        className="border-b border-dashed border-muted-foreground/50"
+                        style={{ display: "inline-block" }}
+                      >
+                        Minimum Profitable Days
+                      </span>
+                    </TooltipTrigger>
                   </span>
-              </TooltipTrigger>
-              </span>
                   <TooltipContent side="top" sideOffset={0} align="center">
                     Days with ≥ 0.5% profit
                   </TooltipContent>
@@ -54,7 +76,12 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
               </span>
             </div>
             <div className="text-right">
-              <Badge variant={profitableDays >= minProfitableDays ? 'default' : 'secondary'} className="mb-1">
+              <Badge
+                variant={
+                  profitableDays >= minProfitableDays ? "default" : "secondary"
+                }
+                className="mb-1"
+              >
                 {profitableDays}/{minProfitableDays}
               </Badge>
             </div>
@@ -73,4 +100,4 @@ const TradingActivityCard = ({ minTradingDays, tradingDays, minProfitableDays, p
   </Card>
 )
 
-export default TradingActivityCard 
+export default TradingActivityCard
