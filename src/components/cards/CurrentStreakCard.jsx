@@ -1,5 +1,11 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent
+} from "@/components/ui/tooltip"
+import { Info } from "lucide-react"
+import { cn } from "@/lib/utils"
 const CurrentStreakCard = ({ extractedTrades }) => {
   let streak = 0
   let type = null
@@ -31,10 +37,28 @@ const CurrentStreakCard = ({ extractedTrades }) => {
     }
   }
   return (
-    <Card className="gap-2 text-xs font-medium">
-      <CardHeader>Streak</CardHeader>
+    <Card className="gap-2 text-xs font-medium py-2">
+      <CardHeader className="flex justify-between items-center  px-2">
+        <span>Streak</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-pointer align-middle">
+              <Info size={14} aria-label="Info about Streak" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent sideOffset={6}>
+            The number of consecutive wins or losses. Shows your current run of
+            results.
+          </TooltipContent>
+        </Tooltip>
+      </CardHeader>
       <CardContent>
-        <div className="text-xl font-normal">
+        <div
+          className={cn(
+            "text-xl font-normal",
+            type === "Win" ? "text-success" : "text-danger"
+          )}
+        >
           {streak} {type ? type + (streak > 1 ? "s" : "") : ""}
         </div>
       </CardContent>

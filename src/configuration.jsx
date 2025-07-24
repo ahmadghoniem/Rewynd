@@ -171,10 +171,10 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold text-foreground dark:text-white">
+        <h2 className="text-3xl font-bold text-foreground ">
           Challenge Configuration
         </h2>
-        <p className="text-muted-foreground dark:text-gray-400">
+        <p className="text-muted-foreground dark:text-primary">
           Configure your funded trading challenge parameters
         </p>
       </div>

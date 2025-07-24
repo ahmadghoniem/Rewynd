@@ -8,7 +8,7 @@ HANDLE UI FIRST
 
 -html trade table-
 
-<div _ngcontent-ng-c1248786696="" role="tabpanel" aria-labelledby="tab-2" id="tab-4-content-1" class="w-full overflow-auto dark:text-white !transition-none p-4 ng-star-inserted">
+<div _ngcontent-ng-c1248786696="" role="tabpanel" aria-labelledby="tab-2" id="tab-4-content-1" class="w-full overflow-auto  !transition-none p-4 ng-star-inserted">
   <lib-closed-position-table class="ng-star-inserted">
     <div>
       <!---->
@@ -415,7 +415,7 @@ HANDLE UI FIRST
               <button fxr-ui-button="" size="SM" cdkoverlayorigin="" class="w-full xl:!w-auto fxr-button">
                 <div class="relative rounded-full contents blob-sm">
                   <!---->
-                  <div class="box-content w-full whitespace-nowrap rounded-full justify-center items-center inline-flex text-center font-normal font-sans leading-normal gap-2 z-10 dark:text-white bg-white dark:bg-fxr-bg-primary-dark border border-fxr-btn-bg-outline-active dark:!border-fxr-btn-bg-outline-active-dark hover:bg-fxr-btn-bg-secondary-hover dark:hover:bg-fxr-btn-bg-secondary-hover-dark text-[#242331] h-6 !px-3 !py-1 text-sm">
+                  <div class="box-content w-full whitespace-nowrap rounded-full justify-center items-center inline-flex text-center font-normal font-sans leading-normal gap-2 z-10  bg-white dark:bg-fxr-bg-primary-dark border border-fxr-btn-bg-outline-active dark:!border-fxr-btn-bg-outline-active-dark hover:bg-fxr-btn-bg-secondary-hover dark:hover:bg-fxr-btn-bg-secondary-hover-dark text-[#242331] h-6 !px-3 !py-1 text-sm">
                     <!---->
                     <!---->
                     <span class="text-fxr-text-primary dark:text-fxr-text-primary-dark ng-star-inserted"> 10 </span>
@@ -441,7 +441,7 @@ HANDLE UI FIRST
               <button fxr-ui-button="" size="SM" cdkoverlayorigin="" class="w-full xl:!w-auto fxr-button">
                 <div class="relative rounded-full contents blob-sm">
                   <!---->
-                  <div class="box-content w-full whitespace-nowrap rounded-full justify-center items-center inline-flex text-center font-normal font-sans leading-normal gap-2 z-10 dark:text-white bg-white dark:bg-fxr-bg-primary-dark border border-fxr-btn-bg-outline-active dark:!border-fxr-btn-bg-outline-active-dark hover:bg-fxr-btn-bg-secondary-hover dark:hover:bg-fxr-btn-bg-secondary-hover-dark text-[#242331] h-6 !px-3 !py-1 text-sm">
+                  <div class="box-content w-full whitespace-nowrap rounded-full justify-center items-center inline-flex text-center font-normal font-sans leading-normal gap-2 z-10  bg-white dark:bg-fxr-bg-primary-dark border border-fxr-btn-bg-outline-active dark:!border-fxr-btn-bg-outline-active-dark hover:bg-fxr-btn-bg-secondary-hover dark:hover:bg-fxr-btn-bg-secondary-hover-dark text-[#242331] h-6 !px-3 !py-1 text-sm">
                     <!---->
                     <!---->
                     <span class="text-fxr-text-primary dark:text-fxr-text-primary-dark ng-star-inserted"> 1 </span>
@@ -480,7 +480,7 @@ HANDLE UI FIRST
       <button fxr-ui-button="" size="SM" cdkoverlayorigin="" class="w-full xl:!w-auto fxr-button">
         <div class="relative rounded-full contents blob-sm">
           <!---->
-          <div class="box-content w-full whitespace-nowrap rounded-full justify-center items-center inline-flex text-center font-normal font-sans leading-normal gap-2 z-10 dark:text-white bg-white dark:bg-fxr-bg-primary-dark border border-fxr-btn-bg-outline-active dark:!border-fxr-btn-bg-outline-active-dark hover:bg-fxr-btn-bg-secondary-hover dark:hover:bg-fxr-btn-bg-secondary-hover-dark text-[#242331] h-6 !px-3 !py-1 text-sm">
+          <div class="box-content w-full whitespace-nowrap rounded-full justify-center items-center inline-flex text-center font-normal font-sans leading-normal gap-2 z-10  bg-white dark:bg-fxr-bg-primary-dark border border-fxr-btn-bg-outline-active dark:!border-fxr-btn-bg-outline-active-dark hover:bg-fxr-btn-bg-secondary-hover dark:hover:bg-fxr-btn-bg-secondary-hover-dark text-[#242331] h-6 !px-3 !py-1 text-sm">
             <!---->
             <!---->
             <span class="text-fxr-text-primary dark:text-fxr-text-primary-dark ng-star-inserted"> 10 </span>
@@ -506,7 +506,7 @@ HANDLE UI FIRST
       <button fxr-ui-button="" size="SM" cdkoverlayorigin="" class="w-full xl:!w-auto fxr-button">
         <div class="relative rounded-full contents blob-sm">
           <!---->
-          <div class="box-content w-full whitespace-nowrap rounded-full justify-center items-center inline-flex text-center font-normal font-sans leading-normal gap-2 z-10 dark:text-white bg-white dark:bg-fxr-bg-primary-dark border border-fxr-btn-bg-outline-active dark:!border-fxr-btn-bg-outline-active-dark hover:bg-fxr-btn-bg-secondary-hover dark:hover:bg-fxr-btn-bg-secondary-hover-dark text-[#242331] h-6 !px-3 !py-1 text-sm">
+          <div class="box-content w-full whitespace-nowrap rounded-full justify-center items-center inline-flex text-center font-normal font-sans leading-normal gap-2 z-10  bg-white dark:bg-fxr-bg-primary-dark border border-fxr-btn-bg-outline-active dark:!border-fxr-btn-bg-outline-active-dark hover:bg-fxr-btn-bg-secondary-hover dark:hover:bg-fxr-btn-bg-secondary-hover-dark text-[#242331] h-6 !px-3 !py-1 text-sm">
             <!---->
             <!---->
             <span class="text-fxr-text-primary dark:text-fxr-text-primary-dark ng-star-inserted"> 1 </span>

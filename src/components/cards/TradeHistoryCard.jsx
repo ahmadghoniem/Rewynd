@@ -491,10 +491,10 @@ const TradeHistoryCard = ({
                 {paginatedTrades.map((trade, index) => (
                   <tr
                     key={index + (currentPage - 1) * pageSize}
-                    className="hover:bg-muted hover:text-muted-foreground"
+                    className="hover:bg-card/50  hover:text-muted-foreground"
                   >
                     {visibleColumns.asset && (
-                      <td className="p-3 text-sm text-foreground dark:text-white font-medium">
+                      <td className="p-3 text-sm text-foreground  font-medium">
                         {trade.asset}
                       </td>
                     )}
@@ -556,7 +556,7 @@ const TradeHistoryCard = ({
                       </td>
                     )}
                     {visibleColumns.rr && (
-                      <td className="p-3 text-sm text-foreground dark:text-white">
+                      <td className="p-3 text-sm text-foreground ">
                         {(() => {
                           if (trade.maxRR === "Loss") return <span>-1</span>
                           const rrNum = parseFloat(trade.maxRR)
@@ -600,7 +600,7 @@ const TradeHistoryCard = ({
                     {visibleColumns.duration && (
                       <td className="p-3 text-sm">
                         <div>
-                          <div className="text-foreground dark:text-white">
+                          <div className="text-foreground ">
                             {calculateHoldTime(trade) || trade.duration || "-"}
                           </div>
                         </div>
@@ -655,7 +655,7 @@ const TradeHistoryCard = ({
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground dark:text-gray-400">
+          <div className="text-center py-8 text-muted-foreground dark:text-foreground">
             <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>No trade data available</p>
             <p className="text-sm">

@@ -19,14 +19,7 @@ import {
   TradeHistorySection
 } from "./components/analytics"
 
-import BalanceAndRealizedPnlCard from "./components/cards/BalanceAndRealizedPnlCard.jsx"
-import WinRateCard from "./components/cards/winRateCard.jsx"
-import AvgRRCard from "./components/cards/AvgRRCard.jsx"
-import ProfitFactorCard from "./components/cards/ProfitFactorCard.jsx"
-import LossesSummaryCard from "./components/cards/LossesSummaryCard.jsx"
-import WinsSummaryCard from "./components/cards/WinsSummaryCard.jsx"
-import TraderExpectancyCard from "./components/cards/TraderExpectancyCard.jsx"
-import CurrentStreakCard from "./components/cards/CurrentStreakCard.jsx"
+import PerformanceSection from "@/components/analytics/PerformanceSection.jsx"
 
 const AnalyticsView = React.forwardRef(({ config, accountData }, ref) => {
   const { isDark, toggleTheme } = useTheme()
@@ -349,7 +342,7 @@ const AnalyticsView = React.forwardRef(({ config, accountData }, ref) => {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-center">
-          <div className="text-gray-600 dark:text-gray-400 mb-4">
+          <div className="dark:text-primary mb-4">
             <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-semibold mb-2">
               No Trading Data Available
@@ -369,35 +362,12 @@ const AnalyticsView = React.forwardRef(({ config, accountData }, ref) => {
       <div className="grid grid-cols-1 gap-4 lg:[grid-template-columns:75%_25%]">
         <div className="flex flex-col gap-4">
           {/* will be stats */}
-          <div className="grid grid-cols-8 gap-4 [&>*]:max-h-24 [&>*]:overflow-hidden">
-            <div className="col-span-8 lg:col-span-4">
-              <BalanceAndRealizedPnlCard displayData={displayData} />
-            </div>
-            <div className="col-span-8 lg:col-span-2">
-              <WinRateCard extractedTrades={extractedTrades} />
-            </div>
-            <div className="col-span-8 lg:col-span-1">
-              <AvgRRCard extractedTrades={extractedTrades} />
-            </div>
-            <div className="col-span-8 lg:col-span-1">
-              <ProfitFactorCard extractedTrades={extractedTrades} />
-            </div>
-            <div className="col-span-12 lg:col-span-3">
-              <LossesSummaryCard
-                stats={stats}
-                formatCurrency={formatCurrency}
-              />
-            </div>
-            <div className="col-span-12 lg:col-span-3">
-              <WinsSummaryCard stats={stats} formatCurrency={formatCurrency} />
-            </div>
-            <div className="col-span-12 lg:col-span-1">
-              <TraderExpectancyCard extractedTrades={extractedTrades} />
-            </div>
-            <div className="col-span-12 lg:col-span-1">
-              <CurrentStreakCard extractedTrades={extractedTrades} />
-            </div>
-          </div>
+          <PerformanceSection
+            displayData={displayData}
+            extractedTrades={extractedTrades}
+            stats={stats}
+            formatCurrency={formatCurrency}
+          />
           <EquityCurveSection
             displayData={displayData}
             extractedTrades={extractedTrades}
