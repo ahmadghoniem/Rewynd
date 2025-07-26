@@ -44,13 +44,10 @@ const AppContent = () => {
 
     // Set up Chrome extension message listener
     const handleExtensionMessage = (message, sender, sendResponse) => {
-      console.log("Extension message received:", message)
       if (message.type === "ACCOUNT_DATA_UPDATED") {
-        console.log("Account data updated via extension:", message.data)
         loadAccountData()
       }
       if (message.type === "TRADE_DATA_UPDATED") {
-        console.log("Trade data updated via extension:", message.data)
         loadTradeData()
       }
     }
@@ -108,7 +105,6 @@ const AppContent = () => {
               fxReplayTab.id,
               { type: "EXTRACT_ALL_DATA" },
               async (response) => {
-                console.log("Refresh data response:", response)
                 if (response && response.success) {
                   // Refresh both account and trade data from storage
                   await loadAccountData()

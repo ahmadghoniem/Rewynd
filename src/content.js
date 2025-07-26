@@ -70,6 +70,13 @@
             data: data
           },
           (response) => {
+            if (chrome.runtime.lastError) {
+              console.error(
+                "Error sending account data:",
+                chrome.runtime.lastError
+              )
+              return
+            }
             if (response && response.success) {
               console.log("Account data sent to background script")
             }
@@ -89,20 +96,23 @@
 
       // Since account balance/PnL only changes when trades occur,
       // automatically extract the latest trades after account data changes
-      console.log("Account data changed, extracting latest trades...")
-      extractTradeHistory(false).then((trades) => {
-        // Use caching for automatic extraction
-        if (trades) {
-          saveTradeData(trades)
-        }
-      })
+      extractTradeHistory(false)
+        .then((trades) => {
+          // Use caching for automatic extraction
+          if (trades) {
+            saveTradeData(trades)
+          }
+        })
+        .catch((error) => {
+          console.error("Error extracting trades after account change:", error)
+        })
     }
   }
 
   // Trade data extraction functionality
   function extractTradeHistory(forceRefresh = false) {
     return new Promise((resolve) => {
-      // Reduced initial delay from 1000ms to 200ms
+      // Initial delay for Angular components to load
       setTimeout(() => {
         // First, ensure we're on the "Closed positions" tab
         function switchToClosedPositionsTab() {
@@ -133,12 +143,10 @@
 
           // Check if it's already active
           if (closedPositionsTab.getAttribute("data-p-active") === "true") {
-            console.log("Already on Closed positions tab")
             return true
           }
 
           // Click the tab to switch to it
-          console.log("Switching to Closed positions tab...")
           closedPositionsTab.click()
           return true
         }
@@ -240,6 +248,52 @@
             return false
           }
 
+          // Function to go to page 1
+          async function goToPage1() {
+            const currentPage = getCurrentPage()
+            const totalPages = getPaginationInfo()
+
+            if (currentPage === 1) {
+              return
+            }
+
+            // Navigate to page 1 by going to previous page the exact number of times needed
+            const pagesToGoBack = currentPage - 1
+
+            for (let i = 0; i < pagesToGoBack; i++) {
+              const prevButton = closedPositionTable.querySelector(
+                'button[data-test="prev"]'
+              )
+              if (!prevButton || prevButton.disabled) {
+                break
+              }
+
+              prevButton.click()
+              await new Promise((resolve) => setTimeout(resolve, 150)) // Wait for page change
+
+              // Verify we're moving in the right direction
+              const newPage = getCurrentPage()
+
+              if (newPage >= currentPage) {
+                console.warn("Page navigation not working as expected")
+                break
+              }
+            }
+          }
+
+          // Function to get current page number
+          function getCurrentPage() {
+            const pageDropdown = closedPositionTable.querySelector(
+              "button[fxr-ui-button] span"
+            )
+            if (pageDropdown) {
+              const pageText = pageDropdown.textContent.trim()
+              const pageNumber = parseInt(pageText)
+              return isNaN(pageNumber) ? 1 : pageNumber
+            }
+            return 1
+          }
+
           // Optimized function to wait for table update
           async function waitForTableUpdate(
             tableBody,
@@ -286,6 +340,14 @@
 
             console.log(`Starting trade extraction for ${totalPages} pages...`)
 
+            // Always start from page 1
+            const currentPage = getCurrentPage()
+            if (currentPage !== 1) {
+              await goToPage1()
+              // Wait a bit for the page change to settle
+              await new Promise((resolve) => setTimeout(resolve, 200))
+            }
+
             for (let page = 1; page <= totalPages; page++) {
               // Reduced wait time for first page from 1000ms to 200ms
               if (page > 1) {
@@ -318,13 +380,13 @@
                 trade.page = page
               })
               allTrades.push(...pageTrades)
-
-              console.log(
-                `Extracted ${pageTrades.length} trades from page ${page}/${totalPages}`
-              )
             }
 
             console.log(`Total trades extracted: ${allTrades.length}`)
+
+            // Return to page 1 after extraction
+            await goToPage1()
+
             return allTrades
           }
 
@@ -339,8 +401,8 @@
             }
             resolve(allTrades)
           })
-        }, 150) // Wait 150ms for tab switch to complete (reduced from 300ms)
-      }, 200) // Reduced from 1000ms to 200ms
+        }, 200) // Wait 200ms for tab switch to complete
+      }, 200) // Initial delay for Angular components to load
     })
   }
 
@@ -363,19 +425,18 @@
             data: data
           },
           (response) => {
+            if (chrome.runtime.lastError) {
+              console.error(
+                "Error sending trade data:",
+                chrome.runtime.lastError
+              )
+              return
+            }
             if (response && response.success) {
               console.log("Trade data sent to background script")
             }
           }
         )
-        // Save to chrome.storage.local (main source of truth)
-        if (chrome && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ fxreplay_trade_data: data }, () => {
-            console.log("Trade data saved to chrome.storage.local:", data)
-            // Notify all extension UIs
-            chrome.runtime.sendMessage({ type: "TRADE_DATA_UPDATED", data })
-          })
-        }
       }
       console.log("Trade data saved:", data)
     } catch (error) {
@@ -392,34 +453,43 @@
         "lib-closed-position-table"
       )
       if (!closedPositionTable) {
-        setTimeout(waitForTradeTableAndExtract, 1000)
+        setTimeout(waitForTradeTableAndExtract, 500) // Increased from 50ms to 500ms
         return
       }
       const table = closedPositionTable.querySelector("table[fxr-ui-table]")
       if (!table) {
-        setTimeout(waitForTradeTableAndExtract, 1000)
+        setTimeout(waitForTradeTableAndExtract, 500) // Increased from 50ms to 500ms
         return
       }
       // Table is present, extract trades once
-      extractTradeHistory(false).then((trades) => {
-        // Use caching for initial extraction
-        if (trades) {
-          saveTradeData(trades)
-        }
-      })
+      extractTradeHistory(false)
+        .then((trades) => {
+          // Use caching for initial extraction
+          if (trades) {
+            saveTradeData(trades)
+          }
+        })
+        .catch((error) => {
+          console.error("Error during initial trade extraction:", error)
+        })
     }
     waitForTradeTableAndExtract()
 
     // Listen for messages from the popup
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === "EXTRACT_TRADES") {
-        extractTradeHistory(true).then((trades) => {
-          // Force refresh for manual extraction
-          if (trades) {
-            saveTradeData(trades)
-          }
-          sendResponse({ success: true, trades: trades })
-        })
+        extractTradeHistory(true)
+          .then((trades) => {
+            // Force refresh for manual extraction
+            if (trades) {
+              saveTradeData(trades)
+            }
+            sendResponse({ success: true, trades: trades })
+          })
+          .catch((error) => {
+            console.error("Error extracting trades:", error)
+            sendResponse({ success: false, error: error.message })
+          })
         return true // Keep message channel open for async response
       }
 

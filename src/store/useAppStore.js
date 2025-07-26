@@ -100,10 +100,6 @@ const useAppStore = create((set, get) => {
               { type: "GET_ACCOUNT_DATA" },
               (response) => {
                 if (response && response.data) {
-                  console.log(
-                    "Loaded account data from storage:",
-                    response.data
-                  )
                   set({ accountData: response.data })
                   resolve(response.data)
                 } else {
@@ -131,7 +127,6 @@ const useAppStore = create((set, get) => {
               { type: "ACCOUNT_DATA_UPDATE", data: accountData },
               (response) => {
                 if (response && response.success) {
-                  console.log("Account data saved to storage:", accountData)
                   set({ accountData })
                   resolve(true)
                 } else {
@@ -173,7 +168,6 @@ const useAppStore = create((set, get) => {
               { type: "GET_TRADE_DATA" },
               (response) => {
                 if (response && response.data) {
-                  console.log("Loaded trade data from storage:", response.data)
                   set({ extractedTrades: response.data.trades || [] })
                   resolve(response.data)
                 } else {
@@ -201,7 +195,6 @@ const useAppStore = create((set, get) => {
               { type: "TRADE_DATA_UPDATE", data: tradeData },
               (response) => {
                 if (response && response.success) {
-                  console.log("Trade data saved to storage:", tradeData)
                   set({ extractedTrades: tradeData.trades || [] })
                   resolve(true)
                 } else {
