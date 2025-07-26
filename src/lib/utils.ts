@@ -69,6 +69,37 @@ export const calculateTargetProgress = (
   }
 }
 
+export const calculateIndividualTargetProgress = (
+  profitTargets: Record<string, number>,
+  capital: number,
+  realizedPnL: number
+) => {
+  const progress: Record<string, number> = {}
+
+  // Calculate cumulative progress for each phase
+  let cumulativeTarget = 0
+  let cumulativeProgress = 0
+
+  Object.entries(profitTargets).forEach(([phase, targetPercentage]) => {
+    cumulativeTarget += targetPercentage
+    const phaseTargetAmount = (cumulativeTarget / 100) * capital
+    const phaseProgress = Math.min(100, (realizedPnL / phaseTargetAmount) * 100)
+
+    // Calculate individual phase progress (difference from previous cumulative)
+    const previousCumulativeProgress = cumulativeProgress
+    cumulativeProgress = phaseProgress
+
+    // Individual phase progress is the difference
+    const individualProgress = Math.max(
+      0,
+      cumulativeProgress - previousCumulativeProgress
+    )
+    progress[phase] = Math.min(100, individualProgress)
+  })
+
+  return progress
+}
+
 export const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

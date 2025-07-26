@@ -7,7 +7,7 @@ import { ProgressBar } from "../ui/progressbar"
 import useAppStore from "@/store/useAppStore"
 import {
   getTargetAmounts,
-  calculateTargetProgress,
+  calculateIndividualTargetProgress,
   formatCurrency as defaultFormatCurrency
 } from "@/lib/utils"
 
@@ -25,7 +25,7 @@ const ProfitTargetsCard = (props) => {
     getTargetAmounts(profitTargets, accountData.capital || 0)
   const targetProgress =
     props.targetProgress ||
-    calculateTargetProgress(
+    calculateIndividualTargetProgress(
       profitTargets,
       accountData.capital || 0,
       accountData.realizedPnL || 0

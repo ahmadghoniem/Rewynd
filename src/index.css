@@ -50,44 +50,65 @@
 
 :root {
   /* Main background and text */
-  --background: #f7f8fa; /* Main background */
-  --foreground: #23272f; /* Main text */
+  --background: #ffffff; /* Main background: pure white */
+  --foreground: #1a1a1a; /* Main text: dark gray */
 
   /* Card backgrounds and text */
-  --card: #fff; /* Card background */
-  --card-foreground: #23272f; /* Card text */
-  --card-border: #e5e7eb; /* Card border */
+  --card: #f8f9fa; /* Card background: very light gray */
+  --card-foreground: #2d3748; /* Card text: dark gray */
+  --card-border: #e2e8f0; /* Card border: light gray */
 
   /* Primary: Use for main actions, key stats, and primary highlights */
-  --primary: #2563eb; /* Blue accent (primary, highlights) */
-  --primary-foreground: #fff; /* Text on blue */
+  --primary: #a78bfa; /* Keep the same violet primary color */
+  --primary-foreground: #ffffff; /* Text on violet: white */
 
   /* Accent: Use for secondary actions, supporting info, and decorative highlights */
-  --accent: #e0e7ff; /* Indigo accent (badges, info) */
-  --accent-foreground: #3730a3; /* Text on indigo */
+  --accent: #f3f4f6; /* Light gray accent background */
+  --accent-foreground: #4b5563; /* Dark gray text on accent */
+
+  /* Accent: Use for success and danger badges */
+  --accent-success: #d1fae5; /* Light green accent background */
+  --accent-success-foreground: #065f46; /* Dark green text on accent */
+
+  --accent-danger: #fee2e2; /* Light red accent background */
+  --accent-danger-foreground: #991b1b; /* Dark red text on accent */
+
+  /* Secondary backgrounds and text */
+  --secondary: #f1f5f9; /* Secondary background: light blue-gray */
+  --secondary-foreground: #475569; /* Text on secondary: medium gray */
 
   /* Muted/disabled backgrounds and text */
-  --muted: #242425; /* Muted background (tooltips, disabled) */
-  --muted-foreground: #6b7280; /* Muted text */
+  --muted: #f8fafc; /* Muted background: very light blue-gray */
+  --muted-foreground: #64748b; /* Muted text: medium gray */
 
   /* Popover/tooltip backgrounds and text */
-  --popover: #fff; /* Popover background */
-  --popover-foreground: #23272f; /* Popover text */
+  --popover: #ffffff; /* Popover background: white */
+  --popover-foreground: #1e293b; /* Popover text: dark blue-gray */
 
   /* Borders and rings */
-  --border: #e5e7eb; /* Border color */
-  --ring: #2563eb; /* Focus ring (blue) */
+  --border: #e2e8f0; /* Border color: light gray */
+  --ring: #a78bfa; /* Focus ring: same violet as primary */
+
+  /* Divider color */
+  --divider: #e2e8f0; /* Divider: light gray */
 
   /* Chart colors */
-  --chart-1: #2563eb; /* Chart blue */
+  --chart-1: #a78bfa; /* Chart violet (same as primary) */
+  --chart-2: #3b82f6; /* Chart blue */
+  --chart-3: #10b981; /* Chart green */
+  --chart-4: #f59e0b; /* Chart amber */
+  --chart-5: #ef4444; /* Chart red */
 
   /* Inputs */
-  --input: #e5e7eb; /* Input background */
+  --input: #ffffff; /* Input background: white */
+  --input-border: #d1d5db; /* Input border: light gray */
 
   /* Status colors */
-  --success: #059669; /* Success green */
-  --danger: #dc2626; /* Danger red */
-  --destructive: #ef4444; /* Destructive (error) red */
+  --success: #10b981; /* Success green: bright green */
+  --danger: #ef4444; /* Danger red: bright red */
+  --marker-hwm: #3b82f6; /* HWM marker blue */
+
+  --destructive: #dc2626; /* Destructive: dark red */
 
   /* Border radius */
   --radius: 0.625rem; /* Default border radius */

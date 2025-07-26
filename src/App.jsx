@@ -16,6 +16,7 @@ const AppContent = () => {
   const loadAccountData = useAppStore((state) => state.loadAccountData)
   const loadChallengeConfig = useAppStore((state) => state.loadChallengeConfig)
   const saveChallengeConfig = useAppStore((state) => state.saveChallengeConfig)
+  const loadTradeData = useAppStore((state) => state.loadTradeData)
   const extractedTrades = useAppStore((state) => state.extractedTrades)
   const setExtractedTrades = useAppStore((state) => state.setExtractedTrades)
   const analyticsRef = React.useRef(null)
@@ -24,11 +25,7 @@ const AppContent = () => {
 
   // Load saved configuration and account data on mount
   useEffect(() => {
-    // Load challenge configuration from chrome.storage.local
-    loadChallengeConfig()
-
-    // Load account data using store function
-    loadAccountData()
+    // Store auto-initializes data on creation, no need to load manually
 
     // Set up event listener for real-time updates from website
     const handleAccountUpdate = (event) => {
@@ -54,7 +51,7 @@ const AppContent = () => {
       }
       if (message.type === "TRADE_DATA_UPDATED") {
         console.log("Trade data updated via extension:", message.data)
-        // This will be handled by the analytics component
+        loadTradeData()
       }
     }
 
@@ -97,35 +94,38 @@ const AppContent = () => {
     setView("config")
   }
 
-  // Handler for fetching all trades from all pages
-  const handleFetchAllTrades = () => {
+  // Handler for refreshing all data
+  const handleRefreshData = async () => {
     if (window.chrome && chrome.tabs) {
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        const fxReplayTab = tabs[0]
-        if (
-          fxReplayTab &&
-          fxReplayTab.url &&
-          fxReplayTab.url.includes("fxreplay.com")
-        ) {
-          chrome.tabs.sendMessage(
-            fxReplayTab.id,
-            { type: "EXTRACT_TRADES" },
-            (response) => {
-              if (response && response.success) {
-                alert("All trades fetched and saved!")
-              } else {
-                alert(
-                  "Failed to fetch trades. Make sure you are on the FxReplay site."
-                )
+      // Find any tab that contains the FxReplay chart URL pattern
+      chrome.tabs.query(
+        { url: "https://app.fxreplay.com/en-US/auth/chart/*" },
+        function (tabs) {
+          if (tabs && tabs.length > 0) {
+            const fxReplayTab = tabs[0] // Use the first FxReplay tab found
+            // Trigger extraction of all data (account + trades)
+            chrome.tabs.sendMessage(
+              fxReplayTab.id,
+              { type: "EXTRACT_ALL_DATA" },
+              async (response) => {
+                console.log("Refresh data response:", response)
+                if (response && response.success) {
+                  // Refresh both account and trade data from storage
+                  await loadAccountData()
+                  await loadTradeData()
+                  alert("Data refreshed successfully!")
+                } else {
+                  alert(
+                    "Failed to refresh data. Make sure you have a FxReplay tab open."
+                  )
+                }
               }
-            }
-          )
-        } else {
-          alert(
-            "Please open this extension while on fxreplay.com to fetch trades."
-          )
+            )
+          } else {
+            alert("Please open a FxReplay tab to refresh data.")
+          }
         }
-      })
+      )
     } else {
       alert("Chrome extension messaging not available.")
     }
@@ -166,10 +166,10 @@ const AppContent = () => {
                     </Button>
                     <Button
                       variant="default"
-                      onClick={handleFetchAllTrades}
+                      onClick={handleRefreshData}
                       className="flex items-center gap-2"
                     >
-                      Fetch All Trades
+                      Refresh Data
                     </Button>
                     <Button
                       variant="secondary"

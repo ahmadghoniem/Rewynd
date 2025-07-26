@@ -11,56 +11,15 @@ import useAppStore from "./store/useAppStore"
 
 const AnalyticsView = React.forwardRef((props, ref) => {
   const accountData = useAppStore((state) => state.accountData)
-  const setAccountData = useAppStore((state) => state.setAccountData)
   const loadAccountData = useAppStore((state) => state.loadAccountData)
+  const loadTradeData = useAppStore((state) => state.loadTradeData)
   const setExtractedTrades = useAppStore((state) => state.setExtractedTrades)
   const displayData = accountData || { capital: 0, realizedPnL: 0, balance: 0 }
 
-  // Expose addExampleTrades via ref
-  React.useImperativeHandle(ref, () => ({
-    addExampleTrades: (data) => {
-      if (data && Array.isArray(data.trades)) {
-        setExtractedTrades(data.trades)
-      }
-    }
-  }))
-
   // Load storage data on component mount
   useEffect(() => {
-    loadAccountData()
-    // Load trades from chrome.storage.local (main source of truth)
-    if (
-      typeof chrome !== "undefined" &&
-      chrome.storage &&
-      chrome.storage.local
-    ) {
-      chrome.storage.local.get(["fxreplay_trade_data"], (result) => {
-        if (result.fxreplay_trade_data && result.fxreplay_trade_data.trades) {
-          console.log("Analytics: Loaded trade data from storage")
-          setExtractedTrades(result.fxreplay_trade_data.trades)
-        }
-      })
-    }
-
-    // Set up Chrome extension message listener for real-time updates
-    const handleTradeDataUpdate = (message, sender, sendResponse) => {
-      if (message.type === "TRADE_DATA_UPDATED") {
-        console.log("Analytics: Trade data updated via extension")
-        if (message.data && message.data.trades) {
-          setExtractedTrades(message.data.trades)
-        }
-      }
-    }
-
-    if (chrome && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.addListener(handleTradeDataUpdate)
-    }
-
-    return () => {
-      if (chrome && chrome.runtime && chrome.runtime.onMessage) {
-        chrome.runtime.onMessage.removeListener(handleTradeDataUpdate)
-      }
-    }
+    // Store auto-initializes data on creation, no need to load manually
+    // No additional setup needed for this component
   }, [])
 
   // Show loading state if data is not ready

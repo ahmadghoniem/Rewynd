@@ -69,17 +69,17 @@ const WinRateCard = ({ extractedTrades, className }) => {
               />
             </PolarRadiusAxis>
             <RadialBar
-              dataKey="won"
-              stackId="a"
-              cornerRadius={4}
-              fill="var(--color-success)"
-              className="stroke-transparent stroke-2"
-            />
-            <RadialBar
               dataKey="loss"
               stackId="a"
               cornerRadius={4}
               fill="var(--color-danger)"
+              className="stroke-transparent stroke-2"
+            />
+            <RadialBar
+              dataKey="won"
+              stackId="a"
+              cornerRadius={4}
+              fill="var(--color-success)"
               className="stroke-transparent stroke-2"
             />
           </RadialBarChart>
