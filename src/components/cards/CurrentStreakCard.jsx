@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Info } from "lucide-react"
 import { cn } from "@/lib/utils"
-const CurrentStreakCard = ({ extractedTrades }) => {
+const CurrentStreakCard = ({ extractedTrades, className }) => {
   let streak = 0
   let type = null
   if (extractedTrades && extractedTrades.length > 0) {
@@ -37,7 +37,7 @@ const CurrentStreakCard = ({ extractedTrades }) => {
     }
   }
   return (
-    <Card className="gap-2 text-xs font-medium py-2">
+    <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
       <CardHeader className="flex justify-between items-center  px-2">
         <span>Streak</span>
         <Tooltip>
@@ -56,7 +56,11 @@ const CurrentStreakCard = ({ extractedTrades }) => {
         <div
           className={cn(
             "text-xl font-normal",
-            type === "Win" ? "text-success" : "text-danger"
+            streak === 0 || !type
+              ? "text-foreground"
+              : type === "Win"
+              ? "text-success"
+              : "text-danger"
           )}
         >
           {streak} {type ? type + (streak > 1 ? "s" : "") : ""}

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Clock, History } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-const DailyRecap = ({ extractedTrades = [] }) => {
+const DailyRecap = ({ extractedTrades = [], className }) => {
   const [dailyData, setDailyData] = useState([])
   const [currentPage, setCurrentPage] = useState(0)
   const scrollRef = useRef(null)
@@ -114,170 +115,164 @@ const DailyRecap = ({ extractedTrades = [] }) => {
   }
 
   return (
-    <Card className="w-full">
+    <Card className={cn("w-full col-span-2", className)}>
       <CardHeader>
         <CardTitle>Daily Recap</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="w-full">
-          <div className="grid grid-cols-6 gap-4 w-full">
-            <div className="col-span-6">
-              {dailyData.length > 0 ? (
-                <>
-                  <div
-                    ref={setScrollRef}
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      gap: "16px",
-                      overflowX: "auto",
-                      overflowY: "hidden",
-                      width: "100%",
-                      minHeight: 120,
-                      scrollSnapType: "x mandatory",
-                      WebkitOverflowScrolling: "touch"
-                    }}
-                    onScroll={handleScroll}
-                    onMouseDown={handlePointerDown}
-                    onMouseMove={handlePointerMove}
-                    onMouseUp={handlePointerUp}
-                    onMouseLeave={handlePointerUp}
-                    onTouchStart={handlePointerDown}
-                    onTouchMove={handlePointerMove}
-                    onTouchEnd={handlePointerUp}
-                    className="hide-scrollbar select-none"
-                  >
-                    {dailyData.map((day) => (
-                      <div
-                        key={day.dateKey}
-                        className={
-                          "flex flex-col justify-between flex-1 min-w-0 rounded-lg p-4 bg-muted text-muted-foreground shadow-sm transition-all duration-200"
-                        }
-                        style={{
-                          minWidth: "calc(50% - 8px)",
-                          maxWidth: "calc(50% - 8px)",
-                          minHeight: 120,
-                          scrollSnapAlign: "start"
-                        }}
-                      >
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                          <span className="mr-2">
-                            <History className="h-4 w-4" />
-                          </span>
-                          <span className="font-semibold">
-                            {day.date.toLocaleDateString("en-US")}
-                          </span>
-                        </div>
-                        <div
-                          className={`text-2xl font-extrabold ${getPnLColor(
-                            day.totalPnL
-                          )}`}
-                        >
-                          {formatCurrency(day.totalPnL)}
-                        </div>
-                        <div className="flex justify-between text-xs mt-2">
-                          <span>
-                            <span className="font-semibold">
-                              {day.trades.length}
-                            </span>{" "}
-                            Trades
-                          </span>
-                          {/* Winrate */}
-                          <span>
-                            <span className="font-semibold">
-                              {(() => {
-                                const wins = day.trades.filter((t) => {
-                                  const realized = parseFloat(
-                                    t.realized?.replace(/[$,]/g, "") || "0"
-                                  )
-                                  return realized > 0
-                                }).length
-                                return day.trades.length > 0
-                                  ? ((wins / day.trades.length) * 100).toFixed(
-                                      0
-                                    )
-                                  : "-"
-                              })()}
-                            </span>
-                            %
-                          </span>
-                          {/* Avg RR */}
-                          <span>
-                            <span className="font-semibold">
-                              {(() => {
-                                const validRRs = day.trades
-                                  .map((t) => parseFloat(t.maxRR))
-                                  .filter((rr) => !isNaN(rr))
-                                return validRRs.length > 0
-                                  ? (
-                                      validRRs.reduce((a, b) => a + b, 0) /
-                                      validRRs.length
-                                    ).toFixed(2)
-                                  : "-"
-                              })()}
-                            </span>{" "}
-                            RR
-                          </span>
-                        </div>
+      <CardContent className="col-span-2">
+        <div className="grid grid-cols-6 gap-4 w-full">
+          <div className="col-span-6">
+            {dailyData.length > 0 ? (
+              <>
+                <div
+                  ref={setScrollRef}
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: "16px",
+                    overflowX: "auto",
+                    overflowY: "hidden",
+                    width: "100%",
+                    minHeight: 120,
+                    scrollSnapType: "x mandatory",
+                    WebkitOverflowScrolling: "touch"
+                  }}
+                  onScroll={handleScroll}
+                  onMouseDown={handlePointerDown}
+                  onMouseMove={handlePointerMove}
+                  onMouseUp={handlePointerUp}
+                  onMouseLeave={handlePointerUp}
+                  onTouchStart={handlePointerDown}
+                  onTouchMove={handlePointerMove}
+                  onTouchEnd={handlePointerUp}
+                  className="hide-scrollbar select-none"
+                >
+                  {dailyData.map((day) => (
+                    <div
+                      key={day.dateKey}
+                      className={
+                        "flex flex-col justify-between flex-1 min-w-0 rounded-lg p-4 bg-muted text-muted-foreground shadow-sm transition-all duration-200"
+                      }
+                      style={{
+                        minWidth: "calc(50% - 8px)",
+                        maxWidth: "calc(50% - 8px)",
+                        minHeight: 120,
+                        scrollSnapAlign: "start"
+                      }}
+                    >
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                        <span className="mr-2">
+                          <History className="h-4 w-4" />
+                        </span>
+                        <span className="font-semibold">
+                          {day.date.toLocaleDateString("en-US")}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                  {/* Pagination controls (Trade History style) */}
-                  <div className="flex justify-center items-center gap-2 mt-4">
-                    {currentPage > 0 ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          setCurrentPage((p) => Math.max(0, p - 1))
-                        }
+                      <div
+                        className={`text-2xl font-extrabold ${getPnLColor(
+                          day.totalPnL
+                        )}`}
                       >
-                        Prev
-                      </Button>
-                    ) : (
-                      <span
-                        style={{ width: 64, display: "inline-block" }}
-                        aria-hidden="true"
-                      ></span>
-                    )}
-                    {Array.from({ length: totalPages }, (_, i) => (
-                      <Button
-                        key={i}
-                        size="sm"
-                        variant={currentPage === i ? "default" : "outline"}
-                        onClick={() => scrollToPage(i)}
-                      >
-                        {i + 1}
-                      </Button>
-                    ))}
-                    {currentPage < totalPages - 1 && totalPages > 0 ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
-                        }
-                      >
-                        Next
-                      </Button>
-                    ) : (
-                      <span
-                        style={{ width: 64, display: "inline-block" }}
-                        aria-hidden="true"
-                      ></span>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No trading data available</p>
-                  <p className="text-sm">
-                    Extract trades from FxReplay to see daily summaries
-                  </p>
+                        {formatCurrency(day.totalPnL)}
+                      </div>
+                      <div className="flex justify-between text-xs mt-2">
+                        <span>
+                          <span className="font-semibold">
+                            {day.trades.length}
+                          </span>{" "}
+                          Trades
+                        </span>
+                        {/* Winrate */}
+                        <span>
+                          <span className="font-semibold">
+                            {(() => {
+                              const wins = day.trades.filter((t) => {
+                                const realized = parseFloat(
+                                  t.realized?.replace(/[$,]/g, "") || "0"
+                                )
+                                return realized > 0
+                              }).length
+                              return day.trades.length > 0
+                                ? ((wins / day.trades.length) * 100).toFixed(0)
+                                : "-"
+                            })()}
+                          </span>
+                          %
+                        </span>
+                        {/* Avg RR */}
+                        <span>
+                          <span className="font-semibold">
+                            {(() => {
+                              const validRRs = day.trades
+                                .map((t) => parseFloat(t.maxRR))
+                                .filter((rr) => !isNaN(rr))
+                              return validRRs.length > 0
+                                ? (
+                                    validRRs.reduce((a, b) => a + b, 0) /
+                                    validRRs.length
+                                  ).toFixed(2)
+                                : "-"
+                            })()}
+                          </span>{" "}
+                          RR
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
+                {/* Pagination controls (Trade History style) */}
+                <div className="flex justify-center items-center gap-2 mt-4">
+                  {currentPage > 0 ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                    >
+                      Prev
+                    </Button>
+                  ) : (
+                    <span
+                      style={{ width: 64, display: "inline-block" }}
+                      aria-hidden="true"
+                    ></span>
+                  )}
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <Button
+                      key={i}
+                      size="sm"
+                      variant={currentPage === i ? "default" : "outline"}
+                      onClick={() => scrollToPage(i)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                  {currentPage < totalPages - 1 && totalPages > 0 ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+                      }
+                    >
+                      Next
+                    </Button>
+                  ) : (
+                    <span
+                      style={{ width: 64, display: "inline-block" }}
+                      aria-hidden="true"
+                    ></span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No trading data available</p>
+                <p className="text-sm">
+                  Extract trades from FxReplay to see daily summaries
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

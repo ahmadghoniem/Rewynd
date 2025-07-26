@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import {
   Tooltip,
   TooltipTrigger,
@@ -6,7 +7,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Info } from "lucide-react"
 
-const ProfitFactorCard = ({ extractedTrades }) => {
+const ProfitFactorCard = ({ extractedTrades, className }) => {
   let profitFactor = 0
   if (extractedTrades && extractedTrades.length > 0) {
     const wins = extractedTrades.filter(
@@ -28,8 +29,8 @@ const ProfitFactorCard = ({ extractedTrades }) => {
     if (totalLoss > 0) profitFactor = totalProfit / totalLoss
   }
   return (
-    <Card className="gap-2 text-xs font-medium py-2">
-      <CardHeader className="flex justify-between items-center tracking-tight px-2">
+    <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
+      <CardHeader className="flex justify-between items-center px-2">
         <span>Profit Factor</span>
         <Tooltip>
           <TooltipTrigger asChild>

@@ -19,28 +19,12 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent
-} from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 
 export const description = "A line chart with dots"
 
 export default function EquityCurveCard({ tradesData = [] }) {
-  // Helper to get week number from a date
-  function getWeekNumber(dateObj) {
-    const d = new Date(
-      Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate())
-    )
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-    const weekNo = Math.ceil(
-      ((d - yearStart) / 86400000 + yearStart.getUTCDay() + 1) / 7
-    )
-    return `${d.getUTCFullYear()}-W${weekNo}`
-  }
-
-  // Helper to process trades into cumulative P&L chart data
+  // Helper to process trades into cumulative PnL chart data
   function processTradeData(trades) {
     if (!trades || trades.length === 0) return []
     // Parse and sort trades by date
@@ -74,11 +58,10 @@ export default function EquityCurveCard({ tradesData = [] }) {
           cumulativePnL: 0,
           tradePnL: realized,
           tradeNumber: 0
-          // week: getWeekNumber(dateObj),
         }
       })
       .sort((a, b) => a.dateTime - b.dateTime)
-    // Calculate cumulative P&L and trade number
+    // Calculate cumulative PnL and trade number
     let cumulativePnL = 0
     const chartPoints = parsedTrades.map((trade, index) => {
       cumulativePnL += trade.tradePnL
@@ -108,32 +91,49 @@ export default function EquityCurveCard({ tradesData = [] }) {
     tradesData && tradesData.length > 0 ? processTradeData(tradesData) : []
 
   // Chart config for actual data
-  const chartConfig =
-    tradesData && tradesData.length > 0
-      ? {
-          cumulativePnL: {
-            label: "Cumulative P&L",
-            color: "hsl(var(--chart-1))"
-          }
-        }
-      : {
-          desktop: {
-            label: "Desktop",
-            color: "var(--chart-1)"
-          },
-          mobile: {
-            label: "Mobile",
-            color: "var(--chart-2)"
-          }
-        }
+  const chartConfig = tradesData &&
+    tradesData.length > 0 && {
+      cumulativePnL: {
+        label: "Cumulative PnL",
+        color: "hsl(var(--chart-1))"
+      }
+    }
 
-  // For actual data, calculate total P&L and trend
-  const totalPnL =
-    tradesData && tradesData.length > 0
-      ? chartData[chartData.length - 1]?.cumulativePnL || 0
-      : null
-  const isPositive = totalPnL !== null ? totalPnL >= 0 : true
+  const maxPnL = Math.max(...chartData.map((d) => d.cumulativePnL))
+  const hwmIndex = chartData.findIndex((d) => d.cumulativePnL === maxPnL)
+  // Custom dot renderer to help highlight HWM
+  const renderDot = ({ cx, cy, index }) => {
+    if (index === hwmIndex) {
+      return (
+        <>
+          <circle
+            cx={cx}
+            cy={cy}
+            r={4}
+            fill="var(--marker-hwm)"
+            stroke="var(--marker-hwm)"
+          />
+        </>
+      )
+    }
+    return <circle cx={cx} cy={cy} r={4} fill="var(--primary)" />
+  }
 
+  const CustomActiveDot = ({ cx, cy, index }) => {
+    const isHwm = index === hwmIndex
+    return (
+      <>
+        <circle
+          cx={cx}
+          cy={cy}
+          r={6}
+          fill={isHwm ? "var(--marker-hwm)" : "var(--primary)"}
+          stroke={isHwm ? "var(--marker-hwm)" : "var(--primary)"}
+          strokeWidth={2}
+        />
+      </>
+    )
+  }
   return (
     <Card>
       <CardHeader>
@@ -174,26 +174,31 @@ export default function EquityCurveCard({ tradesData = [] }) {
                   if (active && payload && payload.length) {
                     const data = payload[0].payload
                     return (
-                      <div className="bg-muted  rounded-lg p-3 shadow-lg">
-                        <p className="font-medium">{label}</p>
-                        <p className="text-sm text-muted-foreground">
-                          #{data.tradeNumber}
-                        </p>
+                      <div className="bg-muted rounded-lg p-3 shadow-lg space-y-1 min-w-[180px]">
+                        {/* Header row: Label + badge */}
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">{label}</p>
+                          <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                            #{data.tradeNumber}
+                          </span>
+                        </div>
+                        {/* Cumulative PnL */}
                         <p
-                          className={`font-medium ${
-                            data.tradePnL >= 0 ? "text-success" : "text-danger"
-                          }`}
-                        >
-                          Trade P&L: ${data.tradePnL}
-                        </p>
-                        <p
-                          className={`font-bold ${
+                          className={`text-sm font-bold ${
                             data.cumulativePnL >= 0
                               ? "text-success"
                               : "text-danger"
                           }`}
                         >
                           Cumulative: ${data.cumulativePnL}
+                        </p>
+                        {/* Trade PnL */}
+                        <p
+                          className={`text-sm font-medium ${
+                            data.tradePnL >= 0 ? "text-success" : "text-danger"
+                          }`}
+                        >
+                          Trade PnL: ${data.tradePnL}
                         </p>
                       </div>
                     )
@@ -228,8 +233,8 @@ export default function EquityCurveCard({ tradesData = [] }) {
                 fillOpacity={0.4}
                 stroke="var(--primary)"
                 strokeWidth={2}
-                dot={{ fill: "var(--primary)" }}
-                activeDot={{ r: 6 }}
+                dot={renderDot}
+                activeDot={CustomActiveDot}
               />
             </AreaChart>
           </ChartContainer>

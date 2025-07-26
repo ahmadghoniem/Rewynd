@@ -1,5 +1,4 @@
 export { default as ObjectivesSection } from "./ObjectivesSection"
-export { default as TradingPerformanceSection } from "./TradingPerformanceSection"
 export { default as EquityCurveSection } from "./EquityCurveSection"
 export { default as TradeHistorySection } from "./TradeHistorySection"
 export { default as DailyRecapSection } from "./DailyRecapSection"

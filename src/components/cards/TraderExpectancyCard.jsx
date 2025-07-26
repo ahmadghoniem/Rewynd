@@ -5,8 +5,8 @@ import {
   TooltipContent
 } from "@/components/ui/tooltip"
 import { Info } from "lucide-react"
-
-const TraderExpectancyCard = ({ extractedTrades }) => {
+import { cn } from "@/lib/utils"
+const TraderExpectancyCard = ({ extractedTrades, className }) => {
   let expectancy = 0
   if (extractedTrades && extractedTrades.length > 0) {
     const wins = extractedTrades.filter(
@@ -37,7 +37,7 @@ const TraderExpectancyCard = ({ extractedTrades }) => {
     expectancy = avgWin * winRate - avgLoss * lossRate
   }
   return (
-    <Card className="gap-2 text-xs font-medium py-2">
+    <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
       <CardHeader className="flex justify-between items-center  px-2">
         <span>Expectancy</span>
         <Tooltip>

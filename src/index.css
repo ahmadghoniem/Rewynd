@@ -92,7 +92,6 @@
   /* Border radius */
   --radius: 0.625rem; /* Default border radius */
 }
-
 .dark {
   /* Main background and text */
   --background: #101014; /* Main background: deep neutral */
@@ -108,8 +107,8 @@
   --primary: #a78bfa;
 
   /* Accent: Use for secondary actions, supporting info, and decorative highlights */
-  --accent: #3d3d50; /* Slightly more blue-tinted */ /* Accent: dark indigo/blue for badges/info */
-  --accent-foreground: #bcbcc4; /* Text on accent */
+  --accent: #2a2a2a;
+  --accent-foreground: #f2f2f2;
 
   /* Accent: Use for success and danger badges */
   --accent-success: #1a4230; /* Accent: dark indigo/blue for badges/info */
@@ -123,8 +122,8 @@
   --secondary-foreground: #e0e0e6; /* Text on secondary */
 
   /* Muted/disabled backgrounds and text */
-  --muted: #242425; /* Muted background (tooltips, disabled) */
-  --muted-foreground: #f5f6fa; /* Muted text */
+  --muted: #2b2b2f;
+  --muted-foreground: #e0e0e6;
 
   /* Borders and rings */
   --border: #23232a; /* Border color: subtle dark gray */
@@ -139,6 +138,7 @@
   /* Status colors */
   --success: #06d484; /* Success green: (wins, gains, approvals) */
   --danger: #ef4f78; /* Danger red: (errors, losses, rejections) */
+  --marker-hwm: #60a5fa; /* HWM marker blue */
 
   --destructive: #ff4b5c; /* Destructive irreversible actions (delete, reset) */
 

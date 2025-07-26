@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 
-const BalanceAndRealizedPnlCard = ({ displayData }) => {
+const BalanceAndRealizedPnlCard = ({ displayData, className }) => {
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -15,7 +16,7 @@ const BalanceAndRealizedPnlCard = ({ displayData }) => {
   const pnlPercent = pnlBase !== 0 ? (realizedPnL / pnlBase) * 100 : 0
 
   return (
-    <Card className="gap-2 text-xs font-medium py-2">
+    <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
       <CardContent className="flex flex-row items-center justify-between px-2">
         {/* Balance Section */}
         <div className="flex flex-col items-start flex-1">
@@ -32,7 +33,18 @@ const BalanceAndRealizedPnlCard = ({ displayData }) => {
             Realized PnL
           </span>
           <span className="text-2xl font-normal flex items-center gap-2">
-            {formatCurrency(realizedPnL)}
+            <span
+              className={
+                realizedPnL > 0
+                  ? "text-success"
+                  : realizedPnL < 0
+                  ? "text-danger"
+                  : ""
+              }
+            >
+              {realizedPnL > 0 ? "+" : realizedPnL < 0 ? "-" : ""}
+              {formatCurrency(Math.abs(realizedPnL))}
+            </span>
             <span className="text-base text-muted-foreground">
               ({pnlPercent.toFixed(2)}%)
             </span>

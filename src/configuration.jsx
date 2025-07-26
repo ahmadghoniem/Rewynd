@@ -4,18 +4,9 @@ import { Input } from "@/components/ui/input"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import {
-  Plus,
-  Minus,
-  Sun,
-  Moon,
-  Settings,
-  Target,
-  Calendar
-} from "lucide-react"
-import { useTheme } from "./ThemeContext"
+import { Plus, Minus, Target } from "lucide-react"
 import "./hideNumberArrows.css"
+import useAppStore from "./store/useAppStore"
 
 const NumberInput = ({
   value,
@@ -97,8 +88,26 @@ const PhaseSelector = ({ phases, onChange }) => {
   )
 }
 
-const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
-  const { isDark, toggleTheme } = useTheme()
+const DrawdownTypeSelector = ({ value, onChange }) => (
+  <div className="flex space-x-2 justify-center">
+    {["static", "trailing"].map((type) => (
+      <Button
+        key={type}
+        variant={value === type ? "default" : "outline"}
+        size="sm"
+        onClick={() => onChange(type)}
+        className="flex-1 min-w-[80px] font-semibold px-0 capitalize"
+      >
+        {type}
+      </Button>
+    ))}
+  </div>
+)
+
+const ConfigurationView = ({ onSave }) => {
+  const config = useAppStore((state) => state.config)
+  const setConfig = useAppStore((state) => state.setConfig)
+
   const getDefaultProfitTargets = (phases) => {
     switch (phases) {
       case 1:
@@ -112,9 +121,17 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
     }
   }
 
+  // DRY helper for updating config fields
+  const updateConfigField = (field, value) => {
+    setConfig({
+      ...config,
+      [field]: value
+    })
+  }
+
   const handlePhasesChange = (newPhases) => {
     const newProfitTargets = getDefaultProfitTargets(newPhases)
-    onConfigChange({
+    setConfig({
       ...config,
       phases: newPhases,
       profitTargets: newProfitTargets
@@ -122,7 +139,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
   }
 
   const handleProfitTargetChange = (phase, value) => {
-    onConfigChange({
+    setConfig({
       ...config,
       profitTargets: {
         ...config.profitTargets,
@@ -131,20 +148,11 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
     })
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2
-    }).format(amount)
-  }
-
   const renderProfitTargets = () => {
     const targets = []
     for (let i = 1; i <= config.phases; i++) {
       const phaseKey = `phase${i}`
       const targetValue = config.profitTargets[phaseKey] || 2
-      const requiredAmount = accountData.capital * (targetValue / 100)
       targets.push(
         <div key={i} className="space-y-2">
           <Label className="text-sm font-medium text-muted-foreground">
@@ -158,9 +166,6 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
             step={1}
             suffix="%"
           />
-          <div className="text-xs text-muted-foreground">
-            Target: {targetValue}% ({formatCurrency(requiredAmount)})
-          </div>
         </div>
       )
     }
@@ -168,7 +173,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 flex flex-col ">
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold text-foreground ">
@@ -180,8 +185,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
       </div>
 
       {/* Configuration Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        {/* Left Column - Basic Settings */}
+      <div className="flex gap-6 max-w-7xl mx-auto">
         <div className="space-y-6">
           {/* Challenge Structure */}
           <Card>
@@ -208,6 +212,8 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                 </Label>
                 {renderProfitTargets()}
               </div>
+              {/* Divider after profit phases targets */}
+              <div className="my-4 border-t border-divider" />
               {/* Daily Drawdown Input */}
               <div className="space-y-2 mt-4">
                 <Label className="text-sm font-medium text-muted-foreground">
@@ -216,7 +222,7 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                 <NumberInput
                   value={config.dailyDrawdown || 2}
                   onChange={(value) =>
-                    onConfigChange({ ...config, dailyDrawdown: value })
+                    updateConfigField("dailyDrawdown", value)
                   }
                   min={1}
                   max={50}
@@ -231,15 +237,27 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                 </Label>
                 <NumberInput
                   value={config.maxDrawdown || 5}
-                  onChange={(value) =>
-                    onConfigChange({ ...config, maxDrawdown: value })
-                  }
+                  onChange={(value) => updateConfigField("maxDrawdown", value)}
                   min={1}
                   max={50}
                   step={1}
                   suffix="%"
                 />
               </div>
+              {/* Max Drawdown Type Select */}
+              <div className="space-y-2 mt-2">
+                <Label className="text-sm font-medium text-muted-foreground">
+                  Max Drawdown Type
+                </Label>
+                <DrawdownTypeSelector
+                  value={config.maxDrawdownType || "static"}
+                  onChange={(type) =>
+                    updateConfigField("maxDrawdownType", type)
+                  }
+                />
+              </div>
+              {/* Divider after max drawdown type select */}
+              <div className="my-4 border-t border-divider" />
               {/* Minimum Profitable Days Input */}
               <div className="space-y-2 mt-4">
                 <Label className="text-sm font-medium text-muted-foreground">
@@ -248,18 +266,15 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                 <NumberInput
                   value={config.requireProfitableDays || 0}
                   onChange={(value) =>
-                    onConfigChange({
-                      ...config,
-                      requireProfitableDays: Math.max(0, value)
-                    })
+                    updateConfigField(
+                      "requireProfitableDays",
+                      Math.max(0, value)
+                    )
                   }
                   min={0}
                   max={30}
                   step={1}
                 />
-                <div className="text-xs text-muted-foreground">
-                  Set to 0 to disable this requirement
-                </div>
               </div>
               {/* Minimum Trading Days Input */}
               <div className="space-y-2 mt-2">
@@ -269,51 +284,16 @@ const ConfigurationView = ({ config, onSave, onConfigChange, accountData }) => {
                 <NumberInput
                   value={config.minTradingDays || 0}
                   onChange={(value) =>
-                    onConfigChange({
-                      ...config,
-                      minTradingDays: Math.max(0, value)
-                    })
+                    updateConfigField("minTradingDays", Math.max(0, value))
                   }
                   min={0}
                   max={30}
                   step={1}
                 />
-                <div className="text-xs text-muted-foreground">
-                  Set to 0 to disable this requirement
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Account Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Account Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <span className="text-sm text-muted-foreground">
-                  Account Size:
-                </span>
-                <span className="text-sm font-bold text-info">
-                  {formatCurrency(accountData.capital)}
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground text-center">
-                Last updated:{" "}
-                {accountData.lastUpdated
-                  ? new Date(accountData.lastUpdated).toLocaleString()
-                  : "Never"}
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Right Column - Summary */}
-        {/* Challenge Summary card removed here */}
       </div>
 
       {/* Action Buttons */}

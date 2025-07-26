@@ -491,7 +491,7 @@ const TradeHistoryCard = ({
                 {paginatedTrades.map((trade, index) => (
                   <tr
                     key={index + (currentPage - 1) * pageSize}
-                    className="hover:bg-card/50  hover:text-muted-foreground"
+                    className="hover:bg-muted transition-all duration-75 ease-in"
                   >
                     {visibleColumns.asset && (
                       <td className="p-3 text-sm text-foreground  font-medium">

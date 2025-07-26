@@ -1,9 +1,10 @@
 import React from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 
-const LossesSummaryCard = ({ stats, formatCurrency }) => {
+const LossesSummaryCard = ({ stats, formatCurrency, className }) => {
   return (
-    <Card className="bg-card py-2">
+    <Card className={cn("bg-card py-2", className)}>
       <CardContent className="flex flex-row items-center justify-between px-2">
         {/* Average Loss Section */}
         <div className="flex flex-col items-start flex-1">

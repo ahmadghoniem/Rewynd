@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import {
   Tooltip,
   TooltipTrigger,
@@ -6,7 +7,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Info } from "lucide-react"
 
-const AvgRRCard = ({ extractedTrades }) => {
+const AvgRRCard = ({ extractedTrades, className }) => {
   let avgRR = 0
   if (extractedTrades && extractedTrades.length > 0) {
     const validRRs = extractedTrades
@@ -17,7 +18,7 @@ const AvgRRCard = ({ extractedTrades }) => {
     }
   }
   return (
-    <Card className="gap-2 text-xs font-medium py-2">
+    <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
       <CardHeader className="flex justify-between items-center  px-2">
         <span>Avg R/R</span>
         <Tooltip>

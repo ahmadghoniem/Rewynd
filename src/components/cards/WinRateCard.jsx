@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { ChartContainer } from "@/components/ui/chart"
 import { RadialBarChart, RadialBar, PolarRadiusAxis, Label } from "recharts"
 
-const WinRateCard = ({ extractedTrades }) => {
+const WinRateCard = ({ extractedTrades, className }) => {
   let winRate = 0,
     won = 0,
     loss = 0
@@ -24,12 +25,19 @@ const WinRateCard = ({ extractedTrades }) => {
   }
 
   return (
-    <Card className="flex flex-row max-h-20 gap-4 text-xs font-medium p-2 justify-between items-start min-h-full">
+    <Card
+      className={cn(
+        "flex flex-row max-h-full gap-4 text-xs font-medium p-2 justify-between items-start min-h-full",
+        className
+      )}
+    >
       <div className="flex flex-col justify-between">
-        <div className="font-semibold mb-2">Win Rate</div>
-        <div className="text-xl font-normal">{winRate.toFixed(1)}%</div>
+        <div className="mb-2 text-card-foreground">Win Rate</div>
+        <div className="text-xl font-normal text-foreground">
+          {winRate.toFixed(1)}%
+        </div>
       </div>
-      <div className="flex items-center justify-center flex-col">
+      <div className="flex items-center justify-center flex-col text-foreground">
         <ChartContainer
           config={chartConfig}
           className="mx-auto aspect-square w-20 max-h-20"

@@ -1,14 +1,13 @@
 import React from "react"
 import DailyRecap from "../cards/DailyRecapCard"
+import { cn } from "@/lib/utils"
+import useAppStore from "@/store/useAppStore"
 
-const DailyRecapSection = ({ extractedTrades }) => {
+const DailyRecapSection = ({ className }) => {
+  const extractedTrades = useAppStore((state) => state.extractedTrades) || []
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-6 gap-4 w-full">
-        <div className="col-span-6">
-          <DailyRecap extractedTrades={extractedTrades} />
-        </div>
-      </div>
+    <div className={cn("w-full", className)}>
+      <DailyRecap extractedTrades={extractedTrades} />
     </div>
   )
 }
