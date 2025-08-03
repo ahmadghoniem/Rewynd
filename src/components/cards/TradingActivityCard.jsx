@@ -25,8 +25,8 @@ const TradingActivityCard = (props) => {
   const { tradingDays, profitableDays } = calculateDrawdownMetrics(
     extractedTrades,
     accountData.capital || 0,
-    config.maxDrawdown || 5,
-    config.dailyDrawdown || 3
+    config.maxDrawdown,
+    config.dailyDrawdown
   )
   return (
     <Card className={cn(props.className)}>

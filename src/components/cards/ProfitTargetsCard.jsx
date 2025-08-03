@@ -18,8 +18,7 @@ const ProfitTargetsCard = (props) => {
     realizedPnL: 0,
     balance: 0
   }
-  const profitTargets = props.profitTargets ||
-    config.profitTargets || { phase1: 10 }
+  const profitTargets = props.profitTargets || config.profitTargets
   const targetAmounts =
     props.targetAmounts ||
     getTargetAmounts(profitTargets, accountData.capital || 0)

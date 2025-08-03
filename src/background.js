@@ -76,6 +76,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })
     return true // Keep the message channel open for async response
   }
+
+  if (message.type === "SAVE_PRESET") {
+    chrome.storage.local.get(["fxReplayPresets"], (result) => {
+      const existingPresets = result.fxReplayPresets || []
+      const updatedPresets = [...existingPresets, message.data]
+      chrome.storage.local.set({ fxReplayPresets: updatedPresets }, () => {
+        sendResponse({ success: true })
+      })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "GET_PRESETS") {
+    chrome.storage.local.get(["fxReplayPresets"], (result) => {
+      sendResponse({ data: result.fxReplayPresets || [] })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "DELETE_PRESET") {
+    chrome.storage.local.get(["fxReplayPresets"], (result) => {
+      const existingPresets = result.fxReplayPresets || []
+      const updatedPresets = existingPresets.filter(
+        (p) => p.name !== message.data.name
+      )
+      chrome.storage.local.set({ fxReplayPresets: updatedPresets }, () => {
+        sendResponse({ success: true })
+      })
+    })
+    return true // Keep the message channel open for async response
+  }
 })
 chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({ url: chrome.runtime.getURL("dist/index.html") })

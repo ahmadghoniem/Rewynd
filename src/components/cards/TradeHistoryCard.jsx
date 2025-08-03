@@ -310,7 +310,7 @@ const TradeHistoryCard = ({
     { key: "dateEnd", label: "Date End" },
     { key: "sl", label: "SL" },
     { key: "tp", label: "TP" },
-    { key: "rr", label: "RR" },
+    { key: "rr", label: "R/R" },
     { key: "risk", label: "Risk %" },
     { key: "realized", label: "Realized" },
     { key: "duration", label: "Hold Time" }
@@ -428,62 +428,20 @@ const TradeHistoryCard = ({
       </CardHeader>
       <CardContent>
         {tradesData.length > 0 ? (
-          <div
-            className="overflow-x-auto"
-            style={{ minHeight: `${pageSize * 48 + 56}px` }} // 48px per row, 56px for header
-          >
+          <div className="overflow-x-auto flex flex-col">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-border">
-                  {visibleColumns.asset && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Asset
-                    </th>
-                  )}
-                  {visibleColumns.side && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Side
-                    </th>
-                  )}
-                  {visibleColumns.dateStart && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Date Start
-                    </th>
-                  )}
-                  {visibleColumns.dateEnd && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Date End
-                    </th>
-                  )}
-                  {visibleColumns.sl && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      SL
-                    </th>
-                  )}
-                  {visibleColumns.tp && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      TP
-                    </th>
-                  )}
-                  {visibleColumns.rr && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      RR
-                    </th>
-                  )}
-                  {visibleColumns.risk && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Risk %
-                    </th>
-                  )}
-                  {visibleColumns.realized && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Realized
-                    </th>
-                  )}
-                  {visibleColumns.duration && (
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                      Hold Time
-                    </th>
+                  {columnDefinitions.map(
+                    (column) =>
+                      visibleColumns[column.key] && (
+                        <th
+                          key={column.key}
+                          className="text-left p-3 text-sm font-medium text-muted-foreground"
+                        >
+                          {column.label}
+                        </th>
+                      )
                   )}
                 </tr>
               </thead>

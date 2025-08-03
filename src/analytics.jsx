@@ -43,7 +43,7 @@ const AnalyticsView = React.forwardRef((props, ref) => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-8">
+    <div className="w-full mx-auto px-2 sm:px-4 py-8">
       <div className="grid grid-cols-1 gap-2 lg:[grid-template-columns:75%_25%]">
         <div className="flex flex-col gap-2">
           <PerformanceSection />

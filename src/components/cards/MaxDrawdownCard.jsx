@@ -20,13 +20,13 @@ const MaxDrawdownCard = (props) => {
     balance: 0
   }
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
-  const maxDrawdown = props.maxDrawdown ?? config.maxDrawdown ?? 5
+  const maxDrawdown = props.maxDrawdown ?? config.maxDrawdown
   const initialCapital = accountData.capital || 0
   const { maxDrawdownUsed, maxDrawdownProgress } = calculateDrawdownMetrics(
     extractedTrades,
     initialCapital,
     maxDrawdown,
-    config.dailyDrawdown || 3
+    config.dailyDrawdown
   )
   return (
     <Card className={cn("gap-2 text-xs font-medium py-2", props.className)}>

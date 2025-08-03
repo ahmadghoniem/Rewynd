@@ -108,20 +108,7 @@ const ConfigurationView = ({ onSave }) => {
   const config = useAppStore((state) => state.config)
   const setConfig = useAppStore((state) => state.setConfig)
 
-  const getDefaultProfitTargets = (phases) => {
-    switch (phases) {
-      case 1:
-        return { phase1: 10 }
-      case 2:
-        return { phase1: 4, phase2: 8 }
-      case 3:
-        return { phase1: 2, phase2: 2, phase3: 2 }
-      default:
-        return { phase1: 10 }
-    }
-  }
-
-  // DRY helper for updating config fields
+  // Helper function to update a single config field
   const updateConfigField = (field, value) => {
     setConfig({
       ...config,
@@ -129,16 +116,8 @@ const ConfigurationView = ({ onSave }) => {
     })
   }
 
-  const handlePhasesChange = (newPhases) => {
-    const newProfitTargets = getDefaultProfitTargets(newPhases)
-    setConfig({
-      ...config,
-      phases: newPhases,
-      profitTargets: newProfitTargets
-    })
-  }
-
-  const handleProfitTargetChange = (phase, value) => {
+  // Helper function to update profit target for a specific phase
+  const updateProfitTarget = (phase, value) => {
     setConfig({
       ...config,
       profitTargets: {
@@ -148,11 +127,26 @@ const ConfigurationView = ({ onSave }) => {
     })
   }
 
+  const handlePhasesChange = (newPhases) => {
+    const defaultProfitTargets =
+      config.defaults.profitTargets[newPhases] ||
+      config.defaults.profitTargets[1]
+    setConfig({
+      ...config,
+      phases: newPhases,
+      profitTargets: defaultProfitTargets
+    })
+  }
+
+  const handleProfitTargetChange = (phase, value) => {
+    updateProfitTarget(phase, value)
+  }
+
   const renderProfitTargets = () => {
     const targets = []
     for (let i = 1; i <= config.phases; i++) {
       const phaseKey = `phase${i}`
-      const targetValue = config.profitTargets[phaseKey] || 2
+      const targetValue = config.profitTargets[phaseKey]
       targets.push(
         <div key={i} className="space-y-2">
           <Label className="text-sm font-medium text-muted-foreground">
@@ -220,7 +214,7 @@ const ConfigurationView = ({ onSave }) => {
                   Daily Drawdown
                 </Label>
                 <NumberInput
-                  value={config.dailyDrawdown || 2}
+                  value={config.dailyDrawdown}
                   onChange={(value) =>
                     updateConfigField("dailyDrawdown", value)
                   }
@@ -236,7 +230,7 @@ const ConfigurationView = ({ onSave }) => {
                   Max Drawdown
                 </Label>
                 <NumberInput
-                  value={config.maxDrawdown || 5}
+                  value={config.maxDrawdown}
                   onChange={(value) => updateConfigField("maxDrawdown", value)}
                   min={1}
                   max={50}
@@ -250,7 +244,7 @@ const ConfigurationView = ({ onSave }) => {
                   Max Drawdown Type
                 </Label>
                 <DrawdownTypeSelector
-                  value={config.maxDrawdownType || "static"}
+                  value={config.maxDrawdownType}
                   onChange={(type) =>
                     updateConfigField("maxDrawdownType", type)
                   }
@@ -264,7 +258,7 @@ const ConfigurationView = ({ onSave }) => {
                   Minimum Profitable Days
                 </Label>
                 <NumberInput
-                  value={config.requireProfitableDays || 0}
+                  value={config.requireProfitableDays}
                   onChange={(value) =>
                     updateConfigField(
                       "requireProfitableDays",
@@ -282,7 +276,7 @@ const ConfigurationView = ({ onSave }) => {
                   Minimum Trading Days
                 </Label>
                 <NumberInput
-                  value={config.minTradingDays || 0}
+                  value={config.minTradingDays}
                   onChange={(value) =>
                     updateConfigField("minTradingDays", Math.max(0, value))
                   }

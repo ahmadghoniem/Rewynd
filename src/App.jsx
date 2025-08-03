@@ -1,14 +1,13 @@
 import React, { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import ConfigurationView from "./configuration"
 import AnalyticsView from "./analytics"
 import { ThemeProvider, useTheme } from "./ThemeContext"
 import useAppStore from "./store/useAppStore"
 import sampleTrades from "./sampleTrades.json"
+import HeaderCard from "./components/cards/HeaderCard"
 
 const AppContent = () => {
-  const [view, setView] = React.useState("analytics") // "config" or "analytics"
   const config = useAppStore((state) => state.config)
   const setConfig = useAppStore((state) => state.setConfig)
   const accountData = useAppStore((state) => state.accountData)
@@ -73,22 +72,24 @@ const AppContent = () => {
     }
   }, [])
 
-  const handleSave = async () => {
+  const handleSaveConfig = async () => {
     try {
+      console.log("Attempting to save config:", config)
       const success = await saveChallengeConfig(config)
+      console.log("Save result:", success)
       if (success) {
-        setView("analytics")
+        return true
       } else {
-        alert("Failed to save challenge config.")
+        console.warn(
+          "Failed to save challenge config - Chrome extension may not be available"
+        )
+        // Don't show alert, just return false and let the dialog handle it
+        return false
       }
     } catch (error) {
       console.error("Error saving config:", error)
-      alert("Failed to save challenge config.")
+      return false
     }
-  }
-
-  const handleBack = () => {
-    setView("config")
   }
 
   // Handler for refreshing all data
@@ -141,67 +142,16 @@ const AppContent = () => {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-background transition-colors duration-200">
+      <div className="min-h-screen mx-auto bg-background transition-colors duration-200">
         {/* Header */}
-        <header className="bg-card border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <h1 className="text-xl font-bold text-foreground">
-                  📈 FxReplay Funded Analytics
-                </h1>
-                {view === "analytics" && (
-                  <div className="flex items-center gap-4 ml-4">
-                    <Button
-                      variant="outline"
-                      onClick={handleBack}
-                      className="flex items-center gap-2"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back
-                    </Button>
-                    <Button
-                      variant="default"
-                      onClick={handleRefreshData}
-                      className="flex items-center gap-2"
-                    >
-                      Refresh Data
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={handleAddSampleData}
-                      className="flex items-center gap-2"
-                    >
-                      Sample Data
-                    </Button>
-                    <span className="text-lg font-bold text-foreground">
-                      Analytics Dashboard
-                    </span>
-                  </div>
-                )}
-                <button
-                  className="ml-2 px-3 py-2 rounded bg-background text-muted-foreground hover:bg-muted"
-                  onClick={toggleTheme}
-                  title="Toggle Dark/Light"
-                >
-                  {isDark ? "🌙" : "☀️"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <HeaderCard
+          onRefreshData={handleRefreshData}
+          onAddSampleData={handleAddSampleData}
+          onSaveConfig={handleSaveConfig}
+        />
         {/* Main Content */}
-        <main className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {view === "config" ? (
-            <div className="max-w-2xl mx-auto">
-              <ConfigurationView
-                accountData={accountData}
-                onSave={handleSave}
-              />
-            </div>
-          ) : (
-            <AnalyticsView ref={analyticsRef} />
-          )}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <AnalyticsView ref={analyticsRef} />
         </main>
       </div>
     </ThemeProvider>
