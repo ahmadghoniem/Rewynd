@@ -6,6 +6,7 @@ import {
   TooltipTrigger,
   TooltipContent
 } from "@/components/ui/tooltip"
+import { parseTradeDate } from "@/lib/utils"
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat("en-US", {
@@ -40,8 +41,8 @@ const TradingPerformanceSummaryCard = ({
   let currentStreak = 0
   if (tradesData && tradesData.length > 0) {
     const sortedTrades = [...tradesData].sort((a, b) => {
-      const dateA = new Date(a.dateEnd || a.dateStart)
-      const dateB = new Date(b.dateEnd || b.dateStart)
+      const dateA = parseTradeDate(a.dateEnd || a.dateStart)
+      const dateB = parseTradeDate(b.dateEnd || b.dateStart)
       return dateB - dateA
     })
     for (let i = 0; i < sortedTrades.length; i++) {

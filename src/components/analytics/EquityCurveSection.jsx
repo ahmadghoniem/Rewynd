@@ -11,7 +11,10 @@ const EquityCurveSection = () => {
   }
   return (
     <div className="w-full">
-      <EquityCurveCard tradesData={extractedTrades} />
+      <EquityCurveCard
+        tradesData={extractedTrades}
+        initialCapital={accountData.capital || 0}
+      />
     </div>
   )
 }

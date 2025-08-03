@@ -4,14 +4,7 @@ import { RefreshCw, Database, Settings, Sun, Moon } from "lucide-react"
 import { useTheme } from "../../ThemeContext"
 import ConfigurationDialog from "../ConfigurationDialog"
 
-const HeaderCard = ({
-  view,
-  onBack,
-  onRefreshData,
-  onAddSampleData,
-  onViewChange,
-  onSaveConfig
-}) => {
+const HeaderCard = ({ onRefreshData, onAddSampleData, onSaveConfig }) => {
   const { isDark, toggleTheme } = useTheme()
 
   return (
@@ -21,7 +14,7 @@ const HeaderCard = ({
           {/* Logo on the left */}
           <div className="flex items-center">
             <h1 className="text-xl font-semibold text-foreground">
-              📈 FxReplay Funded
+              FxReplay Funded
             </h1>
           </div>
 

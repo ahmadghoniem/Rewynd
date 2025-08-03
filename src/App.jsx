@@ -29,14 +29,14 @@ const AppContent = () => {
     // Set up event listener for real-time updates from website
     const handleAccountUpdate = (event) => {
       const newData = event.detail
-      console.log("Event-triggered account update:", newData)
+      // console.log("Event-triggered account update:", newData)
       setAccountData(newData)
     }
 
     // Set up storage event listener for cross-tab updates
     const handleStorageChange = (event) => {
       if (event.key === "tradeAnalytics_accountData") {
-        console.log("Storage change detected, reloading account data")
+        // console.log("Storage change detected, reloading account data")
         loadAccountData()
       }
     }
@@ -74,9 +74,9 @@ const AppContent = () => {
 
   const handleSaveConfig = async () => {
     try {
-      console.log("Attempting to save config:", config)
+      // console.log("Attempting to save config:", config)
       const success = await saveChallengeConfig(config)
-      console.log("Save result:", success)
+      // console.log("Save result:", success)
       if (success) {
         return true
       } else {
@@ -92,35 +92,71 @@ const AppContent = () => {
     }
   }
 
-  // Handler for refreshing all data
+  // Handler for refreshing all data with automatic tab switching
   const handleRefreshData = async () => {
     if (window.chrome && chrome.tabs) {
-      // Find any tab that contains the FxReplay chart URL pattern
+      // Get current active tab to return to later
       chrome.tabs.query(
-        { url: "https://app.fxreplay.com/en-US/auth/chart/*" },
-        function (tabs) {
-          if (tabs && tabs.length > 0) {
-            const fxReplayTab = tabs[0] // Use the first FxReplay tab found
-            // Trigger extraction of all data (account + trades)
-            chrome.tabs.sendMessage(
-              fxReplayTab.id,
-              { type: "EXTRACT_ALL_DATA" },
-              async (response) => {
-                if (response && response.success) {
-                  // Refresh both account and trade data from storage
-                  await loadAccountData()
-                  await loadTradeData()
-                  alert("Data refreshed successfully!")
-                } else {
-                  alert(
-                    "Failed to refresh data. Make sure you have a FxReplay tab open."
+        { active: true, currentWindow: true },
+        async (currentTabs) => {
+          const currentTab = currentTabs[0]
+
+          // Find any tab that contains the FxReplay chart URL pattern
+          chrome.tabs.query(
+            { url: "https://app.fxreplay.com/en-US/auth/chart/*" },
+            async function (tabs) {
+              if (tabs && tabs.length > 0) {
+                const fxReplayTab = tabs[0] // Use the first FxReplay tab found
+
+                try {
+                  // Switch to FxReplay tab for faster extraction
+                  await chrome.tabs.update(fxReplayTab.id, { active: true })
+
+                  // Trigger extraction of all data (account + trades)
+                  chrome.tabs.sendMessage(
+                    fxReplayTab.id,
+                    { type: "EXTRACT_ALL_DATA" },
+                    async (response) => {
+                      if (response && response.success) {
+                        // Refresh both account and trade data from storage
+                        await loadAccountData()
+                        await loadTradeData()
+
+                        // Switch back to the original tab
+                        if (currentTab && currentTab.id !== fxReplayTab.id) {
+                          await chrome.tabs.update(currentTab.id, {
+                            active: true
+                          })
+                        }
+
+                        alert("Data refreshed successfully!")
+                      } else {
+                        // Switch back to the original tab even if extraction failed
+                        if (currentTab && currentTab.id !== fxReplayTab.id) {
+                          await chrome.tabs.update(currentTab.id, {
+                            active: true
+                          })
+                        }
+
+                        alert(
+                          "Failed to refresh data. Make sure you have a FxReplay tab open."
+                        )
+                      }
+                    }
                   )
+                } catch (error) {
+                  console.error("Error during tab switching:", error)
+                  // Switch back to the original tab on error
+                  if (currentTab && currentTab.id !== fxReplayTab.id) {
+                    await chrome.tabs.update(currentTab.id, { active: true })
+                  }
+                  alert("Error during data refresh. Please try again.")
                 }
+              } else {
+                alert("Please open a FxReplay tab to refresh data.")
               }
-            )
-          } else {
-            alert("Please open a FxReplay tab to refresh data.")
-          }
+            }
+          )
         }
       )
     } else {

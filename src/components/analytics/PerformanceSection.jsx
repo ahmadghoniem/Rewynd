@@ -8,6 +8,7 @@ import TraderExpectancyCard from "@/components/cards/TraderExpectancyCard.jsx"
 import CurrentStreakCard from "@/components/cards/CurrentStreakCard.jsx"
 import useAppStore from "@/store/useAppStore"
 import { useMemo } from "react"
+import { parseTradeDate } from "@/lib/utils"
 
 const PerformanceSection = () => {
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
@@ -48,7 +49,7 @@ const PerformanceSection = () => {
       const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
       const maxRR = parseFloat(trade.maxRR || "0")
       const duration = 0 // You can add duration parsing if needed
-      const date = new Date(trade.dateStart)
+      const date = parseTradeDate(trade.dateStart)
       return {
         realized,
         maxRR,

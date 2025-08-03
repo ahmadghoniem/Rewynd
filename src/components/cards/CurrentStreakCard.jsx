@@ -5,14 +5,14 @@ import {
   TooltipContent
 } from "@/components/ui/tooltip"
 import { Info } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, parseTradeDate } from "@/lib/utils"
 const CurrentStreakCard = ({ extractedTrades, className }) => {
   let streak = 0
   let type = null
   if (extractedTrades && extractedTrades.length > 0) {
     // Sort by dateStart ascending
     const sorted = [...extractedTrades].sort(
-      (a, b) => new Date(a.dateStart) - new Date(b.dateStart)
+      (a, b) => parseTradeDate(a.dateStart) - parseTradeDate(b.dateStart)
     )
     for (let i = sorted.length - 1; i >= 0; i--) {
       const realized = parseFloat(

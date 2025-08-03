@@ -37,16 +37,16 @@ const useAppStore = create((set, get) => {
               { type: "GET_CHALLENGE_CONFIG" },
               (response) => {
                 if (response && response.data) {
-                  console.log(
-                    "Loaded challenge config from storage:",
-                    response.data
-                  )
+                  // console.log(
+                  //   "Loaded challenge config from storage:",
+                  //   response.data
+                  // )
                   set({ config: response.data })
                   resolve(response.data)
                 } else {
-                  console.log(
-                    "No challenge config found in storage, using defaults"
-                  )
+                  // console.log(
+                  //   "No challenge config found in storage, using defaults"
+                  // )
                   resolve(null)
                 }
               }
@@ -70,7 +70,7 @@ const useAppStore = create((set, get) => {
               { type: "SET_CHALLENGE_CONFIG", data: config },
               (response) => {
                 if (response && response.success) {
-                  console.log("Challenge config saved to storage:", config)
+                  // console.log("Challenge config saved to storage:", config)
                   set({ config })
                   resolve(true)
                 } else {

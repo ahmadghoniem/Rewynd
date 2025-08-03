@@ -20,10 +20,14 @@ import {
   CardTitle
 } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { parseTradeDate } from "@/lib/utils"
 
 export const description = "A line chart with dots"
 
-export default function EquityCurveCard({ tradesData = [] }) {
+export default function EquityCurveCard({
+  tradesData = [],
+  initialCapital = 0
+}) {
   // Helper to process trades into cumulative PnL chart data
   function processTradeData(trades) {
     if (!trades || trades.length === 0) return []
@@ -31,19 +35,7 @@ export default function EquityCurveCard({ tradesData = [] }) {
     const parsedTrades = trades
       .map((trade) => {
         const dateStr = trade.dateEnd || trade.date || ""
-        let dateObj
-        if (dateStr) {
-          const [datePart, timePart] = dateStr.split(", ")
-          if (datePart && timePart) {
-            const [month, day, year] = datePart.split("/")
-            const fullYear = year && year.length === 2 ? `20${year}` : year
-            dateObj = new Date(`${month}/${day}/${fullYear} ${timePart}`)
-          } else {
-            dateObj = new Date(dateStr)
-          }
-        } else {
-          dateObj = new Date()
-        }
+        const dateObj = parseTradeDate(dateStr)
         const dayKey = dateObj.toISOString().split("T")[0]
         let realized = 0
         if (typeof trade.realized === "string") {
@@ -61,8 +53,8 @@ export default function EquityCurveCard({ tradesData = [] }) {
         }
       })
       .sort((a, b) => a.dateTime - b.dateTime)
-    // Calculate cumulative PnL and trade number
-    let cumulativePnL = 0
+    // Calculate cumulative PnL and trade number (including initial capital)
+    let cumulativePnL = initialCapital
     const chartPoints = parsedTrades.map((trade, index) => {
       cumulativePnL += trade.tradePnL
       return {
@@ -71,14 +63,14 @@ export default function EquityCurveCard({ tradesData = [] }) {
         tradeNumber: index + 1
       }
     })
-    // Add a zero point at the start
+    // Add a starting point with initial capital
     if (chartPoints.length > 0) {
       const firstDate = new Date(chartPoints[0].dateTime)
       firstDate.setDate(firstDate.getDate() - 1)
       chartPoints.unshift({
         date: firstDate.toISOString().split("T")[0],
         dateTime: firstDate,
-        cumulativePnL: 0,
+        cumulativePnL: initialCapital,
         tradePnL: 0,
         tradeNumber: 0
       })
@@ -94,7 +86,7 @@ export default function EquityCurveCard({ tradesData = [] }) {
   const chartConfig = tradesData &&
     tradesData.length > 0 && {
       cumulativePnL: {
-        label: "Cumulative PnL",
+        label: "Total Equity",
         color: "hsl(var(--chart-1))"
       }
     }
@@ -137,7 +129,7 @@ export default function EquityCurveCard({ tradesData = [] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Equity Curve</CardTitle>
+        <CardTitle>Total Equity Curve</CardTitle>
       </CardHeader>
       <CardContent>
         {chartData.length > 0 ? (
@@ -182,7 +174,7 @@ export default function EquityCurveCard({ tradesData = [] }) {
                             #{data.tradeNumber}
                           </span>
                         </div>
-                        {/* Cumulative PnL */}
+                        {/* Total Equity */}
                         <p
                           className={`text-sm font-bold ${
                             data.cumulativePnL >= 0
@@ -190,7 +182,7 @@ export default function EquityCurveCard({ tradesData = [] }) {
                               : "text-danger"
                           }`}
                         >
-                          Cumulative: ${data.cumulativePnL}
+                          Total Equity: ${data.cumulativePnL}
                         </p>
                         {/* Trade PnL */}
                         <p

@@ -1,8 +1,43 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Parses the date format used in sample trades (e.g., "6/06/25, 2:03 AM")
+ * and returns a valid Date object
+ */
+export function parseTradeDate(dateString: string): Date {
+  if (!dateString) return new Date()
+
+  // Handle the format "6/06/25, 2:03 AM"
+  const match = dateString.match(/(\d+)\/(\d+)\/(\d+),\s*(\d+):(\d+)\s*(AM|PM)/)
+  if (match) {
+    const [, month, day, year, hour, minute, ampm] = match
+    const fullYear = parseInt(year) + 2000 // Convert 25 to 2025
+    const monthIndex = parseInt(month) - 1 // Month is 0-indexed
+    const dayNum = parseInt(day)
+    let hourNum = parseInt(hour)
+
+    // Convert to 24-hour format
+    if (ampm === "PM" && hourNum !== 12) {
+      hourNum += 12
+    } else if (ampm === "AM" && hourNum === 12) {
+      hourNum = 0
+    }
+
+    return new Date(fullYear, monthIndex, dayNum, hourNum, parseInt(minute))
+  }
+
+  // Fallback to regular Date parsing
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) {
+    console.warn(`Invalid date format: ${dateString}, using current date`)
+    return new Date()
+  }
+  return date
 }
 
 // Trading Analytics Utility Functions
@@ -137,7 +172,7 @@ export const calculateDrawdownMetrics = (
   // Calculate daily/max drawdown from trades
   extractedTrades.forEach((trade) => {
     const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
-    const date = new Date(trade.dateStart).toISOString().split("T")[0]
+    const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
     runningPnL += realized
     equity = initialCapital + runningPnL
     if (equity < minEquity) minEquity = equity
@@ -204,7 +239,7 @@ export function getPreviousEOD(trades: any[], initialCapital: number): number {
   const dayMap: Record<string, number> = {}
   trades.forEach((trade) => {
     const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
-    const date = new Date(trade.dateStart).toISOString().split("T")[0]
+    const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
     if (!dayMap[date]) dayMap[date] = 0
     dayMap[date] += realized
   })

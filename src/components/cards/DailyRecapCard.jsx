@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Clock, History } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, parseTradeDate } from "@/lib/utils"
 
 const DailyRecap = ({ extractedTrades = [], className }) => {
   const [dailyData, setDailyData] = useState([])
@@ -26,7 +26,7 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
   const calculateDailyAnalysis = (trades) => {
     const dailyGroups = {}
     trades.forEach((trade) => {
-      const date = new Date(trade.dateStart)
+      const date = parseTradeDate(trade.dateStart)
       const dateKey = date.toISOString().split("T")[0]
       if (!dailyGroups[dateKey]) {
         dailyGroups[dateKey] = {
