@@ -36,6 +36,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "TRADE_DATA_UPDATE") {
     const { trades, forceRefresh, url } = message.data
 
+    // Validate trades data
+    if (!Array.isArray(trades)) {
+      console.error("Invalid trades data:", trades)
+      sendResponse({ success: false, error: "Invalid trades data" })
+      return
+    }
+
     if (forceRefresh) {
       // Replace all data
       chrome.storage.local.set(
@@ -135,6 +142,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.storage.local.set({ fxReplayPresets: updatedPresets }, () => {
         sendResponse({ success: true })
       })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "CLEAR_PRESETS") {
+    chrome.storage.local.set({ fxReplayPresets: [] }, () => {
+      sendResponse({ success: true })
     })
     return true // Keep the message channel open for async response
   }

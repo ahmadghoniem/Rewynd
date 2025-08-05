@@ -7,7 +7,7 @@ const DailyRecapSection = ({ className }) => {
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
   return (
     <div className={cn("w-full", className)}>
-      <DailyRecap extractedTrades={extractedTrades} />
+      <DailyRecap extractedTrades={extractedTrades} className="w-full" />
     </div>
   )
 }

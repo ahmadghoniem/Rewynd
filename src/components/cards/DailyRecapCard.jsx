@@ -1,27 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+
 import { Clock, History } from "lucide-react"
 import { cn, parseTradeDate } from "@/lib/utils"
 
 const DailyRecap = ({ extractedTrades = [], className }) => {
   const [dailyData, setDailyData] = useState([])
-  const [currentPage, setCurrentPage] = useState(0)
+
   const scrollRef = useRef(null)
 
   useEffect(() => {
     if (extractedTrades && extractedTrades.length > 0) {
       calculateDailyAnalysis(extractedTrades)
-      setCurrentPage(0) // Reset carousel on new data
     }
   }, [extractedTrades])
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      const scrollTo = currentPage * scrollRef.current.offsetWidth
-      scrollRef.current.scrollTo({ left: scrollTo, behavior: "smooth" })
-    }
-  }, [currentPage, dailyData.length])
 
   const calculateDailyAnalysis = (trades) => {
     const dailyGroups = {}
@@ -69,50 +61,25 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
 
   const handlePointerDown = (e) => {
     isDragging.current = true
-    startX.current = e.pageX || e.touches?.[0]?.pageX
-    scrollLeft.current = scrollRef.current.scrollLeft
+    startX.current = e.pageY || e.touches?.[0]?.pageY
+    scrollLeft.current = scrollRef.current.scrollTop
     scrollRef.current.style.cursor = "grabbing"
   }
   const handlePointerMove = (e) => {
     if (!isDragging.current) return
-    const x = e.pageX || e.touches?.[0]?.pageX
-    const walk = (x - startX.current) * -1
-    scrollRef.current.scrollLeft = scrollLeft.current + walk
+    const y = e.pageY || e.touches?.[0]?.pageY
+    const walk = (y - startX.current) * -1
+    scrollRef.current.scrollTop = scrollLeft.current + walk
   }
   const handlePointerUp = () => {
     isDragging.current = false
     scrollRef.current.style.cursor = ""
   }
 
-  const totalPages = Math.ceil(dailyData.length / 2)
-
   // Use a ref callback to always get the latest scrollRef
   const setScrollRef = useCallback((node) => {
     scrollRef.current = node
   }, [])
-
-  // Debounced onScroll handler
-  const scrollTimeout = useRef()
-  const handleScroll = () => {
-    if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
-    scrollTimeout.current = setTimeout(() => {
-      if (scrollRef.current) {
-        const page = Math.round(
-          scrollRef.current.scrollLeft / scrollRef.current.offsetWidth
-        )
-        if (page !== currentPage) setCurrentPage(page)
-      }
-    }, 50)
-  }
-
-  // Scroll to a page
-  const scrollToPage = (page) => {
-    setCurrentPage(page)
-    if (scrollRef.current) {
-      const scrollTo = page * scrollRef.current.offsetWidth
-      scrollRef.current.scrollTo({ left: scrollTo, behavior: "smooth" })
-    }
-  }
 
   return (
     <Card className={cn("w-full col-span-2", className)}>
@@ -128,16 +95,15 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
                   ref={setScrollRef}
                   style={{
                     display: "flex",
-                    flexDirection: "row",
+                    flexDirection: "column",
                     gap: "16px",
-                    overflowX: "auto",
-                    overflowY: "hidden",
+                    overflowX: "hidden",
+                    overflowY: "auto",
                     width: "100%",
-                    minHeight: 120,
-                    scrollSnapType: "x mandatory",
+                    maxHeight: "400px",
+                    scrollSnapType: "y mandatory",
                     WebkitOverflowScrolling: "touch"
                   }}
-                  onScroll={handleScroll}
                   onMouseDown={handlePointerDown}
                   onMouseMove={handlePointerMove}
                   onMouseUp={handlePointerUp}
@@ -154,8 +120,7 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
                         "flex flex-col justify-between flex-1 min-w-0 rounded-lg p-4 bg-muted text-muted-foreground shadow-sm transition-all duration-200"
                       }
                       style={{
-                        minWidth: "calc(50% - 8px)",
-                        maxWidth: "calc(50% - 8px)",
+                        width: "100%",
                         minHeight: 120,
                         scrollSnapAlign: "start"
                       }}
@@ -219,49 +184,6 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
                       </div>
                     </div>
                   ))}
-                </div>
-                {/* Pagination controls (Trade History style) */}
-                <div className="flex justify-center items-center gap-2 mt-4">
-                  {currentPage > 0 ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                    >
-                      Prev
-                    </Button>
-                  ) : (
-                    <span
-                      style={{ width: 64, display: "inline-block" }}
-                      aria-hidden="true"
-                    ></span>
-                  )}
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <Button
-                      key={i}
-                      size="sm"
-                      variant={currentPage === i ? "default" : "outline"}
-                      onClick={() => scrollToPage(i)}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                  {currentPage < totalPages - 1 && totalPages > 0 ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
-                      }
-                    >
-                      Next
-                    </Button>
-                  ) : (
-                    <span
-                      style={{ width: 64, display: "inline-block" }}
-                      aria-hidden="true"
-                    ></span>
-                  )}
                 </div>
               </>
             ) : (

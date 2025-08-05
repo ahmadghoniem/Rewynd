@@ -76,7 +76,29 @@ export default function EquityCurveCard({
     }
 
   const maxPnL = Math.max(...chartData.map((d) => d.cumulativePnL))
+  const minPnL = Math.min(...chartData.map((d) => d.cumulativePnL))
   const hwmIndex = chartData.findIndex((d) => d.cumulativePnL === maxPnL)
+
+  // Calculate smart y-axis domain for better visibility
+  const calculateYAxisDomain = () => {
+    if (chartData.length === 0) return [0, "auto"]
+
+    const range = maxPnL - minPnL
+    const center = (maxPnL + minPnL) / 2
+
+    // If the range is very small (less than 5% of the center value), zoom in
+    if (range < Math.abs(center) * 0.05) {
+      // Add padding of 20% of the range, minimum $50 padding
+      const padding = Math.max(range * 0.2, 50)
+      return [minPnL - padding, maxPnL + padding]
+    }
+
+    // For normal ranges, add 10% padding
+    const padding = range * 0.1
+    return [minPnL - padding, maxPnL + padding]
+  }
+
+  const yAxisDomain = calculateYAxisDomain()
   // Custom dot renderer to help highlight HWM
   const renderDot = ({ cx, cy, index }) => {
     if (index === hwmIndex) {
@@ -128,8 +150,8 @@ export default function EquityCurveCard({
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tickFormatter={(value) => `$${value}`}
-                domain={[0, "auto"]}
+                tickFormatter={(value) => `$${value.toFixed(0)}`}
+                domain={yAxisDomain}
               />
               <XAxis
                 dataKey="date"

@@ -176,7 +176,7 @@ const ProfitTargetsCard = (props) => {
   return (
     <Card className={cn("gap-2 text-xs font-medium py-2", props.className)}>
       <CardHeader className="flex justify-between items-center px-2 pb-0">
-        <span className="uppercase tracking-wide text-xs font-semibold">
+        <span className="capitalize tracking-wide text-xs font-semibold">
           Profit Targets
         </span>
         <Tooltip>
@@ -195,7 +195,7 @@ const ProfitTargetsCard = (props) => {
           className="flex items-end gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={handleToggleDisplay}
         >
-          <span className="text-2xl font-semibold">
+          <span className="text-xl font-semibold">
             {showAmounts
               ? formatCurrency(currentPhaseData.actualProfitAmount)
               : `${currentPhaseData.actualProfitAchieved.toFixed(1)}%`}

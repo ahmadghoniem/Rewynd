@@ -373,6 +373,103 @@ const useAppStore = create((set, get) => {
       get().loadChallengeConfig()
       get().loadAccountData()
       get().loadTradeData()
+    },
+
+    // Export all data for backup/transfer
+    exportAllData: async () => {
+      try {
+        const state = get()
+
+        // Load fresh data from storage to ensure we have the latest
+        const [challengeConfig, accountData, tradeData, presets] =
+          await Promise.all([
+            state.loadChallengeConfig(),
+            state.loadAccountData(),
+            state.loadTradeData(),
+            state.loadPresets()
+          ])
+
+        return {
+          exportMetadata: {
+            exportDate: new Date().toISOString(),
+            version: "1.0",
+            source: "FxReplayFunded"
+          },
+          challengeConfig: challengeConfig || state.config,
+          accountData: accountData || state.accountData,
+          tradeData: state.extractedTrades || [],
+          presets: presets || []
+        }
+      } catch (error) {
+        console.error("Error exporting data:", error)
+        throw error
+      }
+    },
+
+    // Import all data and replace current data
+    importAllData: async (importData) => {
+      try {
+        const state = get()
+
+        // Validate import data structure
+        if (
+          !importData.exportMetadata ||
+          !importData.challengeConfig ||
+          !importData.accountData ||
+          !Array.isArray(importData.tradeData) ||
+          !Array.isArray(importData.presets)
+        ) {
+          throw new Error("Invalid import data structure")
+        }
+
+        // Import challenge config
+        if (importData.challengeConfig) {
+          await state.saveChallengeConfig(importData.challengeConfig)
+        }
+
+        // Import account data
+        if (importData.accountData) {
+          await state.saveAccountData(importData.accountData)
+        }
+
+        // Import trade data
+        if (importData.tradeData && Array.isArray(importData.tradeData)) {
+          set({ extractedTrades: importData.tradeData })
+          await state.saveTradeData({
+            trades: importData.tradeData,
+            forceRefresh: true,
+            url: window.location.href
+          })
+        }
+
+        // Import presets - replace all existing presets
+        if (importData.presets && Array.isArray(importData.presets)) {
+          // First clear existing presets, then add imported ones
+          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
+            await new Promise((resolve) => {
+              chrome.runtime.sendMessage({ type: "CLEAR_PRESETS" }, () =>
+                resolve()
+              )
+            })
+
+            // Add each preset
+            for (const preset of importData.presets) {
+              await new Promise((resolve) => {
+                chrome.runtime.sendMessage(
+                  { type: "SAVE_PRESET", data: preset },
+                  () => resolve()
+                )
+              })
+            }
+          }
+        }
+
+        console.log("Data import completed successfully")
+        return true
+      } catch (error) {
+        console.error("Error importing data:", error)
+        return false
+      }
     }
   }
 })

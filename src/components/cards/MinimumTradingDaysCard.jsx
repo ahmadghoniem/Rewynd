@@ -36,7 +36,7 @@ const MinimumTradingDaysCard = (props) => {
   return (
     <Card className={cn("gap-2 text-xs font-medium py-2", props.className)}>
       <CardHeader className="flex justify-between items-center px-2 pb-0">
-        <span className="uppercase tracking-wide text-xs font-semibold">
+        <span className="capitalize tracking-wide text-xs font-semibold">
           Minimum Trading Days
         </span>
         <Tooltip>
@@ -53,7 +53,7 @@ const MinimumTradingDaysCard = (props) => {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex items-end gap-2">
-          <span className="text-2xl font-semibold">
+          <span className="text-xl font-semibold">
             {typeof tradingDays === "number" && !isNaN(tradingDays)
               ? tradingDays
               : "--"}

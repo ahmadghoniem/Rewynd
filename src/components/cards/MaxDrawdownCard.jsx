@@ -50,7 +50,7 @@ const MaxDrawdownCard = ({ className }) => {
   return (
     <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
       <CardHeader className="flex justify-between items-center px-2 pb-0">
-        <span className="uppercase tracking-wide text-xs font-semibold">
+        <span className="capitalize tracking-wide text-xs font-semibold">
           Max {getDrawdownTypeLabel(maxDrawdownType)} Loss
         </span>
         <Tooltip>
@@ -69,7 +69,7 @@ const MaxDrawdownCard = ({ className }) => {
           className="flex items-end gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => setShowAmounts(!showAmounts)}
         >
-          <span className="text-2xl font-semibold">
+          <span className="text-xl font-semibold">
             {showAmounts
               ? formatCurrency(maxDrawdownAmount)
               : `${maxDrawdownUsed.toFixed(2)}%`}
