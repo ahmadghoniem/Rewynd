@@ -1,24 +1,8 @@
 "use client"
 
-import { TrendingUp } from "lucide-react"
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-  Area,
-  AreaChart
-} from "recharts"
-import React, { useState } from "react"
+import { CartesianGrid, XAxis, YAxis, Area, AreaChart } from "recharts"
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { parseTradeDate } from "@/lib/utils"
 
@@ -165,14 +149,22 @@ export default function EquityCurveCard({
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     const data = payload[0].payload
+                    const isHwm = data.cumulativePnL === maxPnL
                     return (
-                      <div className="bg-muted rounded-lg p-3 shadow-lg space-y-1 min-w-[180px]">
-                        {/* Header row: Label + badge */}
+                      <div className="bg-muted rounded-lg p-3 shadow-lg space-y-1 min-w-48">
+                        {/* Header row: Label + badges */}
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-medium">{label}</p>
-                          <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                            #{data.tradeNumber}
-                          </span>
+                          <div className="flex gap-1">
+                            {isHwm && (
+                              <span className="text-xs font-semibold bg-marker-hwm text-primary-foreground px-2 py-0.5 rounded-full">
+                                HWM
+                              </span>
+                            )}
+                            <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                              #{data.tradeNumber}
+                            </span>
+                          </div>
                         </div>
                         {/* Total Equity */}
                         <p

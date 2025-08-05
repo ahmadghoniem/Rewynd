@@ -46,6 +46,7 @@
   --color-accent-danger: var(--accent-danger);
   --color-accent-danger-foreground: var(--accent-danger-foreground);
   --color-divider: var(--divider);
+  --color-marker-hwm: var(--marker-hwm);
 }
 
 :root {
@@ -86,7 +87,7 @@
   --popover-foreground: #1e293b; /* Popover text: dark blue-gray */
 
   /* Borders and rings */
-  --border: #e2e8f0; /* Border color: light gray */
+  --border: #f1f5f9; /* Border color: very subtle light gray that matches secondary background */
   --ring: #a78bfa; /* Focus ring: same violet as primary */
 
   /* Divider color */

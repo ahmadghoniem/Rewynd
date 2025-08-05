@@ -8,22 +8,42 @@ import {
   TooltipTrigger,
   TooltipContent
 } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
-import { formatCurrency } from "@/lib/utils"
+import { cn, calculateDailyDrawdownMetrics, formatCurrency } from "@/lib/utils"
+import useAppStore from "@/store/useAppStore"
 
-const DailyDrawdownCard = ({
-  drawdownProgressPercent,
-  maxDailyDrawdownPercent,
-  equityLimit,
-  className
-}) => {
+const DailyDrawdownCard = ({ className }) => {
   const [showAmounts, setShowAmounts] = useState(false)
+  const config = useAppStore((state) => state.config) || {}
+  const accountData = useAppStore((state) => state.accountData) || {
+    capital: 0,
+    realizedPnL: 0,
+    balance: 0
+  }
+  const extractedTrades = useAppStore((state) => state.extractedTrades) || []
 
-  // Calculate dollar amounts
-  const dailyDrawdownAmount =
-    (drawdownProgressPercent / 100) * (equityLimit || 0)
-  const maxDailyDrawdownAmount =
-    (maxDailyDrawdownPercent / 100) * (equityLimit || 0)
+  const dailyDrawdown = config.dailyDrawdown ?? 2
+  const initialCapital = accountData.capital || 0
+
+  // Calculate metrics directly (matching MaxDrawdownCard pattern)
+  const {
+    dailyDrawdownUsed = 0,
+    dailyDrawdownProgress = 0,
+    dailyDrawdownAmount = 0,
+    dailyDrawdownTargetAmount = 0,
+    currentDayStartBalance,
+    dailyLossEquityLimit
+  } = initialCapital && dailyDrawdown && extractedTrades.length
+    ? calculateDailyDrawdownMetrics(
+        extractedTrades,
+        initialCapital,
+        dailyDrawdown
+      )
+    : {}
+
+  // Don't render if no capital or invalid configuration
+  if (!initialCapital || !dailyDrawdown) {
+    return null
+  }
 
   const handleToggleDisplay = () => {
     setShowAmounts(!showAmounts)
@@ -53,47 +73,22 @@ const DailyDrawdownCard = ({
         >
           <span className="text-2xl font-semibold">
             {showAmounts
-              ? typeof dailyDrawdownAmount === "number" &&
-                !isNaN(dailyDrawdownAmount)
-                ? formatCurrency(dailyDrawdownAmount)
-                : "--"
-              : typeof drawdownProgressPercent === "number" &&
-                !isNaN(drawdownProgressPercent)
-              ? drawdownProgressPercent.toFixed(2) + "%"
-              : "--"}
+              ? formatCurrency(dailyDrawdownAmount)
+              : `${dailyDrawdownUsed.toFixed(2)}%`}
           </span>
           <span className="text-base text-muted-foreground">
             /{" "}
             {showAmounts
-              ? typeof maxDailyDrawdownAmount === "number" &&
-                !isNaN(maxDailyDrawdownAmount)
-                ? formatCurrency(maxDailyDrawdownAmount)
-                : "--"
-              : typeof maxDailyDrawdownPercent === "number" &&
-                !isNaN(maxDailyDrawdownPercent)
-              ? maxDailyDrawdownPercent + "%"
-              : "--"}
+              ? formatCurrency(dailyDrawdownTargetAmount)
+              : `${dailyDrawdown}%`}
           </span>
         </div>
         <div className="text-xs text-muted-foreground mb-2">
-          Equity limit:{" "}
-          {showAmounts
-            ? "--"
-            : "$" +
-              (typeof equityLimit === "number" && !isNaN(equityLimit)
-                ? equityLimit.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })
-                : "--")}
+          Equity limit: {formatCurrency(dailyLossEquityLimit)} / SOD:{" "}
+          {formatCurrency(currentDayStartBalance)}
         </div>
         <ProgressBar
-          progress={
-            typeof drawdownProgressPercent === "number" &&
-            !isNaN(drawdownProgressPercent)
-              ? Math.max(0, Math.min(1, drawdownProgressPercent / 100))
-              : 0
-          }
+          progress={Math.max(0, Math.min(1, dailyDrawdownProgress / 100))}
           height={12}
           filledColor="bg-destructive"
           emptyColor="bg-accent"

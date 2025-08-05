@@ -210,48 +210,97 @@ export const calculateDailyDrawdownMetrics = (
   dailyDrawdown: number
 ) => {
   // Handle edge cases
-  if (!initialCapital || !dailyDrawdown) {
+  if (!initialCapital || !dailyDrawdown || !extractedTrades.length) {
     return {
       dailyDrawdownUsed: 0,
       dailyDrawdownProgress: 0,
+      dailyDrawdownAmount: 0,
+      dailyDrawdownTargetAmount: 0,
+      eodBalance: initialCapital,
+      dailyLossEquityLimit: initialCapital,
       dailyPnLMap: {}
     }
   }
 
-  let dailyDrawdownUsed = 0
   let dailyPnLMap: Record<string, number> = {}
-  let maxLossInADay = 0
 
-  // Calculate daily drawdown from trades
-  extractedTrades.forEach((trade) => {
+  // Sort trades by date to process chronologically
+  const sortedTrades = extractedTrades.sort((a, b) => {
+    const dateA = parseTradeDate(a.dateStart)
+    const dateB = parseTradeDate(b.dateStart)
+    return dateA.getTime() - dateB.getTime()
+  })
+
+  // Group trades by date and calculate daily P&L
+  sortedTrades.forEach((trade) => {
     try {
       const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
       const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
 
-      // Daily drawdown
-      if (!dailyPnLMap[date]) dailyPnLMap[date] = 0
+      if (!dailyPnLMap[date]) {
+        dailyPnLMap[date] = 0
+      }
       dailyPnLMap[date] += realized
     } catch (error) {
       console.warn("Error processing trade:", trade, error)
     }
   })
 
-  // Daily drawdown used (as % of the worst day)
-  Object.values(dailyPnLMap).forEach((dayPnL) => {
-    if (dayPnL < maxLossInADay) maxLossInADay = dayPnL
-  })
-  dailyDrawdownUsed =
-    initialCapital > 0 ? (Math.abs(maxLossInADay) / initialCapital) * 100 : 0
+  // Find the latest/current trading date
+  const sortedDates = Object.keys(dailyPnLMap).sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime()
+  )
 
-  // Progress for bars - ensure they don't exceed 100%
+  if (sortedDates.length === 0) {
+    return {
+      dailyDrawdownUsed: 0,
+      dailyDrawdownProgress: 0,
+      dailyDrawdownAmount: 0,
+      dailyDrawdownTargetAmount: 0,
+      eodBalance: initialCapital,
+      dailyLossEquityLimit: initialCapital,
+      dailyPnLMap: {}
+    }
+  }
+
+  const currentDate = sortedDates[sortedDates.length - 1] // Latest trading date
+
+  // Calculate balance at START of current day (previous day's EOD balance)
+  let currentDayStartBalance = initialCapital
+
+  // Add up all P&L from days BEFORE current day
+  sortedDates.forEach((date) => {
+    if (date < currentDate) {
+      currentDayStartBalance += dailyPnLMap[date]
+    }
+  })
+
+  // Get current day's P&L
+  const currentDayPnL = dailyPnLMap[currentDate] || 0
+  const currentDayLoss = currentDayPnL < 0 ? Math.abs(currentDayPnL) : 0
+
+  // Calculate current day's drawdown metrics
+  const dailyDrawdownTargetAmount =
+    (dailyDrawdown / 100) * currentDayStartBalance
+  const dailyDrawdownAmount = currentDayLoss
+  const dailyDrawdownUsed =
+    currentDayLoss > 0 ? (currentDayLoss / currentDayStartBalance) * 100 : 0
   const dailyDrawdownProgress = Math.min(
     100,
     Math.max(0, (dailyDrawdownUsed / dailyDrawdown) * 100)
   )
 
+  // Calculate equity limits and balances
+  const dailyLossEquityLimit =
+    currentDayStartBalance - dailyDrawdownTargetAmount
+
   return {
     dailyDrawdownUsed,
     dailyDrawdownProgress,
+    dailyDrawdownAmount,
+    dailyDrawdownTargetAmount,
+    currentDayStartBalance,
+    dailyLossEquityLimit,
     dailyPnLMap
   }
 }
