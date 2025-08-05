@@ -20,7 +20,7 @@ import {
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog"
-import "../hideNumberArrows.css"
+
 import useAppStore from "../store/useAppStore"
 import PresetSaver from "./PresetSaver"
 
@@ -67,7 +67,7 @@ const NumberInput = ({
             )
             onChange(newValue)
           }}
-          className="text-center pr-8"
+          className="text-center pr-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           min={min}
           max={max}
           step={step}

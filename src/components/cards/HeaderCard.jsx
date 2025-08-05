@@ -11,79 +11,57 @@ const HeaderCard = () => {
   const setExtractedTrades = useAppStore((state) => state.setExtractedTrades)
   const setAccountData = useAppStore((state) => state.setAccountData)
   const loadAccountData = useAppStore((state) => state.loadAccountData)
+  const loadTradeData = useAppStore((state) => state.loadTradeData)
 
   // Handler for refreshing all data with automatic tab switching
   const handleRefreshData = async () => {
-    if (window.chrome && chrome.tabs) {
-      // Get current active tab to return to later
-      chrome.tabs.query(
-        { active: true, currentWindow: true },
-        async (currentTabs) => {
-          const currentTab = currentTabs[0]
-
-          // Find any tab that contains the FxReplay chart URL pattern
-          chrome.tabs.query(
-            { url: "https://app.fxreplay.com/en-US/auth/chart/*" },
-            async function (tabs) {
-              if (tabs && tabs.length > 0) {
-                const fxReplayTab = tabs[0] // Use the first FxReplay tab found
-
-                try {
-                  // Switch to FxReplay tab for faster extraction
-                  await chrome.tabs.update(fxReplayTab.id, { active: true })
-
-                  // Trigger extraction of all data (account + trades)
-                  chrome.tabs.sendMessage(
-                    fxReplayTab.id,
-                    {
-                      type: "EXTRACT_TRADES",
-                      forceRefresh: true
-                    },
-                    async (response) => {
-                      if (response && response.success) {
-                        // Refresh both account and trade data from storage
-                        await loadAccountData()
-                        await loadTradeData()
-
-                        // Switch back to the original tab
-                        if (currentTab && currentTab.id !== fxReplayTab.id) {
-                          await chrome.tabs.update(currentTab.id, {
-                            active: true
-                          })
-                        }
-
-                        alert("Data refreshed successfully!")
-                      } else {
-                        // Switch back to the original tab even if extraction failed
-                        if (currentTab && currentTab.id !== fxReplayTab.id) {
-                          await chrome.tabs.update(currentTab.id, {
-                            active: true
-                          })
-                        }
-
-                        alert(
-                          "Failed to refresh data. Make sure you have a FxReplay tab open."
-                        )
-                      }
-                    }
-                  )
-                } catch (error) {
-                  console.error("Error during tab switching:", error)
-                  // Switch back to the original tab on error
-                  if (currentTab && currentTab.id !== fxReplayTab.id) {
-                    await chrome.tabs.update(currentTab.id, { active: true })
-                  }
-                  alert("Error during data refresh. Please try again.")
-                }
-              } else {
-                alert("Please open a FxReplay tab to refresh data.")
-              }
-            }
-          )
-        }
-      )
-    } else {
+    if (!window.chrome?.tabs) {
       alert("Chrome extension messaging not available.")
+      return
+    }
+
+    try {
+      // Get current tab and FxReplay tab
+      // eslint-disable-next-line no-undef
+      const [currentTab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+      })
+      // eslint-disable-next-line no-undef
+      const [fxReplayTab] = await chrome.tabs.query({
+        url: "https://app.fxreplay.com/en-US/auth/chart/*"
+      })
+
+      if (!fxReplayTab) {
+        alert("Please open a FxReplay tab to refresh data.")
+        return
+      }
+
+      // Switch to FxReplay tab and extract data
+      // eslint-disable-next-line no-undef
+      await chrome.tabs.update(fxReplayTab.id, { active: true })
+
+      // eslint-disable-next-line no-undef
+      const response = await chrome.tabs.sendMessage(fxReplayTab.id, {
+        type: "EXTRACT_TRADES",
+        forceRefresh: true
+      })
+
+      if (response?.success) {
+        await Promise.all([loadAccountData(), loadTradeData()])
+        alert("Data refreshed successfully!")
+      } else {
+        alert("Failed to refresh data. Make sure you have a FxReplay tab open.")
+      }
+
+      // Switch back to original tab
+      if (currentTab?.id !== fxReplayTab.id) {
+        // eslint-disable-next-line no-undef
+        await chrome.tabs.update(currentTab.id, { active: true })
+      }
+    } catch (error) {
+      console.error("Error during data refresh:", error)
+      alert("Error during data refresh. Please try again.")
     }
   }
 

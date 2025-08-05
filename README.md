@@ -1,12 +1,32 @@
-# React + Vite
+# FxReplay Funded - Chrome Extension
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Chrome extension for analyzing trading performance from FxReplay platform.
 
-Currently, two official plugins are available:
+## Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```
+src/
+├── extension/           # Chrome extension files
+│   ├── background.js   # Background service worker
+│   ├── content.js      # Content script for data extraction
+│   ├── utils.js        # Utility functions
+│   ├── build-extension.js # Build script for extension files
+│   └── README.md       # Extension documentation
+├── components/          # React components
+├── store/              # State management (Zustand)
+├── lib/                # Shared utilities
+└── ...                 # Other React app files
+```
 
-## Expanding the ESLint configuration
+## Development
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **React App**: Standard Vite + React setup
+- **Chrome Extension**: Files in `src/extension/` are built separately
+- **Build Process**: Uses `src/extension/build-extension.js` to copy extension files to `dist/`
+
+## Features
+
+- Real-time trade data extraction from FxReplay
+- Performance analytics and visualization
+- Challenge configuration management
+- Dark/light theme support
