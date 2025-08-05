@@ -140,5 +140,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 })
 chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({ url: chrome.runtime.getURL("dist/index.html") })
+  chrome.tabs.create({ url: chrome.runtime.getURL("index.html") })
 })

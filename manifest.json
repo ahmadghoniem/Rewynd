@@ -4,20 +4,20 @@
   "version": "1.0",
 
   "background": {
-    "service_worker": "src/extension/background.js"
+    "service_worker": "background.js"
   },
 
   "content_scripts": [
     {
       "matches": ["https://*.fxreplay.com/*"],
-      "js": ["src/extension/utils.js", "src/extension/content.js"]
+      "js": ["utils.js", "content.js"]
     }
   ],
   "action": {},
   "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {
-      "resources": ["dist/index.html", "dist/*"],
+      "resources": ["index.html", "*"],
       "matches": ["<all_urls>"]
     }
   ]
