@@ -115,11 +115,15 @@ const ProfitTargetsCard = (props) => {
         accountData.capital > 0
           ? (accountData.realizedPnL / accountData.capital) * 100
           : 0
-      actualProfitAchieved = Math.min(
-        totalProfitPercentage,
-        requiredProfitPercentage
+      // Ensure we don't show negative progress - if in drawdown, show 0
+      actualProfitAchieved = Math.max(
+        0,
+        Math.min(totalProfitPercentage, requiredProfitPercentage)
       )
-      actualProfitAmount = (actualProfitAchieved / 100) * accountData.capital
+      actualProfitAmount = Math.max(
+        0,
+        (actualProfitAchieved / 100) * accountData.capital
+      )
     } else {
       // For phase 2+, show the profit achieved in this specific phase
       const previousPhaseKey = `phase${currentPhase - 1}`
@@ -136,11 +140,14 @@ const ProfitTargetsCard = (props) => {
       } else {
         // Calculate profit achieved in this phase
         const profitInThisPhase = totalProfitPercentage - previousPhaseTarget
-        actualProfitAchieved = Math.min(
-          profitInThisPhase,
-          requiredProfitPercentage
+        actualProfitAchieved = Math.max(
+          0,
+          Math.min(profitInThisPhase, requiredProfitPercentage)
         )
-        actualProfitAmount = (actualProfitAchieved / 100) * accountData.capital
+        actualProfitAmount = Math.max(
+          0,
+          (actualProfitAchieved / 100) * accountData.capital
+        )
       }
     }
 
