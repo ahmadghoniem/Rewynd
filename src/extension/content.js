@@ -356,11 +356,13 @@
         return 1
       }
 
-      // Optimized function to wait for table update using MutationObserver
+      // Optimized function to wait for table update using MutationObserver with retry logic
       async function waitForTableUpdate(
         tableBody,
         oldContent,
-        maxWaitMs = 500 // Reduced from 800ms to 500ms since observer is more efficient
+        maxWaitMs = 500, // Reduced from 800ms to 500ms since observer is more efficient
+        retryCount = 0,
+        maxRetries = 3
       ) {
         if (!tableBody) {
           return false
@@ -401,9 +403,30 @@
           })
 
           // Set timeout as fallback
-          setTimeout(() => {
+          setTimeout(async () => {
             observer.disconnect()
-            resolve(false) // Timeout
+
+            // Retry logic if timeout occurs
+            if (retryCount < maxRetries) {
+              console.log(
+                `🔄 Table update timeout on retry ${
+                  retryCount + 1
+                }/${maxRetries}, retrying...`
+              )
+              // Wait a bit longer before retry
+              await new Promise((resolve) => setTimeout(resolve, 200))
+              const retryResult = await waitForTableUpdate(
+                tableBody,
+                oldContent,
+                maxWaitMs,
+                retryCount + 1,
+                maxRetries
+              )
+              resolve(retryResult)
+            } else {
+              console.warn(`❌ Table update failed after ${maxRetries} retries`)
+              resolve(false) // Final timeout after all retries
+            }
           }, maxWaitMs)
         })
       }
@@ -446,10 +469,14 @@
               // Add delay after navigation to ensure page loads completely
               await new Promise((resolve) => setTimeout(resolve, 50))
 
-              // Wait for table body to change with optimized timeout
+              // Wait for table body to change with optimized timeout and retry logic
               const updated = await waitForTableUpdate(tableBody, oldContent)
               if (!updated) {
-                console.warn(`Table update timeout on page ${page}`)
+                console.warn(
+                  `⚠️ Table update failed on page ${page} after all retries`
+                )
+              } else {
+                console.log(`✅ Table updated successfully on page ${page}`)
               }
             } else {
               // Reduced first page wait from 500ms to 200ms
