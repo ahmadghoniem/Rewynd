@@ -1,10 +1,22 @@
 import { parseTradeDate } from "./utils"
 
+// Helper to clean and parse numbers from strings
+export const cleanNumber = (val) => {
+  if (typeof val === "number") return val
+  if (!val) return 0
+  return parseFloat(val.toString().replace(/[^\d.-]/g, ""))
+}
+
+// Helper to parse PnL values consistently
+const parsePnL = (realized) => {
+  if (!realized) return 0
+  return cleanNumber(realized)
+}
+
 // Format currency with consistent formatting
 export const formatCurrency = (amount) => {
   if (!amount) return "$0.00"
-  const cleanAmount = amount.toString().replace(/[$,]/g, "")
-  const numAmount = parseFloat(cleanAmount)
+  const numAmount = cleanNumber(amount)
   if (isNaN(numAmount)) return amount
 
   return new Intl.NumberFormat("en-US", {
@@ -18,16 +30,15 @@ export const formatCurrency = (amount) => {
 // Format numbers to 2 decimal places
 export const formatNumber = (number) => {
   if (number === null || number === undefined || number === "") return "-"
-  const num = parseFloat(number)
+  const num = cleanNumber(number)
   if (isNaN(num)) return number
   return num.toFixed(2)
 }
 
 // Get PnL color based on realized amount
 export const getPnLColor = (realized) => {
-  if (!realized) return "text-muted-foreground"
-  const cleanAmount = realized.replace(/[$,]/g, "")
-  const amount = parseFloat(cleanAmount)
+  const amount = parsePnL(realized)
+  if (amount === 0) return "text-muted-foreground"
   return amount > 0 ? "text-success" : "text-danger"
 }
 
@@ -39,9 +50,8 @@ export const getSideBadge = (side) => {
 
 // Get PnL badge variant
 export const getPnLBadge = (realized) => {
-  if (!realized) return "secondary"
-  const cleanAmount = realized.replace(/[$,]/g, "")
-  const amount = parseFloat(cleanAmount)
+  const amount = parsePnL(realized)
+  if (amount === 0) return "secondary"
   return amount > 0 ? "default" : "destructive"
 }
 
@@ -63,6 +73,9 @@ export const formatDate = (dateStr) => {
   }
 }
 
+// Helper to pad numbers for date formatting
+const pad = (n) => n.toString().padStart(2, "0")
+
 // Format date range
 export const formatDateRange = (dateStart, dateEnd) => {
   if (!dateStart || !dateEnd) return "-"
@@ -71,7 +84,6 @@ export const formatDateRange = (dateStart, dateEnd) => {
     const end = parseTradeDate(dateEnd)
     if (isNaN(start.getTime()) || isNaN(end.getTime())) return "-"
 
-    const pad = (n) => n.toString().padStart(2, "0")
     const startDate = `${pad(start.getFullYear() % 100)}/${pad(
       start.getMonth() + 1
     )}/${pad(start.getDate())}`
@@ -95,8 +107,8 @@ export const formatDateRange = (dateStart, dateEnd) => {
 export const calculatePercentage = (entry, target, side = "buy") => {
   if (!entry || !target) return null
 
-  const entryNum = parseFloat(entry)
-  const targetNum = parseFloat(target)
+  const entryNum = cleanNumber(entry)
+  const targetNum = cleanNumber(target)
 
   if (isNaN(entryNum) || isNaN(targetNum)) return null
 
@@ -109,14 +121,28 @@ export const calculatePercentage = (entry, target, side = "buy") => {
   return percentage.toFixed(2)
 }
 
-// Helper to clean and parse numbers from strings
-export const cleanNumber = (val) => {
-  if (typeof val === "number") return val
-  if (!val) return 0
-  return parseFloat(val.toString().replace(/[^\d.-]/g, ""))
+// Calculate historical account balance for a specific trade
+export const calculateHistoricalBalance = (trade, currentBalance) => {
+  if (!trade.realized || !currentBalance) {
+    return currentBalance
+  }
+
+  try {
+    const realizedAmount = parsePnL(trade.realized)
+    if (isNaN(realizedAmount)) {
+      return currentBalance
+    }
+
+    // Historical balance = Current balance - this trade's realized PnL
+    const historicalBalance = currentBalance - realizedAmount
+    return Math.max(historicalBalance, 0) // Ensure balance doesn't go negative
+  } catch (error) {
+    console.error("Error calculating historical balance:", error)
+    return currentBalance
+  }
 }
 
-// Calculate risk percentage based on entry, sl, lot size, and current account balance
+// Calculate risk percentage based on entry, sl, lot size, and historical account balance
 export const calculateRiskPercentage = (trade, accountBalance) => {
   if (!trade.size || !trade.entry || !trade.initialSL || !accountBalance)
     return null
@@ -126,6 +152,9 @@ export const calculateRiskPercentage = (trade, accountBalance) => {
   const slNum = cleanNumber(trade.initialSL)
   if (isNaN(sizeNum) || isNaN(entryNum) || isNaN(slNum)) return null
 
+  // Calculate historical balance for this trade
+  const historicalBalance = calculateHistoricalBalance(trade, accountBalance)
+
   // Risk per trade = (Entry − Stop Loss) × Lot Size
   let riskPerTrade = 0
   if (trade.side?.toLowerCase() === "sell") {
@@ -134,22 +163,61 @@ export const calculateRiskPercentage = (trade, accountBalance) => {
     riskPerTrade = (entryNum - slNum) * sizeNum
   }
   if (riskPerTrade < 0) riskPerTrade = Math.abs(riskPerTrade)
-  // Risk % = (Risk per trade ÷ Current Balance) × 100
-  const riskPercentage = (riskPerTrade / accountBalance) * 100
+
+  // Risk % = (Risk per trade ÷ Historical Balance) × 100
+  const riskPercentage = (riskPerTrade / historicalBalance) * 100
   return {
     percent: riskPercentage.toFixed(2),
-    amount: riskPerTrade
+    amount: riskPerTrade,
+    historicalBalance: historicalBalance
   }
 }
 
-// Get risk level color based on percentage
-export const getRiskLevelColor = (riskPercentage) => {
-  const risk = parseFloat(riskPercentage)
-  if (isNaN(risk)) return "text-muted-foreground"
-  if (risk <= 1) return "text-success" // Low risk
-  if (risk <= 2) return "text-warning" // Medium risk
-  if (risk <= 5) return "text-warning" // High risk
-  return "text-danger" // Very high risk
+// Calculate risk percentage based on actual trade history (RR ratio)
+export const calculateRiskPercentageFromHistory = (trade, accountBalance) => {
+  if (!trade.realized || !trade.maxRR || !accountBalance) return null
+
+  const realizedAmount = parsePnL(trade.realized)
+  const maxRR = cleanNumber(trade.maxRR)
+
+  if (
+    isNaN(realizedAmount) ||
+    isNaN(maxRR) ||
+    realizedAmount <= 0 ||
+    maxRR <= 0
+  )
+    return null
+
+  // Calculate historical balance for this trade
+  const historicalBalance = calculateHistoricalBalance(trade, accountBalance)
+
+  // For winning trades, calculate actual risk from RR ratio
+  if (realizedAmount > 0) {
+    // RR = Risk:Reward ratio (e.g., 1:2 means risk $1 to make $2)
+    // So if we made $100 with 1:2 RR, our risk was $50
+    const actualRiskAmount = realizedAmount / maxRR
+
+    // Calculate risk percentage based on historical account balance
+    const riskPercentage = (actualRiskAmount / historicalBalance) * 100
+
+    return {
+      percent: riskPercentage.toFixed(2),
+      amount: actualRiskAmount,
+      method: "historical",
+      historicalBalance: historicalBalance
+    }
+  }
+
+  // For losing trades, use the loss amount as risk
+  const riskAmount = Math.abs(realizedAmount)
+  const riskPercentage = (riskAmount / historicalBalance) * 100
+
+  return {
+    percent: riskPercentage.toFixed(2),
+    amount: riskAmount,
+    method: "loss",
+    historicalBalance: historicalBalance
+  }
 }
 
 // Calculate hold time from trade start and end dates
@@ -182,16 +250,14 @@ export const calculateHoldTime = (trade) => {
 // Pre-process trade data with all calculated values
 export const preprocessTradeData = (tradesData, accountBalance) => {
   return tradesData.map((trade) => {
-    // Parse and clean realized amount once
-    const cleanRealized = trade.realized?.replace(/[$,]/g, "") || "0"
-    const realizedAmount = parseFloat(cleanRealized)
-
     // Parse dates once
     const startDate = parseTradeDate(trade.dateStart)
     const endDate = parseTradeDate(trade.dateEnd)
 
     // Pre-calculate all derived values
-    const riskPercentage = calculateRiskPercentage(trade, accountBalance)
+    const riskPercentage =
+      calculateRiskPercentageFromHistory(trade, accountBalance) ||
+      calculateRiskPercentage(trade, accountBalance)
     const holdTime = calculateHoldTime(trade)
     const formattedDates = {
       start: formatDate(trade.dateStart),
@@ -202,7 +268,6 @@ export const preprocessTradeData = (tradesData, accountBalance) => {
     return {
       ...trade,
       // Cached parsed values
-      realizedAmount,
       startDate,
       endDate,
       // Pre-calculated values

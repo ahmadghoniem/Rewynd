@@ -16,16 +16,16 @@ const useAppStore = create((set, get) => {
       maxDrawdown: 5,
       maxDrawdownType: "static",
       requireProfitableDays: 3,
-      minTradingDays: 5,
-      // Default profit targets for different phase counts
-      defaults: {
-        profitTargets: {
-          1: { phase1: 10 },
-          2: { phase1: 4, phase2: 8 },
-          3: { phase1: 2, phase2: 2, phase3: 2 }
-        }
-      }
+      minTradingDays: 5
     },
+
+    // Default profit targets for different phase counts
+    profitTargetDefaults: {
+      1: { phase1: 10 },
+      2: { phase1: 4, phase2: 8 },
+      3: { phase1: 2, phase2: 2, phase3: 2 }
+    },
+
     setConfig: (config) => set({ config }),
 
     // Challenge config management functions
@@ -37,16 +37,16 @@ const useAppStore = create((set, get) => {
               { type: "GET_CHALLENGE_CONFIG" },
               (response) => {
                 if (response && response.data) {
-                  // console.log(
-                  //   "Loaded challenge config from storage:",
-                  //   response.data
-                  // )
+                  console.log(
+                    "Loaded challenge config from storage:",
+                    response.data
+                  )
                   set({ config: response.data })
                   resolve(response.data)
                 } else {
-                  // console.log(
-                  //   "No challenge config found in storage, using defaults"
-                  // )
+                  console.log(
+                    "No challenge config found in storage, using defaults"
+                  )
                   resolve(null)
                 }
               }
@@ -70,7 +70,7 @@ const useAppStore = create((set, get) => {
               { type: "SET_CHALLENGE_CONFIG", data: config },
               (response) => {
                 if (response && response.success) {
-                  // console.log("Challenge config saved to storage:", config)
+                  console.log("Challenge config saved to storage:", config)
                   set({ config })
                   resolve(true)
                 } else {

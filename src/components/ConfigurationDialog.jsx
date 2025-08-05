@@ -10,7 +10,6 @@ import {
   Calendar,
   Check,
   X,
-  Image,
   Settings
 } from "lucide-react"
 import {
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import "../hideNumberArrows.css"
 import useAppStore from "../store/useAppStore"
+import PresetSaver from "./PresetSaver"
 
 // Common button styles
 const buttonStyles =
@@ -105,20 +105,28 @@ const PhaseSelector = ({ phases, onChange }) => {
   )
 }
 
-const DrawdownTypeSelector = ({ value, onChange }) => (
-  <div className="flex space-x-2 justify-center">
-    {["static", "trailing"].map((type) => (
-      <Button
-        key={type}
-        variant={value === type ? "default" : "outline"}
-        onClick={() => onChange(type)}
-        className="flex-1 min-w-[80px] font-semibold px-0 capitalize"
-      >
-        {type}
-      </Button>
-    ))}
-  </div>
-)
+const DrawdownTypeSelector = ({ value, onChange }) => {
+  const drawdownTypes = [
+    { value: "static", label: "Static" },
+    { value: "trailing", label: "Trailing (Fixed)" },
+    { value: "trailing_scaling", label: "Trailing (Scaling)" }
+  ]
+
+  return (
+    <div className="flex gap-2 justify-center">
+      {drawdownTypes.map((type) => (
+        <Button
+          key={type.value}
+          variant={value === type.value ? "default" : "outline"}
+          onClick={() => onChange(type.value)}
+          className="flex-1 min-w-20 font-semibold px-0 capitalize"
+        >
+          {type.label}
+        </Button>
+      ))}
+    </div>
+  )
+}
 
 const StepIndicator = ({ step, currentStep, title, isCompleted }) => {
   const isActive = currentStep === step
@@ -150,25 +158,19 @@ const StepIndicator = ({ step, currentStep, title, isCompleted }) => {
   )
 }
 
-const ConfigurationDialog = ({ onSave }) => {
+const ConfigurationDialog = () => {
   const [open, setOpen] = useState(false)
   const [currentPhase, setCurrentPhase] = useState(0)
   const [selectedPreset, setSelectedPreset] = useState(null)
   const [presets, setPresets] = useState([])
-
-  // Consolidated preset form state
-  const [presetForm, setPresetForm] = useState({
-    isOpen: false,
-    name: "",
-    image: null,
-    isSaving: false,
-    isSaved: false
-  })
   const config = useAppStore((state) => state.config)
+  const profitTargetDefaults = useAppStore(
+    (state) => state.profitTargetDefaults
+  )
   const setConfig = useAppStore((state) => state.setConfig)
-  const savePreset = useAppStore((state) => state.savePreset)
   const loadPresets = useAppStore((state) => state.loadPresets)
   const deletePreset = useAppStore((state) => state.deletePreset)
+  const saveChallengeConfig = useAppStore((state) => state.saveChallengeConfig)
 
   // Helper function to update a single config field
   const updateConfigField = (field, value) => {
@@ -191,8 +193,7 @@ const ConfigurationDialog = ({ onSave }) => {
 
   const handlePhasesChange = (newPhases) => {
     const defaultProfitTargets =
-      config.defaults.profitTargets[newPhases] ||
-      config.defaults.profitTargets[1]
+      profitTargetDefaults[newPhases] || profitTargetDefaults[1]
     setConfig({
       ...config,
       phases: newPhases,
@@ -231,7 +232,12 @@ const ConfigurationDialog = ({ onSave }) => {
 
   const handleSave = async () => {
     try {
-      await onSave()
+      const success = await saveChallengeConfig(config)
+      if (success) {
+        console.log("Configuration saved successfully")
+      } else {
+        console.error("Failed to save configuration")
+      }
     } catch (error) {
       console.error("Error saving config:", error)
     }
@@ -504,33 +510,6 @@ const ConfigurationDialog = ({ onSave }) => {
     loadPresetsData()
   }, [loadPresets])
 
-  // Reset preset form state when dialog opens or phase changes
-  React.useEffect(() => {
-    if (open) {
-      setPresetForm({
-        isOpen: false,
-        name: "",
-        image: null,
-        isSaving: false,
-        isSaved: false
-      })
-    }
-  }, [open, currentPhase])
-
-  const savePresetToStorage = async (presetData) => {
-    try {
-      const success = await savePreset(presetData)
-      if (success) {
-        // Update local state instead of reloading all presets
-        setPresets((prev) => [...prev, presetData])
-      }
-      return success
-    } catch (error) {
-      handleError("saving preset", error)
-      return false
-    }
-  }
-
   const handleDeletePreset = async (presetName, event) => {
     event.stopPropagation() // Prevent triggering preset selection
     if (window.confirm(`Are you sure you want to delete "${presetName}"?`)) {
@@ -550,15 +529,9 @@ const ConfigurationDialog = ({ onSave }) => {
     }
   }
 
-  const handleImageSelect = (event) => {
-    const file = event.target.files[0]
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setPresetForm((prev) => ({ ...prev, image: e.target.result }))
-      }
-      reader.readAsDataURL(file)
-    }
+  const handlePresetSaved = (presetData) => {
+    // Update local state when a new preset is saved
+    setPresets((prev) => [...prev, presetData])
   }
 
   const steps = [
@@ -616,127 +589,9 @@ const ConfigurationDialog = ({ onSave }) => {
         <DialogFooter className="px-4 pb-6">
           <div className="flex items-center justify-between w-full">
             {/* Save Preset Section - Left Side */}
-            {currentPhase === 3 &&
-              (presetForm.isSaved ? (
-                <Button disabled>Saved</Button>
-              ) : presetForm.isOpen ? (
-                <div className="flex items-center space-x-2">
-                  {/* Icon Selector */}
-                  <div className="flex items-center space-x-0">
-                    <div className="relative">
-                      <div
-                        className="w-9 h-9 rounded-md bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors"
-                        onClick={() =>
-                          document.getElementById("image-picker").click()
-                        }
-                      >
-                        {presetForm.image ? (
-                          <img
-                            src={presetForm.image}
-                            alt="Selected"
-                            className="w-9 h-9 rounded-md object-cover"
-                          />
-                        ) : (
-                          <Target className="h-3 w-3 text-muted-foreground" />
-                        )}
-                      </div>
-                      {selectedImage && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute -top-1 -right-1 h-4 w-4 p-0 hover:text-destructive"
-                          onClick={() =>
-                            setPresetForm((prev) => ({ ...prev, image: null }))
-                          }
-                        >
-                          <X className="h-2 w-2" />
-                        </Button>
-                      )}
-                    </div>
-                    <input
-                      id="image-picker"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      className="hidden"
-                    />
-                  </div>
-
-                  {/* Preset Name Input */}
-                  <Input
-                    placeholder="Preset name..."
-                    value={presetForm.name}
-                    onChange={(e) =>
-                      setPresetForm((prev) => ({
-                        ...prev,
-                        name: e.target.value
-                      }))
-                    }
-                    className="w-44"
-                    disabled={presetForm.isSaving}
-                  />
-
-                  {/* Save/Cancel Buttons */}
-                  <Button
-                    onClick={async () => {
-                      setPresetForm((prev) => ({ ...prev, isSaving: true }))
-                      try {
-                        const presetData = {
-                          name: presetForm.name,
-                          config: config,
-                          image: presetForm.image,
-                          createdAt: new Date().toISOString()
-                        }
-
-                        const success = await savePresetToStorage(presetData)
-
-                        if (success) {
-                          setPresetForm({
-                            isOpen: false,
-                            name: "",
-                            image: null,
-                            isSaving: false,
-                            isSaved: true
-                          })
-                        } else {
-                          console.error("Failed to save preset")
-                        }
-                      } catch (error) {
-                        handleError("saving preset", error)
-                      } finally {
-                        setPresetForm((prev) => ({ ...prev, isSaving: false }))
-                      }
-                    }}
-                    disabled={!presetForm.name.trim() || presetForm.isSaving}
-                  >
-                    {presetForm.isSaving ? "Saving..." : "Save"}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setPresetForm({
-                        isOpen: false,
-                        name: "",
-                        image: null,
-                        isSaving: false,
-                        isSaved: false
-                      })
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setPresetForm((prev) => ({ ...prev, isOpen: true }))
-                  }
-                >
-                  Save as Preset
-                </Button>
-              ))}
+            {currentPhase === 3 && (
+              <PresetSaver config={config} onPresetSaved={handlePresetSaved} />
+            )}
 
             {/* Navigation Buttons - Right Side */}
             <div className="flex items-center space-x-2 ml-auto">

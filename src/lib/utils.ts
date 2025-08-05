@@ -111,25 +111,21 @@ export const calculateIndividualTargetProgress = (
 ) => {
   const progress: Record<string, number> = {}
 
-  // Calculate cumulative progress for each phase
-  let cumulativeTarget = 0
-  let cumulativeProgress = 0
+  // Calculate sequential progress for each phase
+  let remainingPnL = realizedPnL
 
   Object.entries(profitTargets).forEach(([phase, targetPercentage]) => {
-    cumulativeTarget += targetPercentage
-    const phaseTargetAmount = (cumulativeTarget / 100) * capital
-    const phaseProgress = Math.min(100, (realizedPnL / phaseTargetAmount) * 100)
+    const phaseTargetAmount = (targetPercentage / 100) * capital
 
-    // Calculate individual phase progress (difference from previous cumulative)
-    const previousCumulativeProgress = cumulativeProgress
-    cumulativeProgress = phaseProgress
-
-    // Individual phase progress is the difference
-    const individualProgress = Math.max(
-      0,
-      cumulativeProgress - previousCumulativeProgress
-    )
-    progress[phase] = Math.min(100, individualProgress)
+    if (remainingPnL >= phaseTargetAmount) {
+      // Phase is completed
+      progress[phase] = 100
+      remainingPnL -= phaseTargetAmount
+    } else {
+      // Phase is partially completed
+      progress[phase] = Math.max(0, (remainingPnL / phaseTargetAmount) * 100)
+      remainingPnL = 0
+    }
   })
 
   return progress
@@ -155,58 +151,148 @@ export const getStatusColor = (value: number) => {
   return "text-muted-foreground"
 }
 
-export const calculateDrawdownMetrics = (
+export const calculateMaxDrawdownMetrics = (
   extractedTrades: any[],
   initialCapital: number,
+  accountBalance: number,
   maxDrawdown: number,
-  dailyDrawdown: number
+  maxDrawdownType: string = "static"
 ) => {
-  let maxDrawdownUsed = 0
-  let dailyDrawdownUsed = 0
-  let dailyPnLMap: Record<string, number> = {}
-  let runningPnL = 0
-  let maxLossInADay = 0
-  let minEquity = initialCapital
-  let equity = initialCapital
+  if (!initialCapital || !maxDrawdown || !extractedTrades.length) {
+    return {
+      maxDrawdownProgress: 0,
+      maxDrawdownUsed: 0,
+      trailingLossEquityLimit: initialCapital,
+      maxDrawdownAmount: 0,
+      maxDrawdownTargetAmount: 0
+    }
+  }
 
-  // Calculate daily/max drawdown from trades
-  extractedTrades.forEach((trade) => {
+  // Calculate max equity from sorted trades
+  const sortedTrades = extractedTrades.sort((a, b) => a.rowIndex - b.rowIndex)
+  let runningPnL = 0
+  let maxEquity = initialCapital
+
+  sortedTrades.forEach((trade) => {
     const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
-    const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
     runningPnL += realized
-    equity = initialCapital + runningPnL
-    if (equity < minEquity) minEquity = equity
-    // Daily drawdown
-    if (!dailyPnLMap[date]) dailyPnLMap[date] = 0
-    dailyPnLMap[date] += realized
+    const currentEquity = initialCapital + runningPnL
+    if (currentEquity > maxEquity) maxEquity = currentEquity
   })
 
-  // Max drawdown used (as %)
-  maxDrawdownUsed = ((initialCapital - minEquity) / initialCapital) * 100
+  // Determine base value for calculations based on drawdown type
+  const baseValue =
+    maxDrawdownType === "trailing_scaling" ? maxEquity : initialCapital
+  const currentDrawdownAmount = Math.max(0, maxEquity - accountBalance)
+  const maxDrawdownUsed = (currentDrawdownAmount / baseValue) * 100
+  const maxDrawdownAmount = (maxDrawdownUsed / 100) * baseValue
+  const maxDrawdownTargetAmount = (maxDrawdown / 100) * baseValue
+
+  // Calculate equity limit
+  const trailingLossEquityLimit = maxEquity - (maxDrawdown / 100) * baseValue
+  const maxDrawdownProgress = Math.min(
+    100,
+    (maxDrawdownUsed / maxDrawdown) * 100
+  )
+
+  return {
+    maxDrawdownProgress,
+    maxDrawdownUsed,
+    trailingLossEquityLimit,
+    maxDrawdownAmount,
+    maxDrawdownTargetAmount
+  }
+}
+
+export const calculateDailyDrawdownMetrics = (
+  extractedTrades: any[],
+  initialCapital: number,
+  dailyDrawdown: number
+) => {
+  // Handle edge cases
+  if (!initialCapital || !dailyDrawdown) {
+    return {
+      dailyDrawdownUsed: 0,
+      dailyDrawdownProgress: 0,
+      dailyPnLMap: {}
+    }
+  }
+
+  let dailyDrawdownUsed = 0
+  let dailyPnLMap: Record<string, number> = {}
+  let maxLossInADay = 0
+
+  // Calculate daily drawdown from trades
+  extractedTrades.forEach((trade) => {
+    try {
+      const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
+      const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
+
+      // Daily drawdown
+      if (!dailyPnLMap[date]) dailyPnLMap[date] = 0
+      dailyPnLMap[date] += realized
+    } catch (error) {
+      console.warn("Error processing trade:", trade, error)
+    }
+  })
 
   // Daily drawdown used (as % of the worst day)
   Object.values(dailyPnLMap).forEach((dayPnL) => {
     if (dayPnL < maxLossInADay) maxLossInADay = dayPnL
   })
-  dailyDrawdownUsed = (Math.abs(maxLossInADay) / initialCapital) * 100
+  dailyDrawdownUsed =
+    initialCapital > 0 ? (Math.abs(maxLossInADay) / initialCapital) * 100 : 0
 
-  // Progress for bars
-  const maxDrawdownProgress = Math.min(
-    100,
-    (maxDrawdownUsed / maxDrawdown) * 100
-  )
+  // Progress for bars - ensure they don't exceed 100%
   const dailyDrawdownProgress = Math.min(
     100,
-    (dailyDrawdownUsed / dailyDrawdown) * 100
+    Math.max(0, (dailyDrawdownUsed / dailyDrawdown) * 100)
   )
+
+  return {
+    dailyDrawdownUsed,
+    dailyDrawdownProgress,
+    dailyPnLMap
+  }
+}
+
+export const calculateProfitableDaysMetrics = (
+  extractedTrades: any[],
+  initialCapital: number
+) => {
+  // Handle edge cases
+  if (!initialCapital) {
+    return {
+      profitableDays: 0,
+      profitableDaysProgress: 0,
+      tradingDays: 0
+    }
+  }
+
+  let dailyPnLMap: Record<string, number> = {}
+
+  // Calculate daily PnL from trades
+  extractedTrades.forEach((trade) => {
+    try {
+      const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
+      const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
+
+      if (!dailyPnLMap[date]) dailyPnLMap[date] = 0
+      dailyPnLMap[date] += realized
+    } catch (error) {
+      console.warn("Error processing trade:", trade, error)
+    }
+  })
 
   // Profitable days logic
   let profitableDays = 0
   const requiredProfitableDays = 3
   const minDayProfit = 0.005 * initialCapital
+
   Object.values(dailyPnLMap).forEach((dayPnL) => {
     if (dayPnL >= minDayProfit) profitableDays++
   })
+
   const profitableDaysProgress = Math.min(
     100,
     (profitableDays / requiredProfitableDays) * 100
@@ -216,11 +302,6 @@ export const calculateDrawdownMetrics = (
   const tradingDays = Object.keys(dailyPnLMap).length
 
   return {
-    maxDrawdownUsed,
-    dailyDrawdownUsed,
-    dailyPnLMap,
-    maxDrawdownProgress,
-    dailyDrawdownProgress,
     profitableDays,
     profitableDaysProgress,
     tradingDays
@@ -234,30 +315,44 @@ export const calculateDrawdownMetrics = (
  * @returns previousEOD (number)
  */
 export function getPreviousEOD(trades: any[], initialCapital: number): number {
-  if (!trades || trades.length === 0) return initialCapital
+  if (!trades || trades.length === 0 || !initialCapital) return initialCapital
+
   // Group trades by day
   const dayMap: Record<string, number> = {}
-  trades.forEach((trade) => {
-    const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
-    const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
-    if (!dayMap[date]) dayMap[date] = 0
-    dayMap[date] += realized
-  })
+
+  try {
+    trades.forEach((trade) => {
+      if (!trade || !trade.dateStart || !trade.realized) return
+
+      const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
+      const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
+      if (!dayMap[date]) dayMap[date] = 0
+      dayMap[date] += realized
+    })
+  } catch (error) {
+    console.warn("Error processing trades in getPreviousEOD:", error)
+    return initialCapital
+  }
+
   // Get all days sorted
   const allDays = Object.keys(dayMap).sort()
   if (allDays.length === 0) return initialCapital
+
   // Get yesterday (previous day to today, or last day if no today trades)
   const today = new Date().toISOString().split("T")[0]
   let prevDay = allDays[allDays.length - 1]
+
   if (allDays.includes(today)) {
     const todayIdx = allDays.indexOf(today)
     prevDay = todayIdx > 0 ? allDays[todayIdx - 1] : allDays[0]
   }
+
   // Sum realized PnL up to and including prevDay
   let runningPnL = 0
   for (const day of allDays) {
     if (day > prevDay) break
     runningPnL += dayMap[day]
   }
+
   return initialCapital + runningPnL
 }

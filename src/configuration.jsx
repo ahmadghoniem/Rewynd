@@ -106,6 +106,9 @@ const DrawdownTypeSelector = ({ value, onChange }) => (
 
 const ConfigurationView = ({ onSave }) => {
   const config = useAppStore((state) => state.config)
+  const profitTargetDefaults = useAppStore(
+    (state) => state.profitTargetDefaults
+  )
   const setConfig = useAppStore((state) => state.setConfig)
 
   // Helper function to update a single config field
@@ -129,8 +132,7 @@ const ConfigurationView = ({ onSave }) => {
 
   const handlePhasesChange = (newPhases) => {
     const defaultProfitTargets =
-      config.defaults.profitTargets[newPhases] ||
-      config.defaults.profitTargets[1]
+      profitTargetDefaults[newPhases] || profitTargetDefaults[1]
     setConfig({
       ...config,
       phases: newPhases,

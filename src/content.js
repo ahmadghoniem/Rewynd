@@ -110,7 +110,7 @@
           extractTradeHistory(false)
             .then((trades) => {
               if (trades) {
-                saveTradeData(trades)
+                saveTradeData(trades) // Append new trades when account changes (default behavior)
               }
             })
             .catch((error) => {
@@ -243,6 +243,7 @@
 
       // Function to go to page 1
       async function goToPage1() {
+        // Cache the current page once at the start
         let currentPage = getCurrentPage()
 
         if (currentPage === 1) {
@@ -251,30 +252,29 @@
 
         // console.log(`Navigating from page ${currentPage} to page 1...`)
 
+        // Cache the previous button to avoid repeated DOM queries
+        const prevButton = closedPositionTable.querySelector(
+          'button[data-test="prev"]'
+        )
+
+        if (!prevButton) {
+          console.warn("Previous button not found")
+          return
+        }
+
         // Navigate to page 1 by going to previous page the exact number of times needed
         const pagesToGoBack = currentPage - 1
         for (let i = 0; i < pagesToGoBack; i++) {
-          const prevButton = closedPositionTable.querySelector(
-            'button[data-test="prev"]'
-          )
-          if (!prevButton || prevButton.disabled) {
-            console.warn("Previous button not found or disabled")
+          if (prevButton.disabled) {
+            console.warn("Previous button disabled")
             break
           }
 
           prevButton.click()
-          await new Promise((resolve) => setTimeout(resolve, 25)) // Reduced from 50ms to 25ms
+          await new Promise((resolve) => setTimeout(resolve, 25))
 
-          // Verify we're moving in the right direction
-          const newPage = getCurrentPage()
-          // console.log(`Moved from page ${currentPage} to page ${newPage}`)
-
-          if (newPage >= currentPage) {
-            console.warn("Page navigation not working as expected")
-            break
-          }
-
-          currentPage = newPage
+          // Update current page without calling getCurrentPage() in every iteration
+          currentPage = Math.max(1, currentPage - 1)
 
           // If we've reached page 1, we're done
           if (currentPage === 1) {
@@ -283,12 +283,12 @@
           }
         }
 
-        // Final verification
-        const finalPage = getCurrentPage()
-        if (finalPage !== 1) {
-          console.warn(`Failed to reach page 1. Current page: ${finalPage}`)
-        } else {
-          // console.log("Successfully navigated to page 1")
+        // Final verification only if we didn't reach page 1
+        if (currentPage !== 1) {
+          const finalPage = getCurrentPage()
+          if (finalPage !== 1) {
+            console.warn(`Failed to reach page 1. Current page: ${finalPage}`)
+          }
         }
       }
 
@@ -360,52 +360,63 @@
           "table[fxr-ui-table] tbody"
         )
 
-        console.log(`🔄 Starting trade extraction for ${totalPages} pages...`)
-
         // Always start from page 1
         const currentPage = getCurrentPage()
         if (currentPage !== 1) {
           await goToPage1()
         }
 
-        for (let page = 1; page <= totalPages; page++) {
-          // Reduced wait time for first page from 500ms to 200ms
-          if (page > 1) {
-            // Click next and wait for table to update
-            const oldContent = tableBody
-              ? Array.from(tableBody.querySelectorAll("tr"))
-                  .map((row) => row.innerText)
-                  .join("|")
-              : ""
+        if (forceRefresh) {
+          // Force refresh mode: scan all pages
 
-            const hasNext = goToNextPage()
-            if (!hasNext) {
-              // console.log(`No more pages after page ${page - 1}`)
-              break
+          for (let page = 1; page <= totalPages; page++) {
+            // Reduced wait time for first page from 500ms to 200ms
+            if (page > 1) {
+              // Click next and wait for table to update
+              const oldContent = tableBody
+                ? Array.from(tableBody.querySelectorAll("tr"))
+                    .map((row) => row.innerText)
+                    .join("|")
+                : ""
+
+              const hasNext = goToNextPage()
+              if (!hasNext) {
+                // console.log(`No more pages after page ${page - 1}`)
+                break
+              }
+
+              // Wait for table body to change with optimized timeout
+              const updated = await waitForTableUpdate(tableBody, oldContent)
+              if (!updated) {
+                console.warn(`Table update timeout on page ${page}`)
+              }
+            } else {
+              // Reduced first page wait from 500ms to 200ms
+              await new Promise((resolve) => setTimeout(resolve, 50)) // Reduced from 100ms to 50ms
             }
 
-            // Wait for table body to change with optimized timeout
-            const updated = await waitForTableUpdate(tableBody, oldContent)
-            if (!updated) {
-              console.warn(`Table update timeout on page ${page}`)
-            }
-          } else {
-            // Reduced first page wait from 500ms to 200ms
-            await new Promise((resolve) => setTimeout(resolve, 50)) // Reduced from 100ms to 50ms
+            // Extract trades from current page
+            const pageTrades = extractTradesFromCurrentPage()
+            allTrades.push(...pageTrades)
           }
 
-          // Extract trades from current page
+          console.log(
+            `✅ Force refresh: Total trades extracted: ${allTrades.length}`
+          )
+        } else {
+          // Extract trades from page 1 only
           const pageTrades = extractTradesFromCurrentPage()
-          pageTrades.forEach((trade) => {
-            trade.page = page
-          })
           allTrades.push(...pageTrades)
+
+          console.log(
+            `✅ Default mode: Trades extracted from page 1: ${allTrades.length}`
+          )
         }
 
-        console.log(`✅ Total trades extracted: ${allTrades.length}`)
-
-        // Return to page 1 after extraction
-        await goToPage1()
+        // Return to page 1 after extraction (only needed in force refresh mode)
+        if (forceRefresh) {
+          await goToPage1()
+        }
 
         return allTrades
       }
@@ -417,7 +428,7 @@
     })
   }
 
-  function saveTradeData(trades) {
+  function saveTradeData(trades, forceRefresh = false) {
     try {
       const data = {
         trades: trades,
@@ -425,15 +436,19 @@
         url: window.location.href
       }
 
-      // Use the store's saveTradeData function
+      // Use the store's functions based on force refresh mode
       if (window.useAppStore) {
-        window.useAppStore.getState().saveTradeData(data)
+        if (forceRefresh) {
+          window.useAppStore.getState().saveTradeData(data)
+        } else {
+          window.useAppStore.getState().updateTradeData(trades)
+        }
       } else {
         // Fallback to direct messaging if store is not available
         chrome.runtime.sendMessage(
           {
             type: "TRADE_DATA_UPDATE",
-            data: data
+            data: { ...data, forceRefresh: forceRefresh }
           },
           (response) => {
             if (chrome.runtime.lastError) {
@@ -476,10 +491,10 @@
       // Only extract if not already extracting to prevent redundant extractions
       if (!isExtracting) {
         isExtracting = true
-        extractTradeHistory(false)
+        extractTradeHistory(true) // Changed to true to extract all pages on initial load
           .then((trades) => {
             if (trades) {
-              saveTradeData(trades)
+              saveTradeData(trades, true) // Force refresh on initial load
             }
           })
           .catch((error) => {
@@ -504,11 +519,13 @@
           return true
         }
 
+        const forceRefresh = message.forceRefresh || false
+
         isExtracting = true
-        extractTradeHistory(true)
+        extractTradeHistory(forceRefresh)
           .then((trades) => {
             if (trades) {
-              saveTradeData(trades)
+              saveTradeData(trades, forceRefresh)
             }
             sendResponse({ success: true, trades: trades })
           })
@@ -519,43 +536,6 @@
           .finally(() => {
             isExtracting = false
           })
-        return true // Keep message channel open for async response
-      }
-
-      if (message.type === "EXTRACT_ALL_DATA") {
-        // Check if already extracting to prevent race conditions
-        if (isExtracting) {
-          sendResponse({
-            success: false,
-            error: "Extraction already in progress"
-          })
-          return true
-        }
-
-        // Extract account data first
-        const accountData = extractAccountData()
-        if (accountData) {
-          saveAccountData(accountData)
-
-          // Then extract trades with force refresh for manual refresh
-          isExtracting = true
-          extractTradeHistory(true)
-            .then((trades) => {
-              if (trades) {
-                saveTradeData(trades)
-              }
-              sendResponse({ success: true })
-            })
-            .catch((error) => {
-              console.error("Error extracting trades:", error)
-              sendResponse({ success: false, error: error.message })
-            })
-            .finally(() => {
-              isExtracting = false
-            })
-        } else {
-          sendResponse({ success: false, error: "No account data found" })
-        }
         return true // Keep message channel open for async response
       }
     })
