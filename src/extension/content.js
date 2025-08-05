@@ -1,5 +1,6 @@
 // content.js - Enhanced content script with account tracking
 // Requires: utils.js
+/* eslint-disable no-undef */
 
 ;(function () {
   // Account tracking functionality
@@ -192,6 +193,45 @@
         return
       }
 
+      // Function to set rows per page to maximum (20) for faster extraction
+      function setRowsPerPageToMax() {
+        // Find the pagination bar within the closed position table
+        const paginationBar = closedPositionTable.querySelector(
+          "fxr-ui-pagination-bar"
+        )
+        if (!paginationBar) return false
+
+        // Find the rows per page dropdown button
+        const button = paginationBar.querySelector("button[cdkoverlayorigin]")
+        if (!button) return false
+
+        // Check if already set to maximum (20)
+        const currentValue = button.querySelector("span")?.textContent?.trim()
+        if (currentValue === "20") return true
+
+        // Open dropdown and find "20" option
+        button.click()
+
+        // Wait for overlay to appear and find "20" option
+        const overlay = document.getElementById("cdk-overlay-0")
+
+        if (overlay) {
+          // Find and click "20" option
+          const buttons = overlay.querySelectorAll("button")
+          const option = Array.from(buttons).find(
+            (btn) => btn.textContent?.trim() === "20"
+          )
+          if (option) {
+            option.click()
+          }
+        }
+
+        return true
+      }
+
+      // Set rows per page to maximum before extraction
+      setRowsPerPageToMax()
+
       // Function to extract trades from current page
       function extractTradesFromCurrentPage() {
         const rows = table.querySelectorAll("tbody tr")
@@ -316,38 +356,56 @@
         return 1
       }
 
-      // Optimized function to wait for table update
+      // Optimized function to wait for table update using MutationObserver
       async function waitForTableUpdate(
         tableBody,
         oldContent,
-        maxWaitMs = 800 // Reduced from 1500ms to 800ms
+        maxWaitMs = 500 // Reduced from 800ms to 500ms since observer is more efficient
       ) {
-        const startTime = Date.now()
+        if (!tableBody) {
+          return false
+        }
 
         // Quick initial check - sometimes the table updates immediately
         await new Promise((resolve) => setTimeout(resolve, 10))
-        let newContent = tableBody
-          ? Array.from(tableBody.querySelectorAll("tr"))
-              .map((row) => row.innerText)
-              .join("|")
-          : ""
+        let newContent = Array.from(tableBody.querySelectorAll("tr"))
+          .map((row) => row.innerText)
+          .join("|")
         if (newContent !== oldContent) {
           return true // Table updated immediately
         }
 
-        // Continue polling with shorter intervals
-        while (Date.now() - startTime < maxWaitMs) {
-          await new Promise((resolve) => setTimeout(resolve, 25)) // Reduced from 50ms to 25ms for faster polling
-          newContent = tableBody
-            ? Array.from(tableBody.querySelectorAll("tr"))
+        // Use MutationObserver for more efficient detection
+        return new Promise((resolve) => {
+          const observer = new MutationObserver(() => {
+            // Add delay to ensure DOM is fully updated before checking content
+            setTimeout(() => {
+              const currentContent = Array.from(
+                tableBody.querySelectorAll("tr")
+              )
                 .map((row) => row.innerText)
                 .join("|")
-            : ""
-          if (newContent !== oldContent) {
-            return true // Table updated
-          }
-        }
-        return false // Timeout
+
+              if (currentContent !== oldContent) {
+                observer.disconnect()
+                resolve(true) // Table updated
+              }
+            }, 50) // 50ms delay to ensure table is fully rendered
+          })
+
+          // Observe changes to the table body
+          observer.observe(tableBody, {
+            childList: true,
+            subtree: true,
+            characterData: true
+          })
+
+          // Set timeout as fallback
+          setTimeout(() => {
+            observer.disconnect()
+            resolve(false) // Timeout
+          }, maxWaitMs)
+        })
       }
 
       // Main extraction process with optimizations
@@ -385,6 +443,9 @@
                 break
               }
 
+              // Add delay after navigation to ensure page loads completely
+              await new Promise((resolve) => setTimeout(resolve, 50))
+
               // Wait for table body to change with optimized timeout
               const updated = await waitForTableUpdate(tableBody, oldContent)
               if (!updated) {
@@ -413,9 +474,27 @@
           )
         }
 
-        // Return to page 1 after extraction (only needed in force refresh mode)
+        // Ensure we're on page 1 before returning to extension (only in force refresh mode)
         if (forceRefresh) {
-          await goToPage1()
+          const currentPage = getCurrentPage()
+          if (currentPage !== 1) {
+            console.log(
+              `🔄 Returning to page 1 (currently on page ${currentPage})...`
+            )
+            await goToPage1()
+
+            // Verify we successfully reached page 1
+            const finalPage = getCurrentPage()
+            if (finalPage !== 1) {
+              console.warn(
+                `⚠️ Failed to return to page 1. Current page: ${finalPage}`
+              )
+            } else {
+              console.log("✅ Successfully returned to page 1")
+            }
+          } else {
+            console.log("✅ Already on page 1, no navigation needed")
+          }
         }
 
         return allTrades
@@ -588,7 +667,7 @@
       // Create observers and store them for cleanup
       spans.forEach((span) => {
         const observer = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
+          mutations.forEach(() => {
             // Debounce the trackAccountData call to prevent rapid firing
             if (extractionTimeout) {
               clearTimeout(extractionTimeout)
