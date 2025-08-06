@@ -83,120 +83,124 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
 
   return (
     <Card className={cn("w-full col-span-2", className)}>
-      <CardHeader>
-        <CardTitle>Daily Recap</CardTitle>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-medium text-foreground">
+          Daily Recap
+        </CardTitle>
       </CardHeader>
-      <CardContent className="col-span-2">
-        <div className="grid grid-cols-6 gap-4 w-full">
-          <div className="col-span-6">
-            {dailyData.length > 0 ? (
-              <>
-                <div
-                  ref={setScrollRef}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "16px",
-                    overflowX: "hidden",
-                    overflowY: "auto",
-                    width: "100%",
-                    maxHeight: "400px",
-                    scrollSnapType: "y mandatory",
-                    WebkitOverflowScrolling: "touch"
-                  }}
-                  onMouseDown={handlePointerDown}
-                  onMouseMove={handlePointerMove}
-                  onMouseUp={handlePointerUp}
-                  onMouseLeave={handlePointerUp}
-                  onTouchStart={handlePointerDown}
-                  onTouchMove={handlePointerMove}
-                  onTouchEnd={handlePointerUp}
-                  className="hide-scrollbar select-none"
-                >
-                  {dailyData.map((day) => (
-                    <div
-                      key={day.dateKey}
-                      className={
-                        "flex flex-col justify-between flex-1 min-w-0 rounded-lg p-4 bg-muted text-muted-foreground shadow-sm transition-all duration-200"
-                      }
-                      style={{
-                        width: "100%",
-                        minHeight: 120,
-                        scrollSnapAlign: "start"
-                      }}
-                    >
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                        <span className="mr-2">
-                          <History className="h-4 w-4" />
-                        </span>
-                        <span className="font-semibold">
-                          {day.date.toLocaleDateString("en-US")}
-                        </span>
-                      </div>
-                      <div
-                        className={`text-2xl font-extrabold ${getPnLColor(
-                          day.totalPnL
-                        )}`}
-                      >
-                        {formatCurrency(day.totalPnL)}
-                      </div>
-                      <div className="flex justify-between text-xs mt-2">
-                        <span>
-                          <span className="font-semibold">
-                            {day.trades.length}
-                          </span>{" "}
-                          Trades
-                        </span>
-                        {/* Winrate */}
-                        <span>
-                          <span className="font-semibold">
-                            {(() => {
-                              const wins = day.trades.filter((t) => {
-                                const realized = parseFloat(
-                                  t.realized?.replace(/[$,]/g, "") || "0"
-                                )
-                                return realized > 0
-                              }).length
-                              return day.trades.length > 0
-                                ? ((wins / day.trades.length) * 100).toFixed(0)
-                                : "-"
-                            })()}
-                          </span>
-                          %
-                        </span>
-                        {/* Avg RR */}
-                        <span>
-                          <span className="font-semibold">
-                            {(() => {
-                              const validRRs = day.trades
-                                .map((t) => parseFloat(t.maxRR))
-                                .filter((rr) => !isNaN(rr))
-                              return validRRs.length > 0
-                                ? (
-                                    validRRs.reduce((a, b) => a + b, 0) /
-                                    validRRs.length
-                                  ).toFixed(2)
-                                : "-"
-                            })()}
-                          </span>{" "}
-                          RR
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+      <CardContent>
+        {dailyData.length > 0 ? (
+          <div
+            ref={setScrollRef}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              overflowX: "hidden",
+              overflowY: "auto",
+              width: "100%",
+              maxHeight: "400px",
+              scrollSnapType: "y mandatory",
+              WebkitOverflowScrolling: "touch"
+            }}
+            onMouseDown={handlePointerDown}
+            onMouseMove={handlePointerMove}
+            onMouseUp={handlePointerUp}
+            onMouseLeave={handlePointerUp}
+            onTouchStart={handlePointerDown}
+            onTouchMove={handlePointerMove}
+            onTouchEnd={handlePointerUp}
+            className="hide-scrollbar select-none"
+          >
+            {dailyData.map((day) => (
+              <div
+                key={day.dateKey}
+                className="group relative border border-border/40 rounded-lg p-4 hover:border-border/60 transition-all duration-200 bg-card/30"
+                style={{
+                  scrollSnapAlign: "start"
+                }}
+              >
+                {/* Date and PnL Row */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <History className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    <span className="text-sm font-medium text-foreground/90">
+                      {day.date.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric"
+                      })}
+                    </span>
+                  </div>
+                  <div
+                    className={`text-lg font-semibold tabular-nums ${getPnLColor(
+                      day.totalPnL
+                    )}`}
+                  >
+                    {formatCurrency(day.totalPnL)}
+                  </div>
                 </div>
-              </>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No trading data available</p>
-                <p className="text-sm">
-                  Extract trades from FxReplay to see daily summaries
-                </p>
+
+                {/* Stats Row */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1">
+                      <span className="text-foreground/70 font-medium tabular-nums">
+                        {day.trades.length}
+                      </span>
+                      <span className="text-muted-foreground/80">trades</span>
+                    </span>
+
+                    <span className="flex items-center gap-1">
+                      <span className="text-foreground/70 font-medium tabular-nums">
+                        {(() => {
+                          const wins = day.trades.filter((t) => {
+                            const realized = parseFloat(
+                              t.realized?.replace(/[$,]/g, "") || "0"
+                            )
+                            return realized > 0
+                          }).length
+                          return day.trades.length > 0
+                            ? ((wins / day.trades.length) * 100).toFixed(0)
+                            : "-"
+                        })()}
+                        %
+                      </span>
+                      <span className="text-muted-foreground/80">win rate</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <span className="text-foreground/70 font-medium tabular-nums">
+                      {(() => {
+                        const validRRs = day.trades
+                          .map((t) => parseFloat(t.maxRR))
+                          .filter((rr) => !isNaN(rr))
+                        return validRRs.length > 0
+                          ? (
+                              validRRs.reduce((a, b) => a + b, 0) /
+                              validRRs.length
+                            ).toFixed(2)
+                          : "-"
+                      })()}
+                    </span>
+                    <span className="text-muted-foreground/80">avg RR</span>
+                  </div>
+                </div>
               </div>
-            )}
+            ))}
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <Clock className="h-8 w-8 mx-auto mb-3 opacity-40" />
+            <p className="text-sm font-medium mb-1">
+              No trading data available
+            </p>
+            <p className="text-xs text-muted-foreground/80">
+              Extract trades from FxReplay to see daily summaries
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
