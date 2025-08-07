@@ -1,11 +1,13 @@
 import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Download, Upload } from "lucide-react"
+import { Download, Upload, FileText } from "lucide-react"
 import useAppStore from "@/store/useAppStore"
 import ImportDialog from "./ImportDialog"
+import NotesDialog from "./NotesDialog"
 
 const AnalyticsHeader = () => {
   const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false)
   const exportAllData = useAppStore((state) => state.exportAllData)
 
   const handleExport = async () => {
@@ -45,6 +47,16 @@ const AnalyticsHeader = () => {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setNotesDialogOpen(true)}
+            className="h-8 px-3 text-xs font-medium"
+          >
+            <FileText className="h-3 w-3 mr-1.5" />
+            Notes
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExport}
             className="h-8 px-3 text-xs font-medium"
           >
@@ -68,6 +80,8 @@ const AnalyticsHeader = () => {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
       />
+
+      <NotesDialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen} />
     </>
   )
 }

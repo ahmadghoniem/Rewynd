@@ -172,6 +172,71 @@ const useAppStore = create((set, get) => {
     extractedTrades: [],
     setExtractedTrades: (trades) => set({ extractedTrades: trades }),
 
+    // Notes management
+    notes: "",
+    setNotes: (notes) => set({ notes }),
+
+    // Notes data management functions
+    loadNotes: () => {
+      return new Promise((resolve) => {
+        try {
+          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ type: "GET_NOTES" }, (response) => {
+              if (response && response.data) {
+                set({ notes: response.data.notes || "" })
+                resolve(response.data.notes || "")
+              } else {
+                console.log("No notes found in storage")
+                resolve("")
+              }
+            })
+          } else {
+            // Fallback to localStorage
+            const notes = localStorage.getItem("fxReplayNotes") || ""
+            set({ notes })
+            resolve(notes)
+          }
+        } catch (error) {
+          console.error("Error loading notes:", error)
+          resolve("")
+        }
+      })
+    },
+
+    saveNotes: (notes) => {
+      return new Promise((resolve) => {
+        try {
+          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage(
+              { type: "SAVE_NOTES", data: { notes } },
+              (response) => {
+                if (response && response.success) {
+                  set({ notes })
+                  console.log("Notes saved to extension storage")
+                  resolve(true)
+                } else {
+                  // Fallback to localStorage
+                  localStorage.setItem("fxReplayNotes", notes)
+                  set({ notes })
+                  console.log("Notes saved to localStorage")
+                  resolve(true)
+                }
+              }
+            )
+          } else {
+            // Fallback to localStorage
+            localStorage.setItem("fxReplayNotes", notes)
+            set({ notes })
+            console.log("Notes saved to localStorage")
+            resolve(true)
+          }
+        } catch (error) {
+          console.error("Error saving notes:", error)
+          resolve(false)
+        }
+      })
+    },
+
     // Trade data management functions
     loadTradeData: () => {
       return new Promise((resolve) => {
@@ -373,6 +438,7 @@ const useAppStore = create((set, get) => {
       get().loadChallengeConfig()
       get().loadAccountData()
       get().loadTradeData()
+      get().loadNotes()
     },
 
     // Export all data for backup/transfer
@@ -381,12 +447,13 @@ const useAppStore = create((set, get) => {
         const state = get()
 
         // Load fresh data from storage to ensure we have the latest
-        const [challengeConfig, accountData, tradeData, presets] =
+        const [challengeConfig, accountData, tradeData, presets, notes] =
           await Promise.all([
             state.loadChallengeConfig(),
             state.loadAccountData(),
             state.loadTradeData(),
-            state.loadPresets()
+            state.loadPresets(),
+            state.loadNotes()
           ])
 
         return {
@@ -398,7 +465,8 @@ const useAppStore = create((set, get) => {
           challengeConfig: challengeConfig || state.config,
           accountData: accountData || state.accountData,
           tradeData: state.extractedTrades || [],
-          presets: presets || []
+          presets: presets || [],
+          notes: notes || state.notes || ""
         }
       } catch (error) {
         console.error("Error exporting data:", error)
@@ -462,6 +530,11 @@ const useAppStore = create((set, get) => {
               })
             }
           }
+        }
+
+        // Import notes
+        if (importData.notes !== undefined) {
+          await state.saveNotes(importData.notes)
         }
 
         console.log("Data import completed successfully")

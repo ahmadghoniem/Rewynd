@@ -152,6 +152,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })
     return true // Keep the message channel open for async response
   }
+
+  if (message.type === "SAVE_NOTES") {
+    chrome.storage.local.set({ fxReplayNotes: message.data }, () => {
+      sendResponse({ success: true })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "GET_NOTES") {
+    chrome.storage.local.get(["fxReplayNotes"], (result) => {
+      sendResponse({ data: result.fxReplayNotes })
+    })
+    return true // Keep the message channel open for async response
+  }
 })
 chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({ url: chrome.runtime.getURL("index.html") })
