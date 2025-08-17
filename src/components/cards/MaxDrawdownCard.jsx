@@ -31,7 +31,7 @@ const MaxDrawdownCard = ({ className }) => {
     maxDrawdownProgress = 0,
     maxDrawdownAmount = 0,
     maxDrawdownTargetAmount = 0,
-    trailingLossEquityLimit = initialCapital
+    trailingLossEquityLimit = 0
   } = initialCapital && maxDrawdown
     ? calculateMaxDrawdownMetrics(
         extractedTrades,
@@ -42,10 +42,16 @@ const MaxDrawdownCard = ({ className }) => {
       )
     : {}
 
-  // Don't render if no capital or invalid configuration
-  if (!initialCapital || !maxDrawdown) {
+  // Don't render if no configuration
+  if (!maxDrawdown) {
     return null
   }
+
+  // Check if we have valid data or should show placeholders
+  const hasValidData = extractedTrades.length > 0
+  const displayTrailingLossEquityLimit = hasValidData
+    ? trailingLossEquityLimit
+    : initialCapital - (maxDrawdown / 100) * initialCapital
 
   return (
     <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
@@ -82,7 +88,7 @@ const MaxDrawdownCard = ({ className }) => {
           </span>
         </div>
         <div className="text-xs text-muted-foreground mb-2">
-          Equity limit: {formatCurrency(trailingLossEquityLimit)}
+          Equity limit: {formatCurrency(displayTrailingLossEquityLimit)}
         </div>
         <ProgressBar
           progress={Math.max(0, Math.min(1, maxDrawdownProgress / 100))}

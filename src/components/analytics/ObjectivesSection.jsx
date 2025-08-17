@@ -5,7 +5,6 @@ import ProfitTargetsCard from "@/components/cards/ProfitTargetsCard"
 import DailyDrawdownCard from "@/components/cards/DailyDrawdownCard"
 import MinimumTradingDaysCard from "@/components/cards/MinimumTradingDaysCard"
 import MinimumProfitableDaysCard from "@/components/cards/MinimumProfitableDaysCard"
-import DailyRecapSection from "@/components/analytics/DailyRecapSection"
 
 const ObjectivesSection = () => {
   // All cards/sections below should use Zustand or local logic for their own data
@@ -16,7 +15,6 @@ const ObjectivesSection = () => {
       <ProfitTargetsCard />
       <MaxDrawdownCard />
       <DailyDrawdownCard />
-      <DailyRecapSection />
     </div>
   )
 }

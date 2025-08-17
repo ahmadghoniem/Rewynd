@@ -47,18 +47,6 @@ export default function EquityCurveCard({
         tradeNumber: index + 1
       }
     })
-    // Add a starting point with initial capital
-    if (chartPoints.length > 0) {
-      const firstDate = new Date(chartPoints[0].dateTime)
-      firstDate.setDate(firstDate.getDate() - 1)
-      chartPoints.unshift({
-        date: firstDate.toISOString().split("T")[0],
-        dateTime: firstDate,
-        cumulativePnL: initialCapital,
-        tradePnL: 0,
-        tradeNumber: 0
-      })
-    }
     return chartPoints
   }
 

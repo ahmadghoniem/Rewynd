@@ -4,11 +4,13 @@ import React from "react"
 import {
   EquityCurveSection,
   TradeHistorySection,
-  AnalyticsHeader
+  AnalyticsHeader,
+  DailyRecapSection
 } from "@/components/analytics"
 
 import PerformanceSection from "@/components/analytics/PerformanceSection.jsx"
 import ObjectivesSection from "@/components/analytics/ObjectivesSection"
+import FooterCard from "@/components/cards/FooterCard"
 
 const AnalyticsView = () => {
   return (
@@ -20,7 +22,11 @@ const AnalyticsView = () => {
           <EquityCurveSection />
           <TradeHistorySection />
         </div>
-        <ObjectivesSection />
+        <div className="flex flex-col gap-2">
+          <ObjectivesSection />
+          <DailyRecapSection />
+          <FooterCard />
+        </div>
       </div>
     </div>
   )

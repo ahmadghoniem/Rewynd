@@ -48,7 +48,15 @@ const HeaderCard = () => {
       })
 
       if (response?.success) {
+        // Load both account data and trade data
         await Promise.all([loadAccountData(), loadTradeData()])
+
+        // Trigger account data extraction using the existing mechanism
+        // This will automatically update the UI through the store
+        console.log(
+          "✅ Data refreshed successfully! Account and trade data updated."
+        )
+
         alert("Data refreshed successfully!")
       } else {
         alert("Failed to refresh data. Make sure you have a FxReplay tab open.")

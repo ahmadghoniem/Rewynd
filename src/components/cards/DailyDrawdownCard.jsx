@@ -30,8 +30,8 @@ const DailyDrawdownCard = ({ className }) => {
     dailyDrawdownProgress = 0,
     dailyDrawdownAmount = 0,
     dailyDrawdownTargetAmount = 0,
-    currentDayStartBalance,
-    dailyLossEquityLimit
+    currentDayStartBalance = initialCapital,
+    dailyLossEquityLimit = initialCapital
   } = initialCapital && dailyDrawdown && extractedTrades.length
     ? calculateDailyDrawdownMetrics(
         extractedTrades,
@@ -40,10 +40,19 @@ const DailyDrawdownCard = ({ className }) => {
       )
     : {}
 
-  // Don't render if no capital or invalid configuration
-  if (!initialCapital || !dailyDrawdown) {
+  // Don't render if no configuration
+  if (!dailyDrawdown) {
     return null
   }
+
+  // Check if we have valid data or should show placeholders
+  const hasValidData = extractedTrades.length > 0
+  const displayCurrentDayStartBalance = hasValidData
+    ? currentDayStartBalance
+    : initialCapital
+  const displayDailyLossEquityLimit = hasValidData
+    ? dailyLossEquityLimit
+    : initialCapital - (dailyDrawdown / 100) * initialCapital
 
   const handleToggleDisplay = () => {
     setShowAmounts(!showAmounts)
@@ -84,8 +93,8 @@ const DailyDrawdownCard = ({ className }) => {
           </span>
         </div>
         <div className="text-xs text-muted-foreground mb-2">
-          Equity limit: {formatCurrency(dailyLossEquityLimit)} / SOD:{" "}
-          {formatCurrency(currentDayStartBalance)}
+          Equity limit: {formatCurrency(displayDailyLossEquityLimit)} / SOD:{" "}
+          {formatCurrency(displayCurrentDayStartBalance)}
         </div>
         <ProgressBar
           progress={Math.max(0, Math.min(1, dailyDrawdownProgress / 100))}
