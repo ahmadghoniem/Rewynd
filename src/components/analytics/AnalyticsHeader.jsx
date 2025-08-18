@@ -1,14 +1,32 @@
 import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Download, Upload, FileText } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
+import { Download, Upload, FileText, Database, Settings } from "lucide-react"
 import useAppStore from "@/store/useAppStore"
+import { getSessionIdFromUrl } from "@/lib/utils"
 import ImportDialog from "./ImportDialog"
 import NotesDialog from "./NotesDialog"
 
-const AnalyticsHeader = () => {
+const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [notesDialogOpen, setNotesDialogOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const exportAllData = useAppStore((state) => state.exportAllData)
+  const capital = useAppStore((state) => state.accountData.capital)
+
+  // Get session ID from URL
+  const sessionId = getSessionIdFromUrl()
+
+  // Format capital for display (default to 100K if not available)
+  const formattedCapital = capital ? `${(capital / 1000).toFixed(0)}K` : "100K"
+
+  // Create the header text with dynamic values
+  const headerText = `#${sessionId}-2-$${formattedCapital}`
 
   const handleExport = async () => {
     try {
@@ -34,12 +52,17 @@ const AnalyticsHeader = () => {
     }
   }
 
+  const handleImportClick = () => {
+    setDropdownOpen(false)
+    setImportDialogOpen(true)
+  }
+
   return (
     <>
       <div className="w-full flex items-center justify-between mb-6 px-2 sm:px-4">
         <div className="flex items-center">
-          <h1 className="text-xl font-semibold text-foreground">
-            Hello, Trader
+          <h1 className="text-xl font-semibold text-foreground uppercase">
+            {headerText}
           </h1>
         </div>
 
@@ -54,24 +77,37 @@ const AnalyticsHeader = () => {
             Notes
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            className="h-8 px-3 text-xs font-medium"
-          >
-            <Download className="h-3 w-3 mr-1.5" />
-            Export Data
-          </Button>
+          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs font-medium"
+              >
+                <Database className="h-3 w-3 mr-1.5" />
+                Import/Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleImportClick}>
+                <Upload className="h-3 w-3 mr-2" />
+                Import Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExport}>
+                <Download className="h-3 w-3 mr-2" />
+                Export Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button
-            variant="outline"
+            variant={showConfiguration ? "default" : "outline"}
             size="sm"
-            onClick={() => setImportDialogOpen(true)}
+            onClick={onToggleConfiguration}
             className="h-8 px-3 text-xs font-medium"
           >
-            <Upload className="h-3 w-3 mr-1.5" />
-            Import Data
+            <Settings className="h-3 w-3 mr-1.5" />
+            Configuration
           </Button>
         </div>
       </div>

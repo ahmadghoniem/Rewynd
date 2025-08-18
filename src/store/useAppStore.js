@@ -301,137 +301,6 @@ const useAppStore = create((set, get) => {
       return get().saveTradeData(updatedData)
     },
 
-    // Preset management functions
-    savePreset: (presetData) => {
-      return new Promise((resolve) => {
-        try {
-          // Save to Chrome extension storage if available
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
-              { type: "SAVE_PRESET", data: presetData },
-              (response) => {
-                if (response && response.success) {
-                  console.log(
-                    "Preset saved to extension storage:",
-                    presetData.name
-                  )
-                  resolve(true)
-                } else {
-                  // Fallback to localStorage
-                  const existingPresets = JSON.parse(
-                    localStorage.getItem("fxReplayPresets") || "[]"
-                  )
-                  const updatedPresets = [...existingPresets, presetData]
-                  localStorage.setItem(
-                    "fxReplayPresets",
-                    JSON.stringify(updatedPresets)
-                  )
-                  console.log("Preset saved to localStorage:", presetData.name)
-                  resolve(true)
-                }
-              }
-            )
-          } else {
-            // Fallback to localStorage
-            const existingPresets = JSON.parse(
-              localStorage.getItem("fxReplayPresets") || "[]"
-            )
-            const updatedPresets = [...existingPresets, presetData]
-            localStorage.setItem(
-              "fxReplayPresets",
-              JSON.stringify(updatedPresets)
-            )
-            console.log("Preset saved to localStorage:", presetData.name)
-            resolve(true)
-          }
-        } catch (error) {
-          console.error("Error saving preset:", error)
-          resolve(false)
-        }
-      })
-    },
-
-    loadPresets: () => {
-      return new Promise((resolve) => {
-        try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage({ type: "GET_PRESETS" }, (response) => {
-              if (response && response.data) {
-                resolve(response.data)
-              } else {
-                // Fallback to localStorage
-                const presets = JSON.parse(
-                  localStorage.getItem("fxReplayPresets") || "[]"
-                )
-                resolve(presets)
-              }
-            })
-          } else {
-            // Fallback to localStorage
-            const presets = JSON.parse(
-              localStorage.getItem("fxReplayPresets") || "[]"
-            )
-            resolve(presets)
-          }
-        } catch (error) {
-          console.error("Error loading presets:", error)
-          resolve([])
-        }
-      })
-    },
-
-    deletePreset: (presetName) => {
-      return new Promise((resolve) => {
-        try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
-              { type: "DELETE_PRESET", data: { name: presetName } },
-              (response) => {
-                if (response && response.success) {
-                  console.log(
-                    "Preset deleted from extension storage:",
-                    presetName
-                  )
-                  resolve(true)
-                } else {
-                  // Fallback to localStorage
-                  const existingPresets = JSON.parse(
-                    localStorage.getItem("fxReplayPresets") || "[]"
-                  )
-                  const updatedPresets = existingPresets.filter(
-                    (p) => p.name !== presetName
-                  )
-                  localStorage.setItem(
-                    "fxReplayPresets",
-                    JSON.stringify(updatedPresets)
-                  )
-                  console.log("Preset deleted from localStorage:", presetName)
-                  resolve(true)
-                }
-              }
-            )
-          } else {
-            // Fallback to localStorage
-            const existingPresets = JSON.parse(
-              localStorage.getItem("fxReplayPresets") || "[]"
-            )
-            const updatedPresets = existingPresets.filter(
-              (p) => p.name !== presetName
-            )
-            localStorage.setItem(
-              "fxReplayPresets",
-              JSON.stringify(updatedPresets)
-            )
-            console.log("Preset deleted from localStorage:", presetName)
-            resolve(true)
-          }
-        } catch (error) {
-          console.error("Error deleting preset:", error)
-          resolve(false)
-        }
-      })
-    },
-
     // Initialize all data
     initialize: () => {
       console.log("Initializing store data...")
@@ -447,12 +316,11 @@ const useAppStore = create((set, get) => {
         const state = get()
 
         // Load fresh data from storage to ensure we have the latest
-        const [challengeConfig, accountData, tradeData, presets, notes] =
+        const [challengeConfig, accountData, tradeData, notes] =
           await Promise.all([
             state.loadChallengeConfig(),
             state.loadAccountData(),
             state.loadTradeData(),
-            state.loadPresets(),
             state.loadNotes()
           ])
 
@@ -465,7 +333,6 @@ const useAppStore = create((set, get) => {
           challengeConfig: challengeConfig || state.config,
           accountData: accountData || state.accountData,
           tradeData: state.extractedTrades || [],
-          presets: presets || [],
           notes: notes || state.notes || ""
         }
       } catch (error) {
@@ -484,8 +351,7 @@ const useAppStore = create((set, get) => {
           !importData.exportMetadata ||
           !importData.challengeConfig ||
           !importData.accountData ||
-          !Array.isArray(importData.tradeData) ||
-          !Array.isArray(importData.presets)
+          !Array.isArray(importData.tradeData)
         ) {
           throw new Error("Invalid import data structure")
         }
@@ -508,28 +374,6 @@ const useAppStore = create((set, get) => {
             forceRefresh: true,
             url: window.location.href
           })
-        }
-
-        // Import presets - replace all existing presets
-        if (importData.presets && Array.isArray(importData.presets)) {
-          // First clear existing presets, then add imported ones
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            await new Promise((resolve) => {
-              chrome.runtime.sendMessage({ type: "CLEAR_PRESETS" }, () =>
-                resolve()
-              )
-            })
-
-            // Add each preset
-            for (const preset of importData.presets) {
-              await new Promise((resolve) => {
-                chrome.runtime.sendMessage(
-                  { type: "SAVE_PRESET", data: preset },
-                  () => resolve()
-                )
-              })
-            }
-          }
         }
 
         // Import notes

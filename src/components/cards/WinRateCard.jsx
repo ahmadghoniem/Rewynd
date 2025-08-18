@@ -37,54 +37,56 @@ const WinRateCard = ({ extractedTrades, className }) => {
           {winRate.toFixed(1)}%
         </div>
       </div>
-      <div className="flex items-center justify-center flex-col text-foreground">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square w-20 max-h-20"
-        >
-          <RadialBarChart
-            data={chartData}
-            endAngle={180}
-            innerRadius={30}
-            outerRadius={45}
-            startAngle={0}
+      {extractedTrades.length > 0 && (
+        <div className="flex items-center justify-center flex-col text-foreground">
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square w-20 max-h-20"
           >
-            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-              <Label
-                content={({ viewBox }) => {
-                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    return (
-                      <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
-                        <tspan
-                          x={viewBox.cx}
-                          y={(viewBox.cy || 0) + 4}
-                          className="fill-foreground text-lg font-bold"
-                        >
-                          {total}
-                        </tspan>
-                      </text>
-                    )
-                  }
-                }}
+            <RadialBarChart
+              data={chartData}
+              endAngle={180}
+              innerRadius={30}
+              outerRadius={45}
+              startAngle={0}
+            >
+              <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                <Label
+                  content={({ viewBox }) => {
+                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                      return (
+                        <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
+                          <tspan
+                            x={viewBox.cx}
+                            y={(viewBox.cy || 0) + 4}
+                            className="fill-foreground text-lg font-bold"
+                          >
+                            {total}
+                          </tspan>
+                        </text>
+                      )
+                    }
+                  }}
+                />
+              </PolarRadiusAxis>
+              <RadialBar
+                dataKey="loss"
+                stackId="a"
+                cornerRadius={4}
+                fill="var(--color-danger)"
+                className="stroke-transparent stroke-2"
               />
-            </PolarRadiusAxis>
-            <RadialBar
-              dataKey="loss"
-              stackId="a"
-              cornerRadius={4}
-              fill="var(--color-danger)"
-              className="stroke-transparent stroke-2"
-            />
-            <RadialBar
-              dataKey="won"
-              stackId="a"
-              cornerRadius={4}
-              fill="var(--color-success)"
-              className="stroke-transparent stroke-2"
-            />
-          </RadialBarChart>
-        </ChartContainer>
-      </div>
+              <RadialBar
+                dataKey="won"
+                stackId="a"
+                cornerRadius={4}
+                fill="var(--color-success)"
+                className="stroke-transparent stroke-2"
+              />
+            </RadialBarChart>
+          </ChartContainer>
+        </div>
+      )}
     </Card>
   )
 }

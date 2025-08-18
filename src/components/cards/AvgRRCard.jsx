@@ -34,7 +34,7 @@ const AvgRRCard = ({ extractedTrades, className }) => {
         </Tooltip>
       </CardHeader>
       <CardContent>
-        <div className="text-lg font-normal">{avgRR.toFixed(2)}</div>
+        <div className="text-xl font-normal">{avgRR.toFixed(2)}</div>
       </CardContent>
     </Card>
   )

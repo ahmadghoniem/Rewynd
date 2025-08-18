@@ -405,3 +405,28 @@ export function getPreviousEOD(trades: any[], initialCapital: number): number {
 
   return initialCapital + runningPnL
 }
+
+/**
+ * Extracts the session ID from the current URL
+ * In production: extracts from fxreplay.com URL path
+ * In development: uses a mock session ID for testing
+ */
+export function getSessionIdFromUrl(): string {
+  // Check if we're in development mode (localhost)
+  if (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  ) {
+    // In development, use the mock session ID from the example URL
+    return "56f3904d44d8"
+  }
+
+  // In production, extract from the URL path
+  const pathSegments = window.location.pathname.split("/")
+  const lastSegment = pathSegments[pathSegments.length - 1]
+
+  // The session ID is the last part after the last dash
+  const sessionId = lastSegment.split("-").pop()
+
+  return sessionId || "56f3904d44d8" // fallback to the example session ID
+}

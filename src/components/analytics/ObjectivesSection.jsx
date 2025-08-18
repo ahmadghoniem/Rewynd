@@ -13,8 +13,8 @@ const ObjectivesSection = () => {
       <MinimumTradingDaysCard />
       <MinimumProfitableDaysCard />
       <ProfitTargetsCard />
-      <MaxDrawdownCard />
       <DailyDrawdownCard />
+      <MaxDrawdownCard />
     </div>
   )
 }

@@ -1,8 +1,7 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Database, Settings, Sun, Moon } from "lucide-react"
+import { RefreshCw, Database, Sun, Moon } from "lucide-react"
 import { useTheme } from "../../ThemeContext"
-import ConfigurationDialog from "../ConfigurationDialog"
 import useAppStore from "../../store/useAppStore"
 import sampleTrades from "../../sampleTrades.json"
 
@@ -131,8 +130,6 @@ const HeaderCard = () => {
                 <Moon className="h-4 w-4" />
               )}
             </Button>
-
-            <ConfigurationDialog />
           </div>
         </div>
       </div>
