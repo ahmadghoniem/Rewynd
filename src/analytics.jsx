@@ -21,7 +21,7 @@ const AnalyticsView = () => {
   }
 
   return (
-    <div className="w-full mx-auto px-2 sm:px-4 py-8">
+    <div className="w-full mx-auto px-2 py-4">
       <AnalyticsHeader
         showConfiguration={showConfiguration}
         onToggleConfiguration={handleToggleConfiguration}

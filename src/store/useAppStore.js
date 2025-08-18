@@ -10,20 +10,14 @@ const useAppStore = create((set, get) => {
 
   return {
     config: {
-      phases: 2,
-      profitTargets: { phase1: 4, phase2: 8 },
+      phases: 1,
+      profitTargets: { phase1: 8 },
       dailyDrawdown: 2,
       maxDrawdown: 5,
       maxDrawdownType: "static",
       requireProfitableDays: 3,
-      minTradingDays: 5
-    },
-
-    // Default profit targets for different phase counts
-    profitTargetDefaults: {
-      1: { phase1: 10 },
-      2: { phase1: 4, phase2: 8 },
-      3: { phase1: 2, phase2: 2, phase3: 2 }
+      minTradingDays: 5,
+      consistencyRule: 15
     },
 
     setConfig: (config) => set({ config }),
@@ -37,26 +31,17 @@ const useAppStore = create((set, get) => {
               { type: "GET_CHALLENGE_CONFIG" },
               (response) => {
                 if (response && response.data) {
-                  console.log(
-                    "Loaded challenge config from storage:",
-                    response.data
-                  )
                   set({ config: response.data })
                   resolve(response.data)
                 } else {
-                  console.log(
-                    "No challenge config found in storage, using defaults"
-                  )
                   resolve(null)
                 }
               }
             )
           } else {
-            console.log("Chrome extension not available")
             resolve(null)
           }
         } catch (error) {
-          console.error("Error loading challenge config:", error)
           resolve(null)
         }
       })
@@ -70,21 +55,17 @@ const useAppStore = create((set, get) => {
               { type: "SET_CHALLENGE_CONFIG", data: config },
               (response) => {
                 if (response && response.success) {
-                  console.log("Challenge config saved to storage:", config)
                   set({ config })
                   resolve(true)
                 } else {
-                  console.error("Failed to save challenge config")
                   resolve(false)
                 }
               }
             )
           } else {
-            console.log("Chrome extension not available")
             resolve(false)
           }
         } catch (error) {
-          console.error("Error saving challenge config:", error)
           resolve(false)
         }
       })
@@ -116,17 +97,14 @@ const useAppStore = create((set, get) => {
                   set({ accountData: response.data })
                   resolve(response.data)
                 } else {
-                  console.log("No account data found in storage")
                   resolve(null)
                 }
               }
             )
           } else {
-            console.log("Chrome extension not available")
             resolve(null)
           }
         } catch (error) {
-          console.error("Error loading account data:", error)
           resolve(null)
         }
       })
@@ -143,17 +121,14 @@ const useAppStore = create((set, get) => {
                   set({ accountData })
                   resolve(true)
                 } else {
-                  console.error("Failed to save account data")
                   resolve(false)
                 }
               }
             )
           } else {
-            console.log("Chrome extension not available")
             resolve(false)
           }
         } catch (error) {
-          console.error("Error saving account data:", error)
           resolve(false)
         }
       })
@@ -186,7 +161,6 @@ const useAppStore = create((set, get) => {
                 set({ notes: response.data.notes || "" })
                 resolve(response.data.notes || "")
               } else {
-                console.log("No notes found in storage")
                 resolve("")
               }
             })
@@ -197,7 +171,6 @@ const useAppStore = create((set, get) => {
             resolve(notes)
           }
         } catch (error) {
-          console.error("Error loading notes:", error)
           resolve("")
         }
       })
@@ -212,13 +185,11 @@ const useAppStore = create((set, get) => {
               (response) => {
                 if (response && response.success) {
                   set({ notes })
-                  console.log("Notes saved to extension storage")
                   resolve(true)
                 } else {
                   // Fallback to localStorage
                   localStorage.setItem("fxReplayNotes", notes)
                   set({ notes })
-                  console.log("Notes saved to localStorage")
                   resolve(true)
                 }
               }
@@ -227,11 +198,9 @@ const useAppStore = create((set, get) => {
             // Fallback to localStorage
             localStorage.setItem("fxReplayNotes", notes)
             set({ notes })
-            console.log("Notes saved to localStorage")
             resolve(true)
           }
         } catch (error) {
-          console.error("Error saving notes:", error)
           resolve(false)
         }
       })
@@ -249,17 +218,14 @@ const useAppStore = create((set, get) => {
                   set({ extractedTrades: response.data.trades || [] })
                   resolve(response.data)
                 } else {
-                  console.log("No trade data found in storage")
                   resolve(null)
                 }
               }
             )
           } else {
-            console.log("Chrome extension not available")
             resolve(null)
           }
         } catch (error) {
-          console.error("Error loading trade data:", error)
           resolve(null)
         }
       })
@@ -276,17 +242,14 @@ const useAppStore = create((set, get) => {
                   set({ extractedTrades: tradeData.trades || [] })
                   resolve(true)
                 } else {
-                  console.error("Failed to save trade data")
                   resolve(false)
                 }
               }
             )
           } else {
-            console.log("Chrome extension not available")
             resolve(false)
           }
         } catch (error) {
-          console.error("Error saving trade data:", error)
           resolve(false)
         }
       })
@@ -303,11 +266,98 @@ const useAppStore = create((set, get) => {
 
     // Initialize all data
     initialize: () => {
-      console.log("Initializing store data...")
       get().loadChallengeConfig()
       get().loadAccountData()
       get().loadTradeData()
       get().loadNotes()
+    },
+
+    // Objectives state for badge system
+    objectives: {
+      // Trading objectives (6 total) - just boolean checks
+      minimumTradingDays: false,
+      minimumProfitableDays: false,
+      profitTargets: false,
+      consistencyRule: false,
+      dailyDrawdown: false,
+      maxDrawdown: false,
+
+      // Breaking rules (3 total)
+      // Note: Only maxDailyLossBroken and maxStaticLossBroken cause challenge failure
+      // consistencyRuleBroken only affects the consistency objective status
+      consistencyRuleBroken: false,
+      maxDailyLossBroken: false,
+      maxStaticLossBroken: false
+    },
+
+    // Update specific objective status
+    updateObjective: (objectiveKey, status) => {
+      console.log("updateObjective called:", { objectiveKey, status })
+      set((state) => ({
+        objectives: {
+          ...state.objectives,
+          [objectiveKey]: status
+        }
+      }))
+    },
+
+    // Update breaking rule status
+    updateBreakingRule: (ruleKey, broken) => {
+      console.log("updateBreakingRule called:", { ruleKey, broken })
+      set((state) => {
+        // Only update if the value is actually changing
+        if (state.objectives[ruleKey] === broken) {
+          return state
+        }
+
+        return {
+          objectives: {
+            ...state.objectives,
+            [ruleKey]: broken
+          }
+        }
+      })
+    },
+
+    // Calculate badge status based on objectives
+    getBadgeStatus: () => {
+      const state = get()
+      const objectives = state.objectives
+
+      // Check if all trading objectives are met
+      const allObjectivesMet =
+        objectives.minimumTradingDays &&
+        objectives.minimumProfitableDays &&
+        objectives.profitTargets &&
+        objectives.consistencyRule &&
+        objectives.dailyDrawdown &&
+        objectives.maxDrawdown
+
+      // Check if any breaking rules are violated (excluding consistency rule)
+      // Only maxDailyLossBroken and maxStaticLossBroken cause failure
+      const anyBreakingRulesViolated =
+        objectives.maxDailyLossBroken || objectives.maxStaticLossBroken
+
+      console.log("getBadgeStatus:", {
+        objectives,
+        allObjectivesMet,
+        maxDailyLossBroken: objectives.maxDailyLossBroken,
+        maxStaticLossBroken: objectives.maxStaticLossBroken,
+        anyBreakingRulesViolated,
+        result: allObjectivesMet
+          ? "funded"
+          : anyBreakingRulesViolated
+          ? "failed"
+          : "in-progress"
+      })
+
+      if (allObjectivesMet) {
+        return "funded"
+      } else if (anyBreakingRulesViolated) {
+        return "failed"
+      } else {
+        return "in-progress"
+      }
     },
 
     // Export all data for backup/transfer
@@ -336,7 +386,6 @@ const useAppStore = create((set, get) => {
           notes: notes || state.notes || ""
         }
       } catch (error) {
-        console.error("Error exporting data:", error)
         throw error
       }
     },
@@ -381,10 +430,8 @@ const useAppStore = create((set, get) => {
           await state.saveNotes(importData.notes)
         }
 
-        console.log("Data import completed successfully")
         return true
       } catch (error) {
-        console.error("Error importing data:", error)
         return false
       }
     }

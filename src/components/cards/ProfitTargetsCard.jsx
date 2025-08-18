@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Info } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -23,6 +23,8 @@ const ProfitTargetsCard = (props) => {
     realizedPnL: 0,
     balance: 0
   }
+  const updateObjective = useAppStore((state) => state.updateObjective)
+
   const profitTargets = props.profitTargets || config.profitTargets || {}
   const formatCurrency = props.formatCurrency || defaultFormatCurrency
 
@@ -53,16 +55,14 @@ const ProfitTargetsCard = (props) => {
 
   // Memoize current phase calculations
   const currentPhaseData = useMemo(() => {
-    const phases = Object.keys(profitTargets).sort()
-
     // Handle empty profit targets
-    if (phases.length === 0) {
+    if (!profitTargets.phase1) {
       return {
-        phases: [],
-        currentPhase: 0,
+        phases: ["phase1"],
+        currentPhase: 1,
         currentPhaseProgress: 0,
         currentPhaseTarget: 0,
-        currentPhaseKey: "",
+        currentPhaseKey: "phase1",
         actualProfitAchieved: 0,
         actualProfitAmount: 0,
         targetAmount: 0,
@@ -70,89 +70,32 @@ const ProfitTargetsCard = (props) => {
       }
     }
 
-    let currentPhase = 1
-    let currentPhaseProgress = 0
-    let currentPhaseTarget = 0
-    let currentPhaseKey = "phase1"
-    let foundIncompletePhase = false
-
-    // Find the current phase (first incomplete phase)
-    for (let i = 0; i < phases.length; i++) {
-      const phase = phases[i]
-      const progress = targetProgress[phase] || 0
-      const target = profitTargets[phase] || 0
-
-      if (progress < 100) {
-        currentPhase = i + 1
-        currentPhaseProgress = progress
-        currentPhaseTarget = target
-        currentPhaseKey = phase
-        foundIncompletePhase = true
-        break
-      }
-    }
-
-    // If all phases are complete, show the last phase
-    if (!foundIncompletePhase) {
-      currentPhase = phases.length
-      const lastPhase = phases[phases.length - 1]
-      currentPhaseProgress = targetProgress[lastPhase] || 0
-      currentPhaseTarget = profitTargets[lastPhase] || 0
-      currentPhaseKey = lastPhase
-    }
+    const currentPhase = 1
+    const currentPhaseProgress = targetProgress.phase1 || 0
+    const currentPhaseTarget = profitTargets.phase1 || 0
+    const currentPhaseKey = "phase1"
 
     // Calculate derived values correctly
-    const targetAmount = targetAmounts[currentPhaseKey] || 0
+    const targetAmount = targetAmounts.phase1 || 0
     const requiredProfitPercentage = currentPhaseTarget
 
-    // Calculate actual profit achieved in current phase
-    let actualProfitAchieved = 0
-    let actualProfitAmount = 0
-
-    if (currentPhase === 1) {
-      // For phase 1, show the actual profit achieved up to the phase 1 target
-      const totalProfitPercentage =
-        accountData.capital > 0
-          ? (accountData.realizedPnL / accountData.capital) * 100
-          : 0
-      // Ensure we don't show negative progress - if in drawdown, show 0
-      actualProfitAchieved = Math.max(
-        0,
-        Math.min(totalProfitPercentage, requiredProfitPercentage)
-      )
-      actualProfitAmount = Math.max(
-        0,
-        (actualProfitAchieved / 100) * accountData.capital
-      )
-    } else {
-      // For phase 2+, show the profit achieved in this specific phase
-      const previousPhaseKey = `phase${currentPhase - 1}`
-      const previousPhaseTarget = profitTargets[previousPhaseKey] || 0
-      const totalProfitPercentage =
-        accountData.capital > 0
-          ? (accountData.realizedPnL / accountData.capital) * 100
-          : 0
-
-      if (totalProfitPercentage <= previousPhaseTarget) {
-        // Haven't reached this phase yet
-        actualProfitAchieved = 0
-        actualProfitAmount = 0
-      } else {
-        // Calculate profit achieved in this phase
-        const profitInThisPhase = totalProfitPercentage - previousPhaseTarget
-        actualProfitAchieved = Math.max(
-          0,
-          Math.min(profitInThisPhase, requiredProfitPercentage)
-        )
-        actualProfitAmount = Math.max(
-          0,
-          (actualProfitAchieved / 100) * accountData.capital
-        )
-      }
-    }
+    // Calculate actual profit achieved
+    const totalProfitPercentage =
+      accountData.capital > 0
+        ? (accountData.realizedPnL / accountData.capital) * 100
+        : 0
+    // Ensure we don't show negative progress - if in drawdown, show 0
+    const actualProfitAchieved = Math.max(
+      0,
+      Math.min(totalProfitPercentage, requiredProfitPercentage)
+    )
+    const actualProfitAmount = Math.max(
+      0,
+      (actualProfitAchieved / 100) * accountData.capital
+    )
 
     return {
-      phases,
+      phases: ["phase1"],
       currentPhase,
       currentPhaseProgress,
       currentPhaseTarget,
@@ -162,16 +105,33 @@ const ProfitTargetsCard = (props) => {
       targetAmount,
       requiredProfitPercentage
     }
-  }, [profitTargets, targetProgress, targetAmounts, accountData.capital])
+  }, [
+    profitTargets,
+    targetProgress,
+    targetAmounts,
+    accountData.capital,
+    accountData.realizedPnL
+  ])
 
   const handleToggleDisplay = () => {
     setShowAmounts(!showAmounts)
   }
 
-  // Don't render if no profit targets are configured or if capital is zero
-  if (Object.keys(profitTargets).length === 0 || !accountData.capital) {
-    return null
-  }
+  // Update store when profit targets status changes
+  useEffect(() => {
+    if (
+      currentPhaseData.requiredProfitPercentage > 0 &&
+      accountData.capital > 0
+    ) {
+      const isMet =
+        currentPhaseData.actualProfitAchieved >=
+        currentPhaseData.requiredProfitPercentage
+      updateObjective("profitTargets", isMet)
+    }
+  }, [
+    currentPhaseData.actualProfitAchieved,
+    currentPhaseData.requiredProfitPercentage
+  ])
 
   return (
     <Card className={cn("gap-2 text-xs font-medium py-2", props.className)}>
@@ -208,13 +168,30 @@ const ProfitTargetsCard = (props) => {
           </span>
         </div>
         <div className="text-xs text-muted-foreground mb-2">
-          {currentPhaseData.currentPhase}/{currentPhaseData.phases.length}{" "}
-          {currentPhaseData.phases.length > 1 ? "phases" : "phase"}
+          {(() => {
+            if (!currentPhaseData.requiredProfitPercentage)
+              return "Set profit target"
+            if (
+              currentPhaseData.actualProfitAchieved >=
+              currentPhaseData.requiredProfitPercentage
+            )
+              return "Target achieved!"
+            const remaining =
+              currentPhaseData.targetAmount -
+              currentPhaseData.actualProfitAmount
+            return `${formatCurrency(remaining)} to target`
+          })()}
         </div>
         <ProgressBar
           progress={Math.max(
             0,
-            Math.min(1, currentPhaseData.currentPhaseProgress / 100)
+            Math.min(
+              1,
+              currentPhaseData.requiredProfitPercentage > 0
+                ? currentPhaseData.actualProfitAchieved /
+                    currentPhaseData.requiredProfitPercentage
+                : 0
+            )
           )}
           height={12}
           filledColor="bg-primary"

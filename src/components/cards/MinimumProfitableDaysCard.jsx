@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, Info } from "lucide-react"
@@ -20,11 +20,21 @@ const MinimumProfitableDaysCard = (props) => {
     realizedPnL: 0,
     balance: 0
   }
+  const updateObjective = useAppStore((state) => state.updateObjective)
+
   const minProfitableDays = config.requireProfitableDays || 0
   const { profitableDays } = calculateProfitableDaysMetrics(
     extractedTrades,
     accountData.capital || 0
   )
+
+  // Update store when profitable days status changes
+  useEffect(() => {
+    if (minProfitableDays > 0 && extractedTrades.length > 0) {
+      const isMet = profitableDays >= minProfitableDays
+      updateObjective("minimumProfitableDays", isMet)
+    }
+  }, [profitableDays, minProfitableDays])
 
   // Don't render if no minimum profitable days requirement
   if (minProfitableDays <= 0) {

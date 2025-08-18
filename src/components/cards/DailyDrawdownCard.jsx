@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Info } from "lucide-react"
@@ -20,6 +20,8 @@ const DailyDrawdownCard = ({ className }) => {
     balance: 0
   }
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
+  const updateObjective = useAppStore((state) => state.updateObjective)
+  const updateBreakingRule = useAppStore((state) => state.updateBreakingRule)
 
   const dailyDrawdown = config.dailyDrawdown ?? 2
   const initialCapital = accountData.capital || 0
@@ -39,6 +41,33 @@ const DailyDrawdownCard = ({ className }) => {
         dailyDrawdown
       )
     : {}
+
+  // Update store when daily drawdown status changes
+  useEffect(() => {
+    console.log("DailyDrawdownCard useEffect triggered:", {
+      dailyDrawdownUsed,
+      dailyDrawdown,
+      extractedTradesLength: extractedTrades.length,
+      initialCapital,
+      condition:
+        dailyDrawdown > 0 && extractedTrades.length > 0 && initialCapital > 0
+    })
+
+    if (dailyDrawdown > 0 && extractedTrades.length > 0 && initialCapital > 0) {
+      const isMet = dailyDrawdownUsed < dailyDrawdown
+      const isBroken = dailyDrawdownUsed >= dailyDrawdown
+
+      console.log("DailyDrawdownCard calculating:", {
+        isMet,
+        isBroken,
+        dailyDrawdownUsed,
+        dailyDrawdown
+      })
+
+      updateObjective("dailyDrawdown", isMet)
+      updateBreakingRule("maxDailyLossBroken", isBroken)
+    }
+  }, [dailyDrawdownUsed, dailyDrawdown])
 
   // Don't render if no configuration
   if (!dailyDrawdown) {

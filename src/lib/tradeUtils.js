@@ -247,6 +247,136 @@ export const calculateHoldTime = (trade) => {
   }
 }
 
+// Calculate consistency rule compliance with minimum trading days logic
+export const calculateConsistencyRule = (
+  tradesData,
+  threshold = 15,
+  minTradingDays = 0
+) => {
+  if (!tradesData || tradesData.length === 0) {
+    return {
+      isConsistent: true,
+      highestDailyPercentage: 0,
+      totalProfits: 0,
+      dailyProfits: {},
+      dailyPnLMap: {},
+      violationDay: null,
+      violationPercentage: 0,
+      threshold,
+      minTradingDays,
+      tradingDays: 0,
+      scenario: "no_trades",
+      message: "No trades available"
+    }
+  }
+
+  // Group trades by date and calculate daily profits
+  const dailyProfits = {}
+  const dailyPnLMap = {}
+  let totalProfits = 0
+
+  tradesData.forEach((trade) => {
+    const realized = parsePnL(trade.realized)
+    // Use the same date format as calculateDailyDrawdownMetrics
+    const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
+
+    // Track all trading days (for consistency with MinimumTradingDaysCard)
+    if (!dailyPnLMap[date]) {
+      dailyPnLMap[date] = 0
+    }
+    dailyPnLMap[date] += realized
+
+    // Only count winning trades for consistency rule calculation
+    if (realized > 0) {
+      dailyProfits[date] = (dailyProfits[date] || 0) + realized
+      totalProfits += realized
+    }
+  })
+
+  const tradingDays = Object.keys(dailyPnLMap).length
+
+  // Scenario 1: Minimum trading days are not met
+  if (minTradingDays > 0 && tradingDays < minTradingDays) {
+    return {
+      isConsistent: true,
+      highestDailyPercentage: 0,
+      totalProfits,
+      dailyProfits,
+      dailyPnLMap,
+      violationDay: null,
+      violationPercentage: 0,
+      threshold,
+      minTradingDays,
+      tradingDays,
+      scenario: "min_days_not_met",
+      message: `Minimum ${minTradingDays} trading days not met (${tradingDays}/${minTradingDays})`
+    }
+  }
+
+  // Scenario 2: Minimum trading days have been met OR Scenario 3: No minimum trading days requirement
+  // Calculate daily profit percentages
+  let highestDailyPercentage = 0
+  let violationDay = null
+  let violationPercentage = 0
+
+  Object.entries(dailyProfits).forEach(([date, dailyProfit]) => {
+    const dailyPercentage =
+      totalProfits > 0 ? (dailyProfit / totalProfits) * 100 : 0
+
+    if (dailyPercentage > highestDailyPercentage) {
+      highestDailyPercentage = dailyPercentage
+    }
+
+    if (dailyPercentage > threshold) {
+      violationDay = date
+      violationPercentage = dailyPercentage
+    }
+  })
+
+  const isConsistent = highestDailyPercentage <= threshold
+
+  // Determine scenario and message
+  let scenario = "calculating"
+  let message = ""
+
+  if (minTradingDays === 0) {
+    // Scenario 3: No minimum trading days requirement
+    scenario = "no_min_requirement"
+    if (totalProfits === 0) {
+      message = "No profits yet"
+    } else if (isConsistent) {
+      message = "Consistent trading!"
+    } else {
+      message = "Spread profits evenly"
+    }
+  } else {
+    // Scenario 2: Minimum trading days have been met
+    scenario = "min_days_met"
+    if (totalProfits === 0) {
+      message = "No profits yet"
+    } else if (isConsistent) {
+      message = "Consistent trading!"
+    } else {
+      message = "Spread profits across more days"
+    }
+  }
+
+  return {
+    isConsistent,
+    highestDailyPercentage,
+    totalProfits,
+    dailyProfits,
+    dailyPnLMap,
+    violationDay,
+    violationPercentage,
+    threshold,
+    minTradingDays,
+    tradingDays,
+    scenario,
+    message
+  }
+}
+
 // Pre-process trade data with all calculated values
 export const preprocessTradeData = (tradesData, accountBalance) => {
   return tradesData.map((trade) => {

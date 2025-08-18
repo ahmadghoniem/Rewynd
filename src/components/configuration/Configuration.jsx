@@ -71,23 +71,6 @@ const NumberInput = ({
   )
 }
 
-const PhaseSelector = ({ phases, onChange }) => {
-  return (
-    <div className="flex space-x-2 justify-center">
-      {[1, 2, 3].map((phase) => (
-        <Button
-          key={phase}
-          variant={phases === phase ? "default" : "outline"}
-          onClick={() => onChange(phase)}
-          className="flex-1 min-w-[80px] font-semibold px-0"
-        >
-          {phase} Phase{phase > 1 ? "s" : ""}
-        </Button>
-      ))}
-    </div>
-  )
-}
-
 const DrawdownTypeSelector = ({ value, onChange }) => {
   return (
     <div className="flex gap-2 justify-center items-center">
@@ -165,47 +148,14 @@ const Configuration = () => {
     })
   }
 
-  // Helper function to update profit target for a specific phase
-  const updateProfitTarget = (phase, value) => {
+  // Helper function to update profit target
+  const updateProfitTarget = (value) => {
     setConfig({
       ...config,
       profitTargets: {
-        ...config.profitTargets,
-        [phase]: value
+        phase1: value
       }
     })
-  }
-
-  const handlePhasesChange = (newPhases) => {
-    setConfig({
-      ...config,
-      phases: newPhases
-    })
-  }
-
-  // Render profit targets based on selected phases
-  const renderProfitTargets = () => {
-    const targets = []
-    for (let i = 1; i <= config.phases; i++) {
-      const phaseKey = `phase${i}`
-      const targetValue = config.profitTargets?.[phaseKey] || 0
-      targets.push(
-        <div key={i} className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">
-            Phase {i} Profit Target
-          </Label>
-          <NumberInput
-            value={targetValue}
-            onChange={(value) => updateProfitTarget(phaseKey, value)}
-            min={1}
-            max={50}
-            step={1}
-            suffix="%"
-          />
-        </div>
-      )
-    }
-    return targets
   }
 
   return (
@@ -245,20 +195,43 @@ const Configuration = () => {
             </div>
           </CardContent>
         </Card>
-        {/* Challenge Phases Card */}
+        {/* Profit Target Card */}
         <Card>
           <CardContent className="flex flex-col gap-2 py-0">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-muted-foreground">
-                Number of Phases
+                Profit Target
               </Label>
-              <PhaseSelector
-                phases={config.phases || 1}
-                onChange={handlePhasesChange}
+              <NumberInput
+                value={config.profitTargets?.phase1 || 0}
+                onChange={updateProfitTarget}
+                min={1}
+                max={50}
+                step={1}
+                suffix="%"
               />
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-3">{renderProfitTargets()}</div>
+        {/* Consistency Rule Card */}
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-0">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground">
+                Consistency Rule
+              </Label>
+              <NumberInput
+                value={config.consistencyRule || 15}
+                onChange={(value) =>
+                  updateConfigField("consistencyRule", value)
+                }
+                min={5}
+                max={50}
+                step={1}
+                suffix="%"
+              />
+            </div>
           </CardContent>
         </Card>
 

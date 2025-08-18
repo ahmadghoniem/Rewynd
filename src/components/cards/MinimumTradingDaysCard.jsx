@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Info } from "lucide-react"
@@ -20,6 +20,8 @@ const MinimumTradingDaysCard = (props) => {
     realizedPnL: 0,
     balance: 0
   }
+  const updateObjective = useAppStore((state) => state.updateObjective)
+
   const minTradingDays = config.minTradingDays || 0
   const { dailyPnLMap } = calculateDailyDrawdownMetrics(
     extractedTrades,
@@ -27,6 +29,14 @@ const MinimumTradingDaysCard = (props) => {
     config.dailyDrawdown || 2
   )
   const tradingDays = Object.keys(dailyPnLMap).length
+
+  // Update store when trading days status changes
+  useEffect(() => {
+    if (minTradingDays > 0 && extractedTrades.length > 0) {
+      const isMet = tradingDays >= minTradingDays
+      updateObjective("minimumTradingDays", isMet)
+    }
+  }, [tradingDays, minTradingDays])
 
   // Don't render if no minimum trading days requirement
   if (minTradingDays <= 0) {

@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Info } from "lucide-react"
 import { ProgressBar } from "../ui/progressbar"
@@ -20,6 +20,8 @@ const MaxDrawdownCard = ({ className }) => {
     balance: 0
   }
   const extractedTrades = useAppStore((state) => state.extractedTrades)
+  const updateObjective = useAppStore((state) => state.updateObjective)
+  const updateBreakingRule = useAppStore((state) => state.updateBreakingRule)
 
   const maxDrawdown = config.maxDrawdown ?? 5
   const maxDrawdownType = config.maxDrawdownType
@@ -41,6 +43,17 @@ const MaxDrawdownCard = ({ className }) => {
         maxDrawdownType
       )
     : {}
+
+  // Update store when max drawdown status changes
+  useEffect(() => {
+    if (maxDrawdown > 0 && extractedTrades.length > 0 && initialCapital > 0) {
+      const isMet = maxDrawdownUsed < maxDrawdown
+      const isBroken = maxDrawdownUsed >= maxDrawdown
+
+      updateObjective("maxDrawdown", isMet)
+      updateBreakingRule("maxStaticLossBroken", isBroken)
+    }
+  }, [maxDrawdownUsed, maxDrawdown])
 
   // Don't render if no configuration
   if (!maxDrawdown) {

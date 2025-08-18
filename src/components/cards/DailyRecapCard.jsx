@@ -83,7 +83,7 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
 
   return (
     <Card className={cn("w-full col-span-2", className)}>
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-1">
         <CardTitle className="text-lg font-medium text-foreground">
           Daily Recap
         </CardTitle>
@@ -99,7 +99,7 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
               overflowX: "hidden",
               overflowY: "auto",
               width: "100%",
-              maxHeight: "400px",
+              maxHeight: "300px",
               scrollSnapType: "y mandatory",
               WebkitOverflowScrolling: "touch"
             }}
@@ -115,7 +115,7 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
             {dailyData.map((day) => (
               <div
                 key={day.dateKey}
-                className="group relative border border-border/40 rounded-lg p-4 hover:border-border/60 transition-all duration-200 bg-card/30"
+                className="group bg-input relative border border-border/40 rounded-lg p-4 hover:border-border/60 transition-all duration-200 "
                 style={{
                   scrollSnapAlign: "start"
                 }}

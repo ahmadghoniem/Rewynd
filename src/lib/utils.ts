@@ -43,18 +43,16 @@ export function parseTradeDate(dateString: string): Date {
 // Trading Analytics Utility Functions
 
 export const getTotalProfitTarget = (profitTargets: Record<string, number>) => {
-  return Object.values(profitTargets).reduce((sum, target) => sum + target, 0)
+  return profitTargets.phase1 || 0
 }
 
 export const getTargetAmounts = (
   profitTargets: Record<string, number>,
   capital: number
 ) => {
-  const amounts: Record<string, number> = {}
-  Object.entries(profitTargets).forEach(([phase, percentage]) => {
-    amounts[phase] = (capital * percentage) / 100
-  })
-  return amounts
+  return {
+    phase1: (capital * (profitTargets.phase1 || 0)) / 100
+  }
 }
 
 export const calculatePerformance = (displayData: {
@@ -109,26 +107,19 @@ export const calculateIndividualTargetProgress = (
   capital: number,
   realizedPnL: number
 ) => {
-  const progress: Record<string, number> = {}
+  const targetPercentage = profitTargets.phase1 || 0
+  const phaseTargetAmount = (targetPercentage / 100) * capital
 
-  // Calculate sequential progress for each phase
-  let remainingPnL = realizedPnL
+  // Handle edge case where there's no target or no capital
+  if (phaseTargetAmount <= 0) {
+    return { phase1: 0 }
+  }
 
-  Object.entries(profitTargets).forEach(([phase, targetPercentage]) => {
-    const phaseTargetAmount = (targetPercentage / 100) * capital
-
-    if (remainingPnL >= phaseTargetAmount) {
-      // Phase is completed
-      progress[phase] = 100
-      remainingPnL -= phaseTargetAmount
-    } else {
-      // Phase is partially completed
-      progress[phase] = Math.max(0, (remainingPnL / phaseTargetAmount) * 100)
-      remainingPnL = 0
-    }
-  })
-
-  return progress
+  if (realizedPnL >= phaseTargetAmount) {
+    return { phase1: 100 }
+  } else {
+    return { phase1: Math.max(0, (realizedPnL / phaseTargetAmount) * 100) }
+  }
 }
 
 export const formatCurrency = (amount: number) => {
