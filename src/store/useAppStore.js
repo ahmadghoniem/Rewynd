@@ -26,8 +26,13 @@ const useAppStore = create((set, get) => {
     loadChallengeConfig: () => {
       return new Promise((resolve) => {
         try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
+          if (
+            typeof window !== "undefined" &&
+            window.chrome &&
+            window.chrome.runtime &&
+            window.chrome.runtime.sendMessage
+          ) {
+            window.chrome.runtime.sendMessage(
               { type: "GET_CHALLENGE_CONFIG" },
               (response) => {
                 if (response && response.data) {
@@ -41,7 +46,7 @@ const useAppStore = create((set, get) => {
           } else {
             resolve(null)
           }
-        } catch (error) {
+        } catch {
           resolve(null)
         }
       })
@@ -50,8 +55,13 @@ const useAppStore = create((set, get) => {
     saveChallengeConfig: (config) => {
       return new Promise((resolve) => {
         try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
+          if (
+            typeof window !== "undefined" &&
+            window.chrome &&
+            window.chrome.runtime &&
+            window.chrome.runtime.sendMessage
+          ) {
+            window.chrome.runtime.sendMessage(
               { type: "SET_CHALLENGE_CONFIG", data: config },
               (response) => {
                 if (response && response.success) {
@@ -65,7 +75,7 @@ const useAppStore = create((set, get) => {
           } else {
             resolve(false)
           }
-        } catch (error) {
+        } catch {
           resolve(false)
         }
       })
@@ -89,8 +99,13 @@ const useAppStore = create((set, get) => {
     loadAccountData: () => {
       return new Promise((resolve) => {
         try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
+          if (
+            typeof window !== "undefined" &&
+            window.chrome &&
+            window.chrome.runtime &&
+            window.chrome.runtime.sendMessage
+          ) {
+            window.chrome.runtime.sendMessage(
               { type: "GET_ACCOUNT_DATA" },
               (response) => {
                 if (response && response.data) {
@@ -104,7 +119,7 @@ const useAppStore = create((set, get) => {
           } else {
             resolve(null)
           }
-        } catch (error) {
+        } catch {
           resolve(null)
         }
       })
@@ -113,8 +128,13 @@ const useAppStore = create((set, get) => {
     saveAccountData: (accountData) => {
       return new Promise((resolve) => {
         try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
+          if (
+            typeof window !== "undefined" &&
+            window.chrome &&
+            window.chrome.runtime &&
+            window.chrome.runtime.sendMessage
+          ) {
+            window.chrome.runtime.sendMessage(
               { type: "ACCOUNT_DATA_UPDATE", data: accountData },
               (response) => {
                 if (response && response.success) {
@@ -128,7 +148,7 @@ const useAppStore = create((set, get) => {
           } else {
             resolve(false)
           }
-        } catch (error) {
+        } catch {
           resolve(false)
         }
       })
@@ -155,22 +175,30 @@ const useAppStore = create((set, get) => {
     loadNotes: () => {
       return new Promise((resolve) => {
         try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage({ type: "GET_NOTES" }, (response) => {
-              if (response && response.data) {
-                set({ notes: response.data.notes || "" })
-                resolve(response.data.notes || "")
-              } else {
-                resolve("")
+          if (
+            typeof window !== "undefined" &&
+            window.chrome &&
+            window.chrome.runtime &&
+            window.chrome.runtime.sendMessage
+          ) {
+            window.chrome.runtime.sendMessage(
+              { type: "GET_NOTES" },
+              (response) => {
+                if (response && response.data) {
+                  set({ notes: response.data.notes || "" })
+                  resolve(response.data.notes || "")
+                } else {
+                  resolve("")
+                }
               }
-            })
+            )
           } else {
             // Fallback to localStorage
             const notes = localStorage.getItem("fxReplayNotes") || ""
             set({ notes })
             resolve(notes)
           }
-        } catch (error) {
+        } catch {
           resolve("")
         }
       })
@@ -179,8 +207,13 @@ const useAppStore = create((set, get) => {
     saveNotes: (notes) => {
       return new Promise((resolve) => {
         try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
+          if (
+            typeof window !== "undefined" &&
+            window.chrome &&
+            window.chrome.runtime &&
+            window.chrome.runtime.sendMessage
+          ) {
+            window.chrome.runtime.sendMessage(
               { type: "SAVE_NOTES", data: { notes } },
               (response) => {
                 if (response && response.success) {
@@ -200,7 +233,7 @@ const useAppStore = create((set, get) => {
             set({ notes })
             resolve(true)
           }
-        } catch (error) {
+        } catch {
           resolve(false)
         }
       })
@@ -210,8 +243,13 @@ const useAppStore = create((set, get) => {
     loadTradeData: () => {
       return new Promise((resolve) => {
         try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
+          if (
+            typeof window !== "undefined" &&
+            window.chrome &&
+            window.chrome.runtime &&
+            window.chrome.runtime.sendMessage
+          ) {
+            window.chrome.runtime.sendMessage(
               { type: "GET_TRADE_DATA" },
               (response) => {
                 if (response && response.data) {
@@ -225,7 +263,7 @@ const useAppStore = create((set, get) => {
           } else {
             resolve(null)
           }
-        } catch (error) {
+        } catch {
           resolve(null)
         }
       })
@@ -234,8 +272,13 @@ const useAppStore = create((set, get) => {
     saveTradeData: (tradeData) => {
       return new Promise((resolve) => {
         try {
-          if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            chrome.runtime.sendMessage(
+          if (
+            typeof window !== "undefined" &&
+            window.chrome &&
+            window.chrome.runtime &&
+            window.chrome.runtime.sendMessage
+          ) {
+            window.chrome.runtime.sendMessage(
               { type: "TRADE_DATA_UPDATE", data: tradeData },
               (response) => {
                 if (response && response.success) {
@@ -249,7 +292,7 @@ const useAppStore = create((set, get) => {
           } else {
             resolve(false)
           }
-        } catch (error) {
+        } catch {
           resolve(false)
         }
       })
@@ -292,7 +335,6 @@ const useAppStore = create((set, get) => {
 
     // Update specific objective status
     updateObjective: (objectiveKey, status) => {
-      console.log("updateObjective called:", { objectiveKey, status })
       set((state) => ({
         objectives: {
           ...state.objectives,
@@ -303,7 +345,6 @@ const useAppStore = create((set, get) => {
 
     // Update breaking rule status
     updateBreakingRule: (ruleKey, broken) => {
-      console.log("updateBreakingRule called:", { ruleKey, broken })
       set((state) => {
         // Only update if the value is actually changing
         if (state.objectives[ruleKey] === broken) {
@@ -338,19 +379,6 @@ const useAppStore = create((set, get) => {
       const anyBreakingRulesViolated =
         objectives.maxDailyLossBroken || objectives.maxStaticLossBroken
 
-      console.log("getBadgeStatus:", {
-        objectives,
-        allObjectivesMet,
-        maxDailyLossBroken: objectives.maxDailyLossBroken,
-        maxStaticLossBroken: objectives.maxStaticLossBroken,
-        anyBreakingRulesViolated,
-        result: allObjectivesMet
-          ? "funded"
-          : anyBreakingRulesViolated
-          ? "failed"
-          : "in-progress"
-      })
-
       if (allObjectivesMet) {
         return "funded"
       } else if (anyBreakingRulesViolated) {
@@ -362,31 +390,26 @@ const useAppStore = create((set, get) => {
 
     // Export all data for backup/transfer
     exportAllData: async () => {
-      try {
-        const state = get()
+      const state = get()
 
-        // Load fresh data from storage to ensure we have the latest
-        const [challengeConfig, accountData, tradeData, notes] =
-          await Promise.all([
-            state.loadChallengeConfig(),
-            state.loadAccountData(),
-            state.loadTradeData(),
-            state.loadNotes()
-          ])
+      // Load fresh data from storage to ensure we have the latest
+      const [challengeConfig, accountData, , notes] = await Promise.all([
+        state.loadChallengeConfig(),
+        state.loadAccountData(),
+        state.loadTradeData(),
+        state.loadNotes()
+      ])
 
-        return {
-          exportMetadata: {
-            exportDate: new Date().toISOString(),
-            version: "1.0",
-            source: "FxReplayFunded"
-          },
-          challengeConfig: challengeConfig || state.config,
-          accountData: accountData || state.accountData,
-          tradeData: state.extractedTrades || [],
-          notes: notes || state.notes || ""
-        }
-      } catch (error) {
-        throw error
+      return {
+        exportMetadata: {
+          exportDate: new Date().toISOString(),
+          version: "1.0",
+          source: "FxReplayFunded"
+        },
+        challengeConfig: challengeConfig || state.config,
+        accountData: accountData || state.accountData,
+        tradeData: state.extractedTrades || [],
+        notes: notes || state.notes || ""
       }
     },
 
@@ -431,7 +454,7 @@ const useAppStore = create((set, get) => {
         }
 
         return true
-      } catch (error) {
+      } catch {
         return false
       }
     }

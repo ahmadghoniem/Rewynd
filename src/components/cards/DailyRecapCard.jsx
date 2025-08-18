@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatCurrency, getPnLColor } from "@/lib/utils"
 
 import { Clock, History } from "lucide-react"
 import { cn, parseTradeDate } from "@/lib/utils"
@@ -37,21 +38,6 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
       (a, b) => b.date - a.date
     )
     setDailyData(dailyArray)
-  }
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount)
-  }
-
-  const getPnLColor = (pnl) => {
-    if (pnl > 0) return "text-success"
-    if (pnl < 0) return "text-danger"
-    return "text-muted-foreground"
   }
 
   // Drag-to-scroll logic

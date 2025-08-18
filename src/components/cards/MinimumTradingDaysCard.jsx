@@ -1,7 +1,6 @@
 import React, { useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import { ProgressBar } from "../ui/progressbar"
 import {
   Tooltip,

@@ -1,16 +1,15 @@
 import { JSX, useCallback, useMemo, useState } from "react"
-import * as React from "react"
 
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog"
 
 export function useEditorModal(): [
   JSX.Element | null,
-  (title: string, showModal: (onClose: () => void) => JSX.Element) => void,
+  (title: string, showModal: (onClose: () => void) => JSX.Element) => void
 ] {
   const [modalContent, setModalContent] = useState<null | {
     closeOnClickOutside: boolean
@@ -48,7 +47,7 @@ export function useEditorModal(): [
       setModalContent({
         closeOnClickOutside,
         content: getContent(onClose),
-        title,
+        title
       })
     },
     [onClose]

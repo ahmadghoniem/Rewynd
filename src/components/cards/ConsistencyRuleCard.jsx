@@ -9,7 +9,7 @@ import {
   TooltipContent
 } from "@/components/ui/tooltip"
 import useAppStore from "@/store/useAppStore"
-import { calculateConsistencyRule, formatCurrency } from "@/lib/tradeUtils"
+import { calculateConsistencyRule, formatCurrency } from "@/lib/utils"
 
 const ConsistencyRuleCard = (props) => {
   const [showAmounts, setShowAmounts] = useState(false)

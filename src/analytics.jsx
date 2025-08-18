@@ -10,7 +10,7 @@ import {
 
 import PerformanceSection from "@/components/analytics/PerformanceSection.jsx"
 import ObjectivesSection from "@/components/analytics/ObjectivesSection"
-import Configuration from "@/components/configuration"
+import Configuration from "@/Configuration"
 import FooterCard from "@/components/cards/FooterCard"
 
 const AnalyticsView = () => {

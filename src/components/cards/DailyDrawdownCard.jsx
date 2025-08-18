@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Info } from "lucide-react"
 import { ProgressBar } from "../ui/progressbar"
 import {
@@ -44,25 +43,9 @@ const DailyDrawdownCard = ({ className }) => {
 
   // Update store when daily drawdown status changes
   useEffect(() => {
-    console.log("DailyDrawdownCard useEffect triggered:", {
-      dailyDrawdownUsed,
-      dailyDrawdown,
-      extractedTradesLength: extractedTrades.length,
-      initialCapital,
-      condition:
-        dailyDrawdown > 0 && extractedTrades.length > 0 && initialCapital > 0
-    })
-
     if (dailyDrawdown > 0 && extractedTrades.length > 0 && initialCapital > 0) {
       const isMet = dailyDrawdownUsed < dailyDrawdown
       const isBroken = dailyDrawdownUsed >= dailyDrawdown
-
-      console.log("DailyDrawdownCard calculating:", {
-        isMet,
-        isBroken,
-        dailyDrawdownUsed,
-        dailyDrawdown
-      })
 
       updateObjective("dailyDrawdown", isMet)
       updateBreakingRule("maxDailyLossBroken", isBroken)

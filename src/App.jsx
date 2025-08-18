@@ -1,6 +1,6 @@
 import React, { useEffect } from "react"
 import AnalyticsView from "./analytics"
-import { ThemeProvider, useTheme } from "./ThemeContext"
+import { ThemeProvider } from "./ThemeContext"
 import useAppStore from "./store/useAppStore"
 import HeaderCard from "./components/cards/HeaderCard"
 
@@ -9,9 +9,6 @@ const AppContent = () => {
   const loadAccountData = useAppStore((state) => state.loadAccountData)
 
   const loadTradeData = useAppStore((state) => state.loadTradeData)
-  const analyticsRef = React.useRef(null)
-
-  const { isDark, toggleTheme } = useTheme()
 
   // Load saved configuration and account data on mount
   useEffect(() => {
@@ -68,7 +65,7 @@ const AppContent = () => {
         <HeaderCard />
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <AnalyticsView ref={analyticsRef} />
+          <AnalyticsView />
         </main>
       </div>
     </ThemeProvider>

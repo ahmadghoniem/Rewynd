@@ -1,14 +1,8 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import React from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { formatCurrency, cn } from "@/lib/utils"
 
 const BalanceAndRealizedPnlCard = ({ displayData, className }) => {
-  const formatCurrency = (amount) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2
-    }).format(amount)
-
   // Calculate PnL percentage
   const balance = displayData?.balance ?? 0
   const realizedPnL = displayData?.realizedPnL ?? 0

@@ -12,7 +12,7 @@ import {
   Eye,
   EyeOff
 } from "lucide-react"
-import { preprocessTradeData } from "@/lib/tradeUtils"
+import { preprocessTradeData } from "@/lib/utils"
 import TradeRow from "./TradeRow"
 import Pagination from "@/components/ui/pagination"
 

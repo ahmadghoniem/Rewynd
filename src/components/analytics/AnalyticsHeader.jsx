@@ -6,14 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import {
-  Download,
-  Upload,
-  FileText,
-  Database,
-  Settings,
-  CheckCircle
-} from "lucide-react"
+import { Download, Upload, FileText, Database, Settings } from "lucide-react"
 import useAppStore from "@/store/useAppStore"
 import { getSessionIdFromUrl } from "@/lib/utils"
 import ImportDialog from "./ImportDialog"
@@ -27,8 +20,6 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
   const exportAllData = useAppStore((state) => state.exportAllData)
   const capital = useAppStore((state) => state.accountData.capital)
   const objectives = useAppStore((state) => state.objectives)
-  const updateObjective = useAppStore((state) => state.updateObjective)
-  const updateBreakingRule = useAppStore((state) => state.updateBreakingRule)
 
   // Get session ID from URL
   const sessionId = getSessionIdFromUrl()
@@ -38,20 +29,6 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
 
   // Create the header text with dynamic values
   const headerText = `#${sessionId}-2-$${formattedCapital}`
-
-  // Test function to set all objectives to true (Funded status)
-  const testFundedStatus = () => {
-    console.log("Setting all objectives to true for Funded status test")
-    updateObjective("minimumTradingDays", true)
-    updateObjective("minimumProfitableDays", true)
-    updateObjective("profitTargets", true)
-    updateObjective("consistencyRule", true)
-    updateObjective("dailyDrawdown", true)
-    updateObjective("maxDrawdown", true)
-    updateBreakingRule("maxDailyLossBroken", false)
-    updateBreakingRule("maxStaticLossBroken", false)
-    updateBreakingRule("consistencyRuleBroken", false)
-  }
 
   // Calculate badge status based on objectives
   const getBadgeStatus = () => {
@@ -68,19 +45,6 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
     // Only maxDailyLossBroken and maxStaticLossBroken cause failure
     const anyBreakingRulesViolated =
       objectives.maxDailyLossBroken || objectives.maxStaticLossBroken
-
-    console.log("getBadgeStatus:", {
-      objectives,
-      allObjectivesMet,
-      maxDailyLossBroken: objectives.maxDailyLossBroken,
-      maxStaticLossBroken: objectives.maxStaticLossBroken,
-      anyBreakingRulesViolated,
-      result: allObjectivesMet
-        ? "funded"
-        : anyBreakingRulesViolated
-        ? "failed"
-        : "in-progress"
-    })
 
     if (allObjectivesMet) {
       return "funded"
@@ -134,16 +98,6 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={testFundedStatus}
-            className="h-8 px-3 text-xs font-medium bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-          >
-            <CheckCircle className="h-3 w-3 mr-1.5" />
-            Test Funded
-          </Button>
-
           <Button
             variant="outline"
             size="sm"

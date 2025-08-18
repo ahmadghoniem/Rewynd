@@ -1,13 +1,14 @@
-import BalanceAndRealizedPnlCard from "@/components/cards/BalanceAndRealizedPnlCard.jsx"
-import WinRateCard from "@/components/cards/winRateCard.jsx"
-import AvgRRCard from "@/components/cards/AvgRRCard.jsx"
-import ProfitFactorCard from "@/components/cards/ProfitFactorCard.jsx"
-import LossesSummaryCard from "@/components/cards/LossesSummaryCard.jsx"
-import WinsSummaryCard from "@/components/cards/WinsSummaryCard.jsx"
-import TraderExpectancyCard from "@/components/cards/TraderExpectancyCard.jsx"
-import CurrentStreakCard from "@/components/cards/CurrentStreakCard.jsx"
+import React, { useMemo } from "react"
+import { formatCurrency } from "@/lib/utils"
 import useAppStore from "@/store/useAppStore"
-import { useMemo } from "react"
+import WinsSummaryCard from "@/components/cards/WinsSummaryCard"
+import LossesSummaryCard from "@/components/cards/LossesSummaryCard"
+import AvgRRCard from "@/components/cards/AvgRRCard"
+import CurrentStreakCard from "@/components/cards/CurrentStreakCard"
+import ProfitFactorCard from "@/components/cards/ProfitFactorCard"
+import TraderExpectancyCard from "@/components/cards/TraderExpectancyCard"
+import BalanceAndRealizedPnlCard from "@/components/cards/BalanceAndRealizedPnlCard"
+import WinRateCard from "@/components/cards/winRateCard.jsx"
 import { parseTradeDate } from "@/lib/utils"
 
 const PerformanceSection = () => {
@@ -16,14 +17,6 @@ const PerformanceSection = () => {
     capital: 0,
     realizedPnL: 0,
     balance: 0
-  }
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2
-    }).format(amount)
   }
 
   const stats = useMemo(() => {

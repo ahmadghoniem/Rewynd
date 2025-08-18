@@ -1,6 +1,6 @@
 import React, { memo } from "react"
 import { Badge } from "@/components/ui/badge"
-import { formatNumber, calculatePercentage } from "@/lib/tradeUtils"
+import { formatNumber, calculatePercentage } from "@/lib/utils"
 
 const TradeRow = memo(({ trade, visibleColumns }) => {
   return (

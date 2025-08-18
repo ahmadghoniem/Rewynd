@@ -167,7 +167,6 @@ A comprehensive Chrome extension and web application for analyzing FxReplay trad
 - **Profit Factor**: Ratio of gross profit to gross loss
 - **Average RR**: Average risk-to-reward ratio
 - **Trader Expectancy**: Expected profit per trade
-- **Sharpe Ratio**: Risk-adjusted return measure
 
 ### Challenge Objectives
 

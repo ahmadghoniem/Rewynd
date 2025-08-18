@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Heart, Clipboard, CheckCircle, DollarSign, Github } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Heart, Clipboard, CheckCircle, Github } from "lucide-react"
+import { cn, copyToClipboard, shortenAddress } from "@/lib/utils"
 
 const FooterCard = ({ className }) => {
   const [copiedAddress, setCopiedAddress] = useState(null)
@@ -9,18 +9,12 @@ const FooterCard = ({ className }) => {
   // Crypto donation address (replace with your actual address)
   const usdtAddress = "TQn9Y2khDD95J42FQtQTdwVVRjqQZ6Zg9g"
 
-  const copyToClipboard = async (address) => {
-    try {
-      await navigator.clipboard.writeText(address)
+  const handleCopyToClipboard = async (address) => {
+    const success = await copyToClipboard(address)
+    if (success) {
       setCopiedAddress(true)
       setTimeout(() => setCopiedAddress(false), 2000)
-    } catch (err) {
-      console.error("Failed to copy: ", err)
     }
-  }
-
-  const shortenAddress = (address) => {
-    return `${address.slice(0, 6)}...${address.slice(-6)}`
   }
 
   return (
@@ -75,7 +69,7 @@ const FooterCard = ({ className }) => {
                   {shortenAddress(usdtAddress)}
                 </code>
                 <button
-                  onClick={() => copyToClipboard(usdtAddress)}
+                  onClick={() => handleCopyToClipboard(usdtAddress)}
                   className="p-1 hover:bg-muted/80 rounded transition-colors"
                   title="Copy USDT address"
                 >
