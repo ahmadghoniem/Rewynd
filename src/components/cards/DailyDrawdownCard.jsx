@@ -12,6 +12,7 @@ import useAppStore from "@/store/useAppStore"
 
 const DailyDrawdownCard = ({ className }) => {
   const [showAmounts, setShowAmounts] = useState(false)
+  const [showEquityLimit, setShowEquityLimit] = useState(true)
   const config = useAppStore((state) => state.config) || {}
   const accountData = useAppStore((state) => state.accountData) || {
     capital: 0,
@@ -70,6 +71,10 @@ const DailyDrawdownCard = ({ className }) => {
     setShowAmounts(!showAmounts)
   }
 
+  const handleToggleBalanceDisplay = () => {
+    setShowEquityLimit(!showEquityLimit)
+  }
+
   return (
     <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
       <CardHeader className="flex justify-between items-center px-2 pb-0">
@@ -104,9 +109,13 @@ const DailyDrawdownCard = ({ className }) => {
               : `${dailyDrawdown}%`}
           </span>
         </div>
-        <div className="text-xs text-muted-foreground mb-2">
-          Equity limit: {formatCurrency(displayDailyLossEquityLimit)} / SOD:{" "}
-          {formatCurrency(displayCurrentDayStartBalance)}
+        <div
+          className="text-xs text-muted-foreground mb-2 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={handleToggleBalanceDisplay}
+        >
+          {showEquityLimit
+            ? `Equity limit: ${formatCurrency(displayDailyLossEquityLimit)}`
+            : `Start of day: ${formatCurrency(displayCurrentDayStartBalance)}`}
         </div>
         <ProgressBar
           progress={Math.max(0, Math.min(1, dailyDrawdownProgress / 100))}

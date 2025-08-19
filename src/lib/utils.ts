@@ -786,7 +786,9 @@ export const calculateConsistencyRule = (
       minTradingDays,
       tradingDays,
       scenario: "min_days_not_met",
-      message: `Minimum ${minTradingDays} trading days not met (${tradingDays}/${minTradingDays})`
+      message: `Need ${
+        minTradingDays - tradingDays
+      } more trading days (${tradingDays}/${minTradingDays})`
     }
   }
 

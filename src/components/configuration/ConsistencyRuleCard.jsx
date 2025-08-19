@@ -14,9 +14,9 @@ const ConsistencyRuleCard = ({ config, updateConfigField }) => {
           <NumberInput
             value={config.consistencyRule || 15}
             onChange={(value) => updateConfigField("consistencyRule", value)}
-            min={5}
+            min={0}
             max={50}
-            step={1}
+            step={5}
             suffix="%"
           />
         </div>

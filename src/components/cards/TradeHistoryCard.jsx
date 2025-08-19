@@ -161,7 +161,7 @@ const TradeHistoryCard = ({
   )
 
   return (
-    <Card>
+    <Card className="justify-between h-full">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">

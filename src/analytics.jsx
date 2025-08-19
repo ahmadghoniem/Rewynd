@@ -26,13 +26,13 @@ const AnalyticsView = () => {
         showConfiguration={showConfiguration}
         onToggleConfiguration={handleToggleConfiguration}
       />
-      <div className="grid grid-cols-1 gap-2 lg:[grid-template-columns:75%_25%]">
-        <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 lg:[grid-template-columns:75%_25%]">
+        <div className="flex flex-col gap-2 pl-2 lg:pl-2">
           <PerformanceSection />
           <EquityCurveSection />
           <TradeHistorySection />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 pl-2 lg:pl-2">
           {showConfiguration ? <Configuration /> : <ObjectivesSection />}
           <DailyRecapSection />
           <FooterCard />

@@ -14,27 +14,27 @@ const DrawdownTypeSelector = ({ value, onChange }) => {
       </Button>
       <div
         className={cn(
-          "bg-input/30 flex flex-row items-center gap-2 rounded-lg border border-border",
+          "bg-input/30 flex flex-row items-center gap-1.5 rounded-lg border border-border h-9",
           (value === "trailing" || value === "trailing_scaling") && ""
         )}
       >
         <span className="text-sm font-semibold pl-2 select-none">Trailing</span>
-        <div className="flex bg-input  rounded-lg relative">
+        <div className="flex bg-input rounded-md m-0.5 relative">
           {/* Animated background slider */}
           <div
             className={cn(
-              "flex flex-row justify-center items-center absolute inset-0 bg-primary rounded-md",
+              "absolute inset-0 bg-primary rounded-md transition-all duration-250 ease-in-out z-0",
               value === "trailing"
-                ? "translate-x-0 transition-all duration-250 ease-in-out"
+                ? "translate-x-0"
                 : value === "trailing_scaling"
-                ? "translate-x-full transition-all duration-250 ease-in-out"
+                ? "translate-x-[calc(100%-1px)]"
                 : "translate-x-0 opacity-0"
             )}
-            style={{ width: "50%" }}
+            style={{ width: "calc(50% - 0.5px)" }}
           />
           <button
             onClick={() => onChange("trailing")}
-            className="relative flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-all duration-250 z-10 flex items-center justify-center"
+            className="relative flex-1 py-1.5 px-3 rounded-md text-sm font-semibold transition-all duration-250 z-10 flex items-center justify-center"
           >
             <span
               className={cn(
@@ -49,7 +49,7 @@ const DrawdownTypeSelector = ({ value, onChange }) => {
           </button>
           <button
             onClick={() => onChange("trailing_scaling")}
-            className="relative flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-all duration-250 z-10 flex items-center justify-center"
+            className="relative flex-1 py-1.5 px-3 rounded-md text-sm font-semibold transition-all duration-250 z-10 flex items-center justify-center"
           >
             <span
               className={cn(

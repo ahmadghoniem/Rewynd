@@ -21,6 +21,11 @@ const ConsistencyRuleCard = (props) => {
   const consistencyRule = props.consistencyRule || config.consistencyRule || 15
   const formatCurrencyFn = props.formatCurrency || formatCurrency
 
+  // Return null if consistency rule is 0 (disabled)
+  if (consistencyRule === 0) {
+    return null
+  }
+
   // Memoize consistency calculations
   const consistencyData = useMemo(() => {
     try {
