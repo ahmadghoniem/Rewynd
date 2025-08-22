@@ -3,8 +3,8 @@
 /* eslint-disable no-undef */
 
 ;(function () {
-  // Account tracking functionality
-  function extractAccountData() {
+  // Session tracking functionality
+  function extractSessionData() {
     // Find account section with multiple fallback selectors
     let accountSection = document.querySelector(
       "div.hidden.lg\\:\\!flex.justify-end.items-center.gap-4.w-full.grow"
@@ -48,7 +48,13 @@
         ? accountBalance - realizedPnL
         : accountBalance
 
+    // Extract session ID from URL
+    const sessionId =
+      window.location.pathname.split("/").pop() ||
+      "834d7ae1-0b55-409a-bd3c-56f3904d44d8"
+
     const result = {
+      id: sessionId,
       balance: accountBalance,
       realizedPnL: realizedPnL || 0,
       capital: initialCapital,
@@ -58,34 +64,34 @@
     return result
   }
 
-  function saveAccountData(data) {
+  function saveSessionData(data) {
     try {
-      // Use the store's saveAccountData function
+      // Use the store's saveSessionData function
       if (window.useAppStore) {
-        window.useAppStore.getState().saveAccountData(data)
+        window.useAppStore.getState().saveSessionData(data)
       } else {
         // Fallback to direct messaging if store is not available
         chrome.runtime.sendMessage(
           {
-            type: "ACCOUNT_DATA_UPDATE",
+            type: "SESSION_DATA_UPDATE",
             data: data
           },
           (response) => {
             if (chrome.runtime.lastError) {
               console.error(
-                "Error sending account data:",
+                "Error sending session data:",
                 chrome.runtime.lastError
               )
               return
             }
             if (response && response.success) {
-              // console.log("Account data sent to background script")
+              // console.log("Session data sent to background script")
             }
           }
         )
       }
     } catch (error) {
-      console.error("Error saving account data:", error)
+      console.error("Error saving session data:", error)
     }
   }
 
@@ -93,11 +99,11 @@
   let isExtracting = false
   let extractionTimeout = null
 
-  function trackAccountData() {
-    const data = extractAccountData()
+  function trackSessionData() {
+    const data = extractSessionData()
     if (data) {
-      // Save account data normally
-      saveAccountData(data)
+      // Save session data normally
+      saveSessionData(data)
 
       // Debounce trade extraction to prevent race conditions
       if (extractionTimeout) {
@@ -577,8 +583,8 @@
   }
 
   function init() {
-    // Initial account tracking
-    trackAccountData()
+    // Initial session tracking
+    trackSessionData()
 
     function waitForTradeTableAndExtract() {
       const closedPositionTable = document.querySelector(
@@ -644,6 +650,20 @@
           })
         return true // Keep message channel open for async response
       }
+
+      if (message.type === "EXTRACT_SESSION_DATA") {
+        const sessionData = extractSessionData()
+        if (sessionData) {
+          saveSessionData(sessionData)
+          sendResponse({ success: true, data: sessionData })
+        } else {
+          sendResponse({
+            success: false,
+            error: "Failed to extract session data"
+          })
+        }
+        return true // Keep message channel open for async response
+      }
     })
 
     // Store observers for cleanup
@@ -695,12 +715,12 @@
       spans.forEach((span) => {
         const observer = new MutationObserver((mutations) => {
           mutations.forEach(() => {
-            // Debounce the trackAccountData call to prevent rapid firing
+            // Debounce the trackSessionData call to prevent rapid firing
             if (extractionTimeout) {
               clearTimeout(extractionTimeout)
             }
             extractionTimeout = setTimeout(() => {
-              trackAccountData()
+              trackSessionData()
             }, 300) // Reduced from 500ms to 300ms debounce
           })
         })

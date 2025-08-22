@@ -942,15 +942,17 @@ export function getSessionIdFromUrl(): string {
     window.location.hostname === "127.0.0.1"
   ) {
     // In development, use the mock session ID from the example URL
-    return "56f3904d44d8"
+    return "834d7ae1-0b55-409a-bd3c-56f3904d44d8"
   }
 
   // In production, extract from the URL path
   const pathSegments = window.location.pathname.split("/")
   const lastSegment = pathSegments[pathSegments.length - 1]
 
-  // The session ID is the last part after the last dash
-  const sessionId = lastSegment.split("-").pop()
+  // The session ID is the full UUID from the URL
+  // Example: https://app.fxreplay.com/en-US/auth/chart/834d7ae1-0b55-409a-bd3c-56f3904d44d8
+  // We want the full UUID: 834d7ae1-0b55-409a-bd3c-56f3904d44d8
+  const sessionId = lastSegment
 
-  return sessionId || "56f3904d44d8" // fallback to the example session ID
+  return sessionId || "834d7ae1-0b55-409a-bd3c-56f3904d44d8" // fallback to the example session ID
 }

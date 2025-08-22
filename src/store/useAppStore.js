@@ -1,5 +1,7 @@
 import { create } from "zustand"
 
+/* eslint-disable no-undef */
+
 const useAppStore = create((set, get) => {
   // Auto-initialize when store is created
   if (typeof window !== "undefined") {
@@ -86,17 +88,18 @@ const useAppStore = create((set, get) => {
       const updatedConfig = { ...currentConfig, ...newConfig }
       return get().saveChallengeConfig(updatedConfig)
     },
-    // account Data management functions
-    accountData: {
+    // session Data management functions
+    sessionData: {
+      id: null,
       balance: null,
       realizedPnL: null,
       capital: null,
       lastUpdated: null
     },
-    setAccountData: (accountData) => set({ accountData }),
+    setSessionData: (sessionData) => set({ sessionData }),
 
-    // Account data management functions
-    loadAccountData: () => {
+    // Session data management functions
+    loadSessionData: () => {
       return new Promise((resolve) => {
         try {
           if (
@@ -106,10 +109,10 @@ const useAppStore = create((set, get) => {
             window.chrome.runtime.sendMessage
           ) {
             window.chrome.runtime.sendMessage(
-              { type: "GET_ACCOUNT_DATA" },
+              { type: "GET_SESSION_DATA" },
               (response) => {
                 if (response && response.data) {
-                  set({ accountData: response.data })
+                  set({ sessionData: response.data })
                   resolve(response.data)
                 } else {
                   resolve(null)
@@ -125,7 +128,7 @@ const useAppStore = create((set, get) => {
       })
     },
 
-    saveAccountData: (accountData) => {
+    saveSessionData: (sessionData) => {
       return new Promise((resolve) => {
         try {
           if (
@@ -135,10 +138,10 @@ const useAppStore = create((set, get) => {
             window.chrome.runtime.sendMessage
           ) {
             window.chrome.runtime.sendMessage(
-              { type: "ACCOUNT_DATA_UPDATE", data: accountData },
+              { type: "SESSION_DATA_UPDATE", data: sessionData },
               (response) => {
                 if (response && response.success) {
-                  set({ accountData })
+                  set({ sessionData })
                   resolve(true)
                 } else {
                   resolve(false)
@@ -154,14 +157,107 @@ const useAppStore = create((set, get) => {
       })
     },
 
-    updateAccountData: (newAccountData) => {
-      const currentData = get().accountData
+    updateSessionData: (newSessionData) => {
+      const currentData = get().sessionData
       const updatedData = {
         ...currentData,
-        ...newAccountData,
+        ...newSessionData,
         lastUpdated: Date.now()
       }
-      return get().saveAccountData(updatedData)
+      return get().saveSessionData(updatedData)
+    },
+
+    // Function to switch to a new session (clears all data and extracts fresh data)
+    switchToNewSession: async (newSessionData) => {
+      const state = get()
+
+      // Clear all existing data
+      set({
+        sessionData: {
+          id: null,
+          balance: null,
+          realizedPnL: null,
+          capital: null,
+          lastUpdated: null
+        },
+        extractedTrades: [],
+        notes: "",
+        objectives: {
+          minimumTradingDays: false,
+          minimumProfitableDays: false,
+          profitTargets: false,
+          consistencyRule: false,
+          dailyDrawdown: false,
+          maxDrawdown: false,
+          consistencyRuleBroken: false,
+          maxDailyLossBroken: false,
+          maxStaticLossBroken: false
+        }
+      })
+
+      // Clear trade data and notes from storage
+      if (
+        typeof window !== "undefined" &&
+        window.chrome?.runtime?.sendMessage
+      ) {
+        try {
+          await new Promise((resolve) => {
+            window.chrome.runtime.sendMessage(
+              { type: "CLEAR_TRADE_DATA" },
+              resolve
+            )
+          })
+          await new Promise((resolve) => {
+            window.chrome.runtime.sendMessage({ type: "CLEAR_NOTES" }, resolve)
+          })
+        } catch (error) {
+          console.error("Error clearing storage data:", error)
+        }
+      }
+
+      // Extract fresh data from the new session
+      try {
+        if (chrome?.tabs) {
+          const [fxReplayTab] = await chrome.tabs.query({
+            url: "https://app.fxreplay.com/en-US/auth/chart/*"
+          })
+
+          if (fxReplayTab) {
+            // Extract fresh session data
+            const sessionResponse = await chrome.tabs.sendMessage(
+              fxReplayTab.id,
+              {
+                type: "EXTRACT_SESSION_DATA"
+              }
+            )
+
+            if (sessionResponse?.success && sessionResponse.data) {
+              await state.saveSessionData(sessionResponse.data)
+            }
+
+            // Extract fresh trade data
+            const tradeResponse = await chrome.tabs.sendMessage(
+              fxReplayTab.id,
+              {
+                type: "EXTRACT_TRADES",
+                forceRefresh: true
+              }
+            )
+
+            if (tradeResponse?.success && tradeResponse.trades) {
+              await state.saveTradeData({
+                trades: tradeResponse.trades,
+                forceRefresh: true,
+                url: fxReplayTab.url
+              })
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error extracting fresh data:", error)
+        // Fallback: save the provided session data
+        await state.saveSessionData(newSessionData)
+      }
     },
 
     extractedTrades: [],
@@ -310,7 +406,7 @@ const useAppStore = create((set, get) => {
     // Initialize all data
     initialize: () => {
       get().loadChallengeConfig()
-      get().loadAccountData()
+      get().loadSessionData()
       get().loadTradeData()
       get().loadNotes()
     },
@@ -393,9 +489,9 @@ const useAppStore = create((set, get) => {
       const state = get()
 
       // Load fresh data from storage to ensure we have the latest
-      const [challengeConfig, accountData, , notes] = await Promise.all([
+      const [challengeConfig, sessionData, , notes] = await Promise.all([
         state.loadChallengeConfig(),
-        state.loadAccountData(),
+        state.loadSessionData(),
         state.loadTradeData(),
         state.loadNotes()
       ])
@@ -407,7 +503,7 @@ const useAppStore = create((set, get) => {
           source: "FxReplayFunded"
         },
         challengeConfig: challengeConfig || state.config,
-        accountData: accountData || state.accountData,
+        sessionData: sessionData || state.sessionData,
         tradeData: state.extractedTrades || [],
         notes: notes || state.notes || ""
       }
@@ -422,7 +518,7 @@ const useAppStore = create((set, get) => {
         if (
           !importData.exportMetadata ||
           !importData.challengeConfig ||
-          !importData.accountData ||
+          !importData.sessionData ||
           !Array.isArray(importData.tradeData)
         ) {
           throw new Error("Invalid import data structure")
@@ -433,9 +529,9 @@ const useAppStore = create((set, get) => {
           await state.saveChallengeConfig(importData.challengeConfig)
         }
 
-        // Import account data
-        if (importData.accountData) {
-          await state.saveAccountData(importData.accountData)
+        // Import session data
+        if (importData.sessionData) {
+          await state.saveSessionData(importData.sessionData)
         }
 
         // Import trade data

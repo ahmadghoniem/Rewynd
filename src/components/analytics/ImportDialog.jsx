@@ -35,9 +35,8 @@ const ImportDialog = ({ open, onOpenChange }) => {
         if (
           !data.exportMetadata ||
           !data.challengeConfig ||
-          !data.accountData ||
-          !data.tradeData ||
-          !data.presets
+          !data.sessionData ||
+          !data.tradeData
         ) {
           throw new Error(
             "Invalid file format. Missing required data sections."
@@ -146,7 +145,6 @@ const ImportDialog = ({ open, onOpenChange }) => {
                       {formatDate(importData.exportMetadata.exportDate)}
                     </div>
                     <div>Trades: {importData.tradeData.length}</div>
-                    <div>Presets: {importData.presets.length}</div>
                   </div>
                 )}
               </div>

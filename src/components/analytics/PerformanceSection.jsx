@@ -13,7 +13,8 @@ import { parseTradeDate } from "@/lib/utils"
 
 const PerformanceSection = () => {
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
-  const accountData = useAppStore((state) => state.accountData) || {
+  const sessionData = useAppStore((state) => state.sessionData) || {
+    id: null,
     capital: 0,
     realizedPnL: 0,
     balance: 0
@@ -134,7 +135,7 @@ const PerformanceSection = () => {
   return (
     <div className="grid grid-cols-8 gap-2 [&>*]:max-h-[4.375rem] ">
       <BalanceAndRealizedPnlCard
-        displayData={accountData}
+        displayData={sessionData}
         className="col-span-full lg:col-span-4"
       />
       <WinRateCard

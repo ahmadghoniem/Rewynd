@@ -1,5 +1,6 @@
 {
-  "accountData": {
+  "sessionData": {
+    "id": "834d7ae1-0b55-409a-bd3c-56f3904d44d8",
     "capital": 1000,
     "balance": 1021.0,
     "realizedPnL": 21.0,

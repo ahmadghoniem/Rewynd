@@ -4,7 +4,8 @@ import useAppStore from "@/store/useAppStore"
 
 const EquityCurveSection = () => {
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
-  const accountData = useAppStore((state) => state.accountData) || {
+  const sessionData = useAppStore((state) => state.sessionData) || {
+    id: null,
     capital: 0,
     realizedPnL: 0,
     balance: 0
@@ -13,7 +14,7 @@ const EquityCurveSection = () => {
     <div className="w-full">
       <EquityCurveCard
         tradesData={extractedTrades}
-        initialCapital={accountData.capital || 0}
+        initialCapital={sessionData.capital || 0}
       />
     </div>
   )

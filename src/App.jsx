@@ -4,33 +4,36 @@ import { ThemeProvider } from "./ThemeContext"
 import useAppStore from "./store/useAppStore"
 import HeaderCard from "./components/cards/HeaderCard"
 
+/* eslint-disable no-undef */
+
 const AppContent = () => {
-  const setAccountData = useAppStore((state) => state.setAccountData)
-  const loadAccountData = useAppStore((state) => state.loadAccountData)
+  const setSessionData = useAppStore((state) => state.setSessionData)
+  const loadSessionData = useAppStore((state) => state.loadSessionData)
 
   const loadTradeData = useAppStore((state) => state.loadTradeData)
 
   // Load saved configuration and account data on mount
   useEffect(() => {
     // Set up event listener for real-time updates from website
-    const handleAccountUpdate = (event) => {
+    const handleSessionUpdate = (event) => {
       const newData = event.detail
-      // console.log("Event-triggered account update:", newData)
-      setAccountData(newData)
+      // console.log("Event-triggered session update:", newData)
+      setSessionData(newData)
     }
 
     // Set up storage event listener for cross-tab updates
     const handleStorageChange = (event) => {
-      if (event.key === "tradeAnalytics_accountData") {
-        // console.log("Storage change detected, reloading account data")
-        loadAccountData()
+      if (event.key === "tradeAnalytics_sessionData") {
+        // console.log("Storage change detected, reloading session data")
+        loadSessionData()
       }
     }
 
     // Set up Chrome extension message listener
+    // eslint-disable-next-line no-unused-vars
     const handleExtensionMessage = (message, sender, sendResponse) => {
-      if (message.type === "ACCOUNT_DATA_UPDATED") {
-        loadAccountData()
+      if (message.type === "SESSION_DATA_UPDATED") {
+        loadSessionData()
       }
       if (message.type === "TRADE_DATA_UPDATED") {
         loadTradeData()
@@ -38,7 +41,7 @@ const AppContent = () => {
     }
 
     // Add event listeners
-    window.addEventListener("accountDataUpdated", handleAccountUpdate)
+    window.addEventListener("sessionDataUpdated", handleSessionUpdate)
     window.addEventListener("storage", handleStorageChange)
 
     // Add Chrome extension message listener if available
@@ -48,7 +51,7 @@ const AppContent = () => {
 
     // Cleanup
     return () => {
-      window.removeEventListener("accountDataUpdated", handleAccountUpdate)
+      window.removeEventListener("sessionDataUpdated", handleSessionUpdate)
       window.removeEventListener("storage", handleStorageChange)
 
       // Remove Chrome extension message listener if available

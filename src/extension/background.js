@@ -3,17 +3,17 @@
 
 // Listen for messages from content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "ACCOUNT_DATA_UPDATE") {
-    // Store the account data in extension storage
+  if (message.type === "SESSION_DATA_UPDATE") {
+    // Store the session data in extension storage
     chrome.storage.local.set(
       {
-        tradeAnalytics_accountData: message.data
+        tradeAnalytics_sessionData: message.data
       },
       () => {
         // Broadcast to all popup windows
         chrome.runtime
           .sendMessage({
-            type: "ACCOUNT_DATA_UPDATED",
+            type: "SESSION_DATA_UPDATED",
             data: message.data
           })
           .catch(() => {
@@ -25,10 +25,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true })
   }
 
-  if (message.type === "GET_ACCOUNT_DATA") {
-    // Retrieve account data from extension storage
-    chrome.storage.local.get(["tradeAnalytics_accountData"], (result) => {
-      sendResponse({ data: result.tradeAnalytics_accountData })
+  if (message.type === "GET_SESSION_DATA") {
+    // Retrieve session data from extension storage
+    chrome.storage.local.get(["tradeAnalytics_sessionData"], (result) => {
+      sendResponse({ data: result.tradeAnalytics_sessionData })
     })
     return true // Keep the message channel open for async response
   }
@@ -163,6 +163,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "GET_NOTES") {
     chrome.storage.local.get(["fxReplayNotes"], (result) => {
       sendResponse({ data: result.fxReplayNotes })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "CLEAR_TRADE_DATA") {
+    chrome.storage.local.remove(["fxreplay_trade_data"], () => {
+      sendResponse({ success: true })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "CLEAR_NOTES") {
+    chrome.storage.local.remove(["fxReplayNotes"], () => {
+      sendResponse({ success: true })
     })
     return true // Keep the message channel open for async response
   }

@@ -14,7 +14,8 @@ import { calculateProfitableDaysMetrics } from "@/lib/utils"
 const MinimumProfitableDaysCard = (props) => {
   const config = useAppStore((state) => state.config) || {}
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
-  const accountData = useAppStore((state) => state.accountData) || {
+  const sessionData = useAppStore((state) => state.sessionData) || {
+    id: null,
     capital: 0,
     realizedPnL: 0,
     balance: 0
@@ -24,7 +25,7 @@ const MinimumProfitableDaysCard = (props) => {
   const minProfitableDays = config.requireProfitableDays || 0
   const { profitableDays } = calculateProfitableDaysMetrics(
     extractedTrades,
-    accountData.capital || 0
+    sessionData.capital || 0
   )
 
   // Update store when profitable days status changes

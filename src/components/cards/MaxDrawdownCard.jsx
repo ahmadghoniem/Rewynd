@@ -14,7 +14,8 @@ import { calculateMaxDrawdownMetrics, formatCurrency } from "@/lib/utils"
 const MaxDrawdownCard = ({ className }) => {
   const [showAmounts, setShowAmounts] = useState(false)
   const config = useAppStore((state) => state.config) || {}
-  const accountData = useAppStore((state) => state.accountData) || {
+  const sessionData = useAppStore((state) => state.sessionData) || {
+    id: null,
     capital: 0,
     realizedPnL: 0,
     balance: 0
@@ -25,7 +26,7 @@ const MaxDrawdownCard = ({ className }) => {
 
   const maxDrawdown = config.maxDrawdown ?? 5
   const maxDrawdownType = config.maxDrawdownType
-  const initialCapital = accountData.capital || 0
+  const initialCapital = sessionData.capital || 0
 
   // Calculate metrics directly
   const {
@@ -38,7 +39,7 @@ const MaxDrawdownCard = ({ className }) => {
     ? calculateMaxDrawdownMetrics(
         extractedTrades,
         initialCapital,
-        accountData.balance,
+        sessionData.balance,
         maxDrawdown,
         maxDrawdownType
       )

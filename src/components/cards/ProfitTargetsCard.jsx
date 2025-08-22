@@ -18,7 +18,8 @@ import {
 const ProfitTargetsCard = (props) => {
   const [showAmounts, setShowAmounts] = useState(false)
   const config = useAppStore((state) => state.config) || {}
-  const accountData = useAppStore((state) => state.accountData) || {
+  const sessionData = useAppStore((state) => state.sessionData) || {
+    id: null,
     capital: 0,
     realizedPnL: 0,
     balance: 0
@@ -32,13 +33,13 @@ const ProfitTargetsCard = (props) => {
   const { targetAmounts, targetProgress } = useMemo(() => {
     const calculatedTargetAmounts =
       props.targetAmounts ||
-      getTargetAmounts(profitTargets, accountData.capital || 0)
+      getTargetAmounts(profitTargets, sessionData.capital || 0)
     const calculatedTargetProgress =
       props.targetProgress ||
       calculateIndividualTargetProgress(
         profitTargets,
-        accountData.capital || 0,
-        accountData.realizedPnL || 0
+        sessionData.capital || 0,
+        sessionData.realizedPnL || 0
       )
 
     return {
@@ -49,8 +50,8 @@ const ProfitTargetsCard = (props) => {
     props.targetAmounts,
     props.targetProgress,
     profitTargets,
-    accountData.capital,
-    accountData.realizedPnL
+    sessionData.capital,
+    sessionData.realizedPnL
   ])
 
   // Memoize current phase calculations
@@ -81,8 +82,8 @@ const ProfitTargetsCard = (props) => {
 
     // Calculate actual profit achieved
     const totalProfitPercentage =
-      accountData.capital > 0
-        ? (accountData.realizedPnL / accountData.capital) * 100
+      sessionData.capital > 0
+        ? (sessionData.realizedPnL / sessionData.capital) * 100
         : 0
     // Ensure we don't show negative progress - if in drawdown, show 0
     const actualProfitAchieved = Math.max(
@@ -91,7 +92,7 @@ const ProfitTargetsCard = (props) => {
     )
     const actualProfitAmount = Math.max(
       0,
-      (actualProfitAchieved / 100) * accountData.capital
+      (actualProfitAchieved / 100) * sessionData.capital
     )
 
     return {
@@ -109,8 +110,8 @@ const ProfitTargetsCard = (props) => {
     profitTargets,
     targetProgress,
     targetAmounts,
-    accountData.capital,
-    accountData.realizedPnL
+    sessionData.capital,
+    sessionData.realizedPnL
   ])
 
   const handleToggleDisplay = () => {
@@ -121,7 +122,7 @@ const ProfitTargetsCard = (props) => {
   useEffect(() => {
     if (
       currentPhaseData.requiredProfitPercentage > 0 &&
-      accountData.capital > 0
+      sessionData.capital > 0
     ) {
       const isMet =
         currentPhaseData.actualProfitAchieved >=

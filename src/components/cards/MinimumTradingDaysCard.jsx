@@ -14,7 +14,8 @@ import { calculateDailyDrawdownMetrics } from "@/lib/utils"
 const MinimumTradingDaysCard = (props) => {
   const config = useAppStore((state) => state.config) || {}
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
-  const accountData = useAppStore((state) => state.accountData) || {
+  const sessionData = useAppStore((state) => state.sessionData) || {
+    id: null,
     capital: 0,
     realizedPnL: 0,
     balance: 0
@@ -24,7 +25,7 @@ const MinimumTradingDaysCard = (props) => {
   const minTradingDays = config.minTradingDays || 0
   const { dailyPnLMap } = calculateDailyDrawdownMetrics(
     extractedTrades,
-    accountData.capital || 0,
+    sessionData.capital || 0,
     config.dailyDrawdown || 2
   )
   const tradingDays = Object.keys(dailyPnLMap).length

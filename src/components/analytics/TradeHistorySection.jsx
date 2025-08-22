@@ -4,7 +4,8 @@ import useAppStore from "@/store/useAppStore"
 
 const TradeHistorySection = () => {
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
-  const accountData = useAppStore((state) => state.accountData) || {
+  const sessionData = useAppStore((state) => state.sessionData) || {
+    id: null,
     capital: 0,
     realizedPnL: 0,
     balance: 0
@@ -13,8 +14,8 @@ const TradeHistorySection = () => {
     <div className="w-full flex-1">
       <TradeHistoryCard
         tradesData={extractedTrades}
-        accountSize={accountData?.capital || 0}
-        accountBalance={accountData?.balance || 0}
+        accountSize={sessionData?.capital || 0}
+        accountBalance={sessionData?.balance || 0}
       />
     </div>
   )

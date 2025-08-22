@@ -14,7 +14,8 @@ const DailyDrawdownCard = ({ className }) => {
   const [showAmounts, setShowAmounts] = useState(false)
   const [showEquityLimit, setShowEquityLimit] = useState(true)
   const config = useAppStore((state) => state.config) || {}
-  const accountData = useAppStore((state) => state.accountData) || {
+  const sessionData = useAppStore((state) => state.sessionData) || {
+    id: null,
     capital: 0,
     realizedPnL: 0,
     balance: 0
@@ -24,7 +25,7 @@ const DailyDrawdownCard = ({ className }) => {
   const updateBreakingRule = useAppStore((state) => state.updateBreakingRule)
 
   const dailyDrawdown = config.dailyDrawdown ?? 2
-  const initialCapital = accountData.capital || 0
+  const initialCapital = sessionData.capital || 0
 
   // Calculate metrics directly (matching MaxDrawdownCard pattern)
   const {

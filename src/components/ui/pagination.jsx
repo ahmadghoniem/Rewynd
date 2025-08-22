@@ -2,8 +2,6 @@ import React from "react"
 import { Button } from "./button"
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  if (totalPages <= 1) return null
-
   return (
     <div className="flex justify-center items-center gap-2 mt-4">
       {currentPage > 1 ? (

@@ -21,11 +21,6 @@ const ConsistencyRuleCard = (props) => {
   const consistencyRule = props.consistencyRule || config.consistencyRule || 15
   const formatCurrencyFn = props.formatCurrency || formatCurrency
 
-  // Return null if consistency rule is 0 (disabled)
-  if (consistencyRule === 0) {
-    return null
-  }
-
   // Memoize consistency calculations
   const consistencyData = useMemo(() => {
     try {
@@ -57,17 +52,6 @@ const ConsistencyRuleCard = (props) => {
     setShowAmounts(!showAmounts)
   }
 
-  // Calculate progress for the progress bar
-  const threshold = consistencyData.threshold || consistencyRule || 15
-
-  // For scenario 1 (min days not met), show 0 progress
-  const progressPercentage =
-    consistencyData.scenario === "min_days_not_met"
-      ? 0
-      : threshold > 0
-      ? Math.min(1, (consistencyData.highestDailyPercentage || 0) / threshold)
-      : 0
-
   // Update store when consistency rule status changes
   useEffect(() => {
     if (
@@ -86,6 +70,22 @@ const ConsistencyRuleCard = (props) => {
       updateBreakingRule("consistencyRuleBroken", isBroken)
     }
   }, [consistencyData])
+
+  // Return null if consistency rule is 0 (disabled)
+  if (consistencyRule === 0) {
+    return null
+  }
+
+  // Calculate progress for the progress bar
+  const threshold = consistencyData.threshold || consistencyRule || 15
+
+  // For scenario 1 (min days not met), show 0 progress
+  const progressPercentage =
+    consistencyData.scenario === "min_days_not_met"
+      ? 0
+      : threshold > 0
+      ? Math.min(1, (consistencyData.highestDailyPercentage || 0) / threshold)
+      : 0
 
   // Safety check to ensure data is properly initialized
   if (

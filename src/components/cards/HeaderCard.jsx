@@ -8,8 +8,8 @@ import sampleTrades from "../../sampleTrades.json"
 const HeaderCard = () => {
   const { isDark, toggleTheme } = useTheme()
   const setExtractedTrades = useAppStore((state) => state.setExtractedTrades)
-  const setAccountData = useAppStore((state) => state.setAccountData)
-  const loadAccountData = useAppStore((state) => state.loadAccountData)
+  const setSessionData = useAppStore((state) => state.setSessionData)
+  const loadSessionData = useAppStore((state) => state.loadSessionData)
   const loadTradeData = useAppStore((state) => state.loadTradeData)
 
   // Handler for refreshing all data with automatic tab switching
@@ -40,25 +40,43 @@ const HeaderCard = () => {
       // eslint-disable-next-line no-undef
       await chrome.tabs.update(fxReplayTab.id, { active: true })
 
-      // eslint-disable-next-line no-undef
-      const response = await chrome.tabs.sendMessage(fxReplayTab.id, {
-        type: "EXTRACT_TRADES",
-        forceRefresh: true
-      })
+      // Extract both session data and trade data separately
+      const [sessionResponse, tradeResponse] = await Promise.all([
+        // eslint-disable-next-line no-undef
+        chrome.tabs.sendMessage(fxReplayTab.id, {
+          type: "EXTRACT_SESSION_DATA"
+        }),
+        // eslint-disable-next-line no-undef
+        chrome.tabs.sendMessage(fxReplayTab.id, {
+          type: "EXTRACT_TRADES",
+          forceRefresh: true
+        })
+      ])
 
-      if (response?.success) {
-        // Load both account data and trade data
-        await Promise.all([loadAccountData(), loadTradeData()])
+      if (sessionResponse?.success && tradeResponse?.success) {
+        // Load both session data and trade data
+        await Promise.all([loadSessionData(), loadTradeData()])
 
         // Trigger account data extraction using the existing mechanism
         // This will automatically update the UI through the store
         console.log(
-          "✅ Data refreshed successfully! Account and trade data updated."
+          "✅ Data refreshed successfully! Session and trade data updated."
         )
 
         alert("Data refreshed successfully!")
       } else {
-        alert("Failed to refresh data. Make sure you have a FxReplay tab open.")
+        const errors = []
+        if (!sessionResponse?.success) {
+          errors.push("Session data extraction failed")
+        }
+        if (!tradeResponse?.success) {
+          errors.push("Trade data extraction failed")
+        }
+        alert(
+          `Failed to refresh data: ${errors.join(
+            ", "
+          )}. Make sure you have a FxReplay tab open.`
+        )
       }
 
       // Switch back to original tab
@@ -78,9 +96,9 @@ const HeaderCard = () => {
     const trades = sampleTrades.trades
     setExtractedTrades(trades)
 
-    // Set account data from the new structure
-    const accountData = sampleTrades.accountData
-    setAccountData(accountData)
+    // Set session data from the new structure
+    const sessionData = sampleTrades.sessionData
+    setSessionData(sessionData)
   }
   return (
     <header className="bg-background border-b border-border/50 sticky top-0 z-50">

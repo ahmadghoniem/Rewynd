@@ -1,34 +1,52 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+
+/* eslint-disable no-undef */
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { Download, Upload, FileText, Database, Settings } from "lucide-react"
+import {
+  Download,
+  Upload,
+  FileText,
+  Database,
+  Settings,
+  RefreshCw
+} from "lucide-react"
 import useAppStore from "@/store/useAppStore"
-import { getSessionIdFromUrl } from "@/lib/utils"
 import ImportDialog from "./ImportDialog"
 import NotesDialog from "./NotesDialog"
 import StatusBadge from "@/components/ui/status-badge"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip"
 
 const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [notesDialogOpen, setNotesDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [pendingSessionChange, setPendingSessionChange] = useState(null)
   const exportAllData = useAppStore((state) => state.exportAllData)
-  const capital = useAppStore((state) => state.accountData.capital)
+  const capital = useAppStore((state) => state.sessionData.capital)
   const objectives = useAppStore((state) => state.objectives)
+  const sessionData = useAppStore((state) => state.sessionData)
+  const switchToNewSession = useAppStore((state) => state.switchToNewSession)
 
-  // Get session ID from URL
-  const sessionId = getSessionIdFromUrl()
+  // Get session ID from global state
+  const sessionId = sessionData?.id || "unknown"
 
   // Format capital for display (default to 100K if not available)
   const formattedCapital = capital ? `${(capital / 1000).toFixed(0)}K` : "100K"
 
   // Create the header text with dynamic values
-  const headerText = `#${sessionId}-2-$${formattedCapital}`
+  // Use last 8 characters of session ID for cleaner display
+  const shortSessionId = sessionId ? sessionId.slice(-8) : "unknown"
+  const headerText = `#${shortSessionId}-2-$${formattedCapital}`
 
   // Calculate badge status based on objectives
   const getBadgeStatus = () => {
@@ -57,6 +75,65 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
 
   // Get current badge status
   const badgeStatus = getBadgeStatus()
+
+  // Check for session changes when component loads and periodically
+  useEffect(() => {
+    const checkSessionChange = async () => {
+      const currentSessionId = sessionData?.id
+
+      // Get session ID from the active FxReplay tab
+      let urlSessionId = null
+      try {
+        if (chrome?.tabs) {
+          const [fxReplayTab] = await chrome.tabs.query({
+            url: "https://app.fxreplay.com/en-US/auth/chart/*"
+          })
+          if (fxReplayTab) {
+            const pathSegments = fxReplayTab.url.split("/")
+            urlSessionId = pathSegments[pathSegments.length - 1]
+          }
+        }
+      } catch (error) {
+        console.error("Error getting FxReplay tab URL:", error)
+      }
+
+      if (
+        currentSessionId &&
+        urlSessionId &&
+        currentSessionId !== urlSessionId
+      ) {
+        // Session has changed - show switch button
+        setPendingSessionChange({
+          currentSessionId,
+          newSessionId: urlSessionId,
+          newSessionData: {
+            id: urlSessionId,
+            balance: null,
+            realizedPnL: null,
+            capital: null,
+            lastUpdated: Date.now()
+          }
+        })
+      } else if (
+        currentSessionId &&
+        urlSessionId &&
+        currentSessionId === urlSessionId
+      ) {
+        // Session is the same - clear any pending change
+        setPendingSessionChange(null)
+      }
+    }
+
+    // Check immediately and also when sessionData changes
+    checkSessionChange()
+
+    // Set up periodic check every 2 seconds while popup is open
+    const interval = setInterval(checkSessionChange, 2000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [sessionData?.id])
 
   const handleExport = async () => {
     try {
@@ -87,6 +164,19 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
     setImportDialogOpen(true)
   }
 
+  const handleSwitchSession = async () => {
+    if (pendingSessionChange) {
+      try {
+        await switchToNewSession(pendingSessionChange.newSessionData)
+        setPendingSessionChange(null)
+        // Data is now refreshed automatically, no need to reload
+      } catch (error) {
+        console.error("Error switching session:", error)
+        alert("Failed to switch session. Please try again.")
+      }
+    }
+  }
+
   return (
     <>
       <div className="w-full flex items-center justify-between mb-6 ">
@@ -98,6 +188,34 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
         </div>
 
         <div className="flex items-center gap-2">
+          {pendingSessionChange && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleSwitchSession}
+                  className="h-8 px-3 text-xs font-medium"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1.5" />
+                  Switch to New Session
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs">
+                  <div>
+                    Current:{" "}
+                    {pendingSessionChange.currentSessionId?.slice(-8) || "None"}
+                  </div>
+                  <div>New: {pendingSessionChange.newSessionId?.slice(-8)}</div>
+                  <div className="text-muted-foreground mt-1">
+                    This will clear all current data
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
           <Button
             variant="outline"
             size="sm"

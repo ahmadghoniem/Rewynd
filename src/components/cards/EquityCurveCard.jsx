@@ -234,7 +234,14 @@ export default function EquityCurveCard({
           </ChartContainer>
         ) : (
           <div className="text-center text-muted-foreground py-12">
-            No data to display.
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                No equity curve data available
+              </p>
+              <p className="text-xs">
+                Extract trades from FxReplay to see your equity curve
+              </p>
+            </div>
           </div>
         )}
       </CardContent>
