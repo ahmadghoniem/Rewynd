@@ -1,8 +1,8 @@
-# FxReplay Funded - Trading Analytics Dashboard
+# Rewynd - Trading Analytics Dashboard
 
 A comprehensive Chrome extension and web application for analyzing FxReplay trading challenge performance with real-time data extraction, advanced analytics, and objective tracking.
 
-![FxReplay Funded Dashboard](https://img.shields.io/badge/Status-Active-brightgreen)
+![Rewynd Dashboard](https://img.shields.io/badge/Status-Active-brightgreen)
 ![React](https://img.shields.io/badge/React-19.1.0-blue)
 ![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-v3-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -84,8 +84,8 @@ A comprehensive Chrome extension and web application for analyzing FxReplay trad
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/FxReplayFunded.git
-   cd FxReplayFunded
+   git clone https://github.com/ahmadghoniem/Rewynd.git
+   cd Rewynd
    ```
 
 2. **Install dependencies**
@@ -196,7 +196,7 @@ A comprehensive Chrome extension and web application for analyzing FxReplay trad
 ## 🏗️ Project Structure
 
 ```
-FxReplayFunded/
+Rewynd/
 ├── src/
 │   ├── components/
 │   │   ├── analytics/          # Analytics dashboard components

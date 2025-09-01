@@ -500,7 +500,7 @@ const useAppStore = create((set, get) => {
         exportMetadata: {
           exportDate: new Date().toISOString(),
           version: "1.0",
-          source: "FxReplayFunded"
+          source: "Rewynd"
         },
         challengeConfig: challengeConfig || state.config,
         sessionData: sessionData || state.sessionData,

@@ -161,7 +161,7 @@ const TradeHistoryCard = ({
   )
 
   return (
-    <Card className="justify-between h-full">
+    <Card className="justify-start h-full">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -230,9 +230,9 @@ const TradeHistoryCard = ({
           </div>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         {processedTrades.length > 0 ? (
-          <div className="overflow-x-auto flex flex-col">
+          <div className="overflow-x-auto flex flex-col h-full justify-between">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-border">
@@ -241,7 +241,7 @@ const TradeHistoryCard = ({
                       visibleColumns[column.key] && (
                         <th
                           key={column.key}
-                          className="text-left p-3 text-sm font-medium text-muted-foreground"
+                          className="text-left p-2.5 text-sm font-medium text-muted-foreground"
                         >
                           {column.label}
                         </th>

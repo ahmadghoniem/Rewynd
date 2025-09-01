@@ -32,7 +32,7 @@ const FooterCard = ({ className }) => {
               <span className="mr-2 text-border">|</span>
               <div className="flex items-center gap-2">
                 <a
-                  href="https://github.com/yourusername/FxReplayFunded"
+                  href="https://github.com/ahmadghoniem/Rewynd"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors"
@@ -41,7 +41,7 @@ const FooterCard = ({ className }) => {
                   <Github className="h-4 w-4 fill-current" />
                 </a>
                 <a
-                  href="https://x.com/yourusername"
+                  href="https://x.com/ghoniemcodes"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors"
@@ -58,30 +58,10 @@ const FooterCard = ({ className }) => {
 
         {/* USDT Donation Section */}
         <div className="border-t border-border pt-2">
-          <div className="flex items-center justify-center gap-3 text-sm">
-            <span className="text-muted-foreground">Support:</span>
-
-            {/* USDT Donation */}
-            <div className="flex items-center gap-2 group">
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">USDT:</span>
-                <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
-                  {shortenAddress(usdtAddress)}
-                </code>
-                <button
-                  onClick={() => handleCopyToClipboard(usdtAddress)}
-                  className="p-1 hover:bg-muted/80 rounded transition-colors"
-                  title="Copy USDT address"
-                >
-                  {copiedAddress ? (
-                    <CheckCircle className="h-4 w-4 text-green-500 fill-current" />
-                  ) : (
-                    <Clipboard className="h-4 w-4 text-muted-foreground group-hover:text-foreground fill-current" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
+          <span>
+            © 2025 Rewynd— Not affiliated with FxReplay and intended solely for
+            educational practice, not financial guidance.
+          </span>
         </div>
       </CardContent>
     </Card>
