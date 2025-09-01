@@ -65,7 +65,6 @@ export default function EquityCurveCard({
 
   const maxPnL = Math.max(...chartData.map((d) => d.cumulativePnL))
   const minPnL = Math.min(...chartData.map((d) => d.cumulativePnL))
-  const hwmIndex = chartData.findIndex((d) => d.cumulativePnL === maxPnL)
 
   // Calculate smart y-axis domain for better visibility
   const calculateYAxisDomain = () => {
@@ -87,34 +86,16 @@ export default function EquityCurveCard({
   }
 
   const yAxisDomain = calculateYAxisDomain()
-  // Custom dot renderer to help highlight HWM
-  const renderDot = ({ cx, cy, index }) => {
-    if (index === hwmIndex) {
-      return (
-        <>
-          <circle
-            cx={cx}
-            cy={cy}
-            r={4}
-            fill="var(--marker-hwm)"
-            stroke="var(--marker-hwm)"
-          />
-        </>
-      )
-    }
-    return <circle cx={cx} cy={cy} r={4} fill="var(--primary)" />
-  }
 
   const CustomActiveDot = ({ cx, cy, index }) => {
-    const isHwm = index === hwmIndex
     return (
       <>
         <circle
           cx={cx}
           cy={cy}
           r={6}
-          fill={isHwm ? "var(--marker-hwm)" : "var(--primary)"}
-          stroke={isHwm ? "var(--marker-hwm)" : "var(--primary)"}
+          fill={"var(--primary)"}
+          stroke={"var(--primary)"}
           strokeWidth={2}
         />
       </>
@@ -227,21 +208,16 @@ export default function EquityCurveCard({
                 fillOpacity={0.4}
                 stroke="var(--primary)"
                 strokeWidth={2}
-                dot={renderDot}
+                dot={({ cx, cy }) => (
+                  <circle cx={cx} cy={cy} r={4} fill="var(--primary)" />
+                )}
                 activeDot={CustomActiveDot}
               />
             </AreaChart>
           </ChartContainer>
         ) : (
           <div className="text-center text-muted-foreground py-12">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">
-                No equity curve data available
-              </p>
-              <p className="text-xs">
-                Extract trades from FxReplay to see your equity curve
-              </p>
-            </div>
+            No data to display.
           </div>
         )}
       </CardContent>
