@@ -6,27 +6,27 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
   return (
     <tr className="border-b border-border hover:bg-muted/50 transition-colors">
       {visibleColumns.asset && (
-        <td className="p-3 text-sm font-medium">{trade.asset}</td>
+        <td className="p-2.5 text-sm font-medium">{trade.asset}</td>
       )}
       {visibleColumns.side && (
-        <td className="p-3">
+        <td className="p-2.5">
           <Badge variant={trade.sideBadge} className="text-xs">
             {trade.side}
           </Badge>
         </td>
       )}
       {visibleColumns.dateStart && (
-        <td className="p-3 text-sm text-muted-foreground">
+        <td className="p-2.5 text-sm text-muted-foreground">
           {trade.formattedDates.start}
         </td>
       )}
       {visibleColumns.dateEnd && (
-        <td className="p-3 text-sm text-muted-foreground">
+        <td className="p-2.5 text-sm text-muted-foreground">
           {trade.formattedDates.end}
         </td>
       )}
       {visibleColumns.sl && (
-        <td className="p-3 text-sm">
+        <td className="p-2.5 text-sm">
           <div>
             {trade.initialSL && trade.entry ? (
               <span className="text-danger">
@@ -39,7 +39,7 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
         </td>
       )}
       {visibleColumns.tp && (
-        <td className="p-3 text-sm">
+        <td className="p-2.5 text-sm">
           <div>
             {trade.maxTP && trade.entry ? (
               <span className="text-success">
@@ -52,7 +52,7 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
         </td>
       )}
       {visibleColumns.rr && (
-        <td className="p-3 text-sm text-foreground">
+        <td className="p-2.5 text-sm text-foreground">
           {(() => {
             if (trade.maxRR === "Loss") return <span>-1</span>
             const rrNum = parseFloat(trade.maxRR)
@@ -63,7 +63,7 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
         </td>
       )}
       {visibleColumns.risk && (
-        <td className="p-3 text-sm">
+        <td className="p-2.5 text-sm">
           {trade.riskPercentage ? (
             <div>
               <span className="font-medium">
@@ -79,7 +79,7 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
         </td>
       )}
       {visibleColumns.realized && (
-        <td className="p-3">
+        <td className="p-2.5">
           <div className="flex items-center gap-2">
             <span className={`text-sm font-medium ${trade.pnlColor}`}>
               {trade.formattedRealized}
@@ -88,7 +88,7 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
         </td>
       )}
       {visibleColumns.duration && (
-        <td className="p-3 text-sm">
+        <td className="p-2.5 text-sm">
           <div>
             <div className="text-foreground">
               {trade.holdTime || trade.duration || "-"}

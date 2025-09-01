@@ -7,8 +7,6 @@ import sampleTrades from "../../sampleTrades.json"
 
 const HeaderCard = () => {
   const { isDark, toggleTheme } = useTheme()
-  const setExtractedTrades = useAppStore((state) => state.setExtractedTrades)
-  const setSessionData = useAppStore((state) => state.setSessionData)
   const loadSessionData = useAppStore((state) => state.loadSessionData)
   const loadTradeData = useAppStore((state) => state.loadTradeData)
 
@@ -90,23 +88,13 @@ const HeaderCard = () => {
     }
   }
 
-  // --- Handler to add provided sample data ---
-  const handleAddSampleData = () => {
-    // Extract trades array from the new sample data structure
-    const trades = sampleTrades.trades
-    setExtractedTrades(trades)
-
-    // Set session data from the new structure
-    const sessionData = sampleTrades.sessionData
-    setSessionData(sessionData)
-  }
   return (
     <header className="bg-background border-b border-border/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo on the left */}
           <div className="flex items-center">
-            <h1 className="text-xl font-semibold text-foreground">Rewynd</h1>
+            <img src="/logo.png" alt="Rewynd" className="h-full w-32" />
           </div>
 
           {/* Buttons on the right */}
@@ -120,17 +108,6 @@ const HeaderCard = () => {
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Refresh</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAddSampleData}
-              className="h-9 px-3"
-              title="Add Sample Data"
-            >
-              <Database className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Sample Data</span>
             </Button>
 
             <Button
