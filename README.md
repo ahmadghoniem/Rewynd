@@ -6,7 +6,9 @@ A comprehensive Chrome extension and web application for analyzing FxReplay trad
 ![React](https://img.shields.io/badge/React-19.1.0-blue)
 ![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-v3-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Animation](https://github.com/user-attachments/assets/be8cccf7-1458-4e14-a416-13b33baafca0)
+
+
+<img width="851" height="910" alt="image" src="https://github.com/user-attachments/assets/42894dd3-aa4e-48e5-81b1-172613a08f03" />
 
 ## 🚀 Features
 
