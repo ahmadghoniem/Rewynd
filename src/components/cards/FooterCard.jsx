@@ -1,21 +1,11 @@
 import React, { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Heart, Clipboard, CheckCircle, Github } from "lucide-react"
-import { cn, copyToClipboard, shortenAddress } from "@/lib/utils"
+import { Heart, Github, Bitcoin } from "lucide-react"
+import { cn } from "@/lib/utils"
+import DonationsDialog from "./DonationsDialog"
 
 const FooterCard = ({ className }) => {
-  const [copiedAddress, setCopiedAddress] = useState(null)
-
-  // Crypto donation address (replace with your actual address)
-  const usdtAddress = "TQn9Y2khDD95J42FQtQTdwVVRjqQZ6Zg9g"
-
-  const handleCopyToClipboard = async (address) => {
-    const success = await copyToClipboard(address)
-    if (success) {
-      setCopiedAddress(true)
-      setTimeout(() => setCopiedAddress(false), 2000)
-    }
-  }
+  const [donationsOpen, setDonationsOpen] = useState(false)
 
   return (
     <Card className={cn("flex-1", className)}>
@@ -28,8 +18,18 @@ const FooterCard = ({ className }) => {
               <Heart className="h-4 w-4 text-primary fill-primary" />
               <span>for traders</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="mr-2 text-border">|</span>
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center">
+                <button
+                  onClick={() => setDonationsOpen(true)}
+                  variant="ghost"
+                  className="hover:text-foreground transition-colors cursor-pointer"
+                  title="Support Development"
+                >
+                  <Bitcoin className="h-4 w-4" />
+                </button>
+              </div>
+              <span className="text-border">|</span>
               <div className="flex items-center gap-2">
                 <a
                   href="https://github.com/ahmadghoniem/Rewynd"
@@ -64,6 +64,8 @@ const FooterCard = ({ className }) => {
           </span>
         </div>
       </CardContent>
+
+      <DonationsDialog open={donationsOpen} onOpenChange={setDonationsOpen} />
     </Card>
   )
 }

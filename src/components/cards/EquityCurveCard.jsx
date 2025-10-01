@@ -4,7 +4,7 @@ import { CartesianGrid, XAxis, YAxis, Area, AreaChart } from "recharts"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
-import { parseTradeDate } from "@/lib/utils"
+import { parseTradeDate, formatCurrency } from "@/lib/utils"
 
 export const description = "A line chart with dots"
 
@@ -87,7 +87,7 @@ export default function EquityCurveCard({
 
   const yAxisDomain = calculateYAxisDomain()
 
-  const CustomActiveDot = ({ cx, cy, index }) => {
+  const CustomActiveDot = ({ cx, cy }) => {
     return (
       <>
         <circle
@@ -131,7 +131,7 @@ export default function EquityCurveCard({
                 ticks={Array.from(new Set(chartData.map((d) => d.date)))}
                 tickFormatter={(value) => {
                   if (!value) return ""
-                  const [year, month, day] = value.split("-")
+                  const [, month, day] = value.split("-")
                   return `${month}/${day}`
                 }}
               />
@@ -142,7 +142,7 @@ export default function EquityCurveCard({
                     const data = payload[0].payload
                     const isHwm = data.cumulativePnL === maxPnL
                     return (
-                      <div className="bg-muted rounded-lg p-3 shadow-lg space-y-1 min-w-48">
+                      <div className="bg-muted rounded-lg p-3 shadow-lg space-y-2 min-w-48">
                         {/* Header row: Label + badges */}
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-medium">{label}</p>
@@ -165,7 +165,9 @@ export default function EquityCurveCard({
                               : "text-danger"
                           }`}
                         >
-                          Total Equity: ${data.cumulativePnL}
+                          {`Total Equity: ${formatCurrency(
+                            data.cumulativePnL
+                          )}`}
                         </p>
                         {/* Trade PnL */}
                         <p
@@ -173,7 +175,13 @@ export default function EquityCurveCard({
                             data.tradePnL >= 0 ? "text-success" : "text-danger"
                           }`}
                         >
-                          Trade PnL: ${data.tradePnL}
+                          {`Trade PnL: ${
+                            data.tradePnL > 0
+                              ? "+"
+                              : data.tradePnL < 0
+                              ? "-"
+                              : ""
+                          }${formatCurrency(Math.abs(data.tradePnL))}`}
                         </p>
                       </div>
                     )

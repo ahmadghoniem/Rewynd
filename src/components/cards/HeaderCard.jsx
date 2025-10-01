@@ -1,24 +1,26 @@
-import React from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Database, Sun, Moon } from "lucide-react"
+import { RefreshCw, Sun, Moon, Check } from "lucide-react"
 import { useTheme } from "../../ThemeContext"
 import useAppStore from "../../store/useAppStore"
-import sampleTrades from "../../sampleTrades.json"
 
 const HeaderCard = () => {
   const { isDark, toggleTheme } = useTheme()
   const loadSessionData = useAppStore((state) => state.loadSessionData)
   const loadTradeData = useAppStore((state) => state.loadTradeData)
+  const [isSynced, setIsSynced] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
-  // Handler for refreshing all data with automatic tab switching
-  const handleRefreshData = async () => {
+  const handleSync = async () => {
     if (!window.chrome?.tabs) {
       alert("Chrome extension messaging not available.")
       return
     }
 
+    setIsSyncing(true)
+    setIsSynced(false)
+
     try {
-      // Get current tab and FxReplay tab
       // eslint-disable-next-line no-undef
       const [currentTab] = await chrome.tabs.query({
         active: true,
@@ -34,11 +36,9 @@ const HeaderCard = () => {
         return
       }
 
-      // Switch to FxReplay tab and extract data
       // eslint-disable-next-line no-undef
       await chrome.tabs.update(fxReplayTab.id, { active: true })
 
-      // Extract both session data and trade data separately
       const [sessionResponse, tradeResponse] = await Promise.all([
         // eslint-disable-next-line no-undef
         chrome.tabs.sendMessage(fxReplayTab.id, {
@@ -52,39 +52,36 @@ const HeaderCard = () => {
       ])
 
       if (sessionResponse?.success && tradeResponse?.success) {
-        // Load both session data and trade data
         await Promise.all([loadSessionData(), loadTradeData()])
 
-        // Trigger account data extraction using the existing mechanism
-        // This will automatically update the UI through the store
-        console.log(
-          "✅ Data refreshed successfully! Session and trade data updated."
-        )
+        try {
+          // eslint-disable-next-line no-undef
+          await chrome.tabs.sendMessage(fxReplayTab.id, {
+            type: "MANUAL_SYNC"
+          })
+        } catch (syncError) {
+          console.warn("Manual sync failed:", syncError.message)
+        }
 
+        setIsSynced(true)
         alert("Data refreshed successfully!")
+
+        setTimeout(() => {
+          setIsSynced(false)
+        }, 3000)
       } else {
-        const errors = []
-        if (!sessionResponse?.success) {
-          errors.push("Session data extraction failed")
-        }
-        if (!tradeResponse?.success) {
-          errors.push("Trade data extraction failed")
-        }
-        alert(
-          `Failed to refresh data: ${errors.join(
-            ", "
-          )}. Make sure you have a FxReplay tab open.`
-        )
+        alert("Failed to refresh data. Make sure you have a FxReplay tab open.")
       }
 
-      // Switch back to original tab
       if (currentTab?.id !== fxReplayTab.id) {
         // eslint-disable-next-line no-undef
         await chrome.tabs.update(currentTab.id, { active: true })
       }
     } catch (error) {
-      console.error("Error during data refresh:", error)
-      alert("Error during data refresh. Please try again.")
+      console.error("Error during sync:", error)
+      alert("Error during sync. Please try again.")
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -102,12 +99,21 @@ const HeaderCard = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleRefreshData}
-              className="h-9 px-3"
-              title="Refresh Data"
+              onClick={handleSync}
+              disabled={isSyncing}
+              className={`h-9 px-3 ${isSynced ? "text-green-600" : ""}`}
+              title={isSynced ? "Last sync successful" : "Sync Data"}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Refresh</span>
+              {isSyncing ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : isSynced ? (
+                <Check className="h-4 w-4 mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              <span className="hidden sm:inline">
+                {isSyncing ? "Syncing..." : isSynced ? "Synced" : "Sync"}
+              </span>
             </Button>
 
             <Button

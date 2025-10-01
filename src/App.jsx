@@ -7,19 +7,12 @@ import HeaderCard from "./components/cards/HeaderCard"
 /* eslint-disable no-undef */
 
 const AppContent = () => {
-  const setSessionData = useAppStore((state) => state.setSessionData)
   const loadSessionData = useAppStore((state) => state.loadSessionData)
-
   const loadTradeData = useAppStore((state) => state.loadTradeData)
 
   // Load saved configuration and account data on mount
   useEffect(() => {
     // Set up event listener for real-time updates from website
-    const handleSessionUpdate = (event) => {
-      const newData = event.detail
-      // console.log("Event-triggered session update:", newData)
-      setSessionData(newData)
-    }
 
     // Set up storage event listener for cross-tab updates
     const handleStorageChange = (event) => {
@@ -41,7 +34,6 @@ const AppContent = () => {
     }
 
     // Add event listeners
-    window.addEventListener("sessionDataUpdated", handleSessionUpdate)
     window.addEventListener("storage", handleStorageChange)
 
     // Add Chrome extension message listener if available
@@ -51,7 +43,6 @@ const AppContent = () => {
 
     // Cleanup
     return () => {
-      window.removeEventListener("sessionDataUpdated", handleSessionUpdate)
       window.removeEventListener("storage", handleStorageChange)
 
       // Remove Chrome extension message listener if available

@@ -101,7 +101,7 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
             {dailyData.map((day) => (
               <div
                 key={day.dateKey}
-                className="group bg-input relative border border-border/40 rounded-lg p-4 hover:border-border/60 transition-all duration-200 "
+                className="group bg-muted/50 relative border border-border/40 rounded-lg p-4 hover:border-border/60 transition-all duration-200 "
                 style={{
                   scrollSnapAlign: "start"
                 }}
