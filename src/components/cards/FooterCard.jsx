@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Heart, Github, Bitcoin } from "lucide-react"
+import { Heart, Github, HandHeart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import DonationsDialog from "./DonationsDialog"
 
@@ -26,7 +26,7 @@ const FooterCard = ({ className }) => {
                   className="hover:text-foreground transition-colors cursor-pointer"
                   title="Support Development"
                 >
-                  <Bitcoin className="h-4 w-4" />
+                  <HandHeart className="h-4 w-4" />
                 </button>
               </div>
               <span className="text-border">|</span>

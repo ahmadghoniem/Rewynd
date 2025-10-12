@@ -1,6 +1,6 @@
 import React, { memo } from "react"
 import { Badge } from "@/components/ui/badge"
-import { formatNumber, calculatePercentage } from "@/lib/utils"
+import { formatNumber } from "@/lib/utils"
 
 const TradeRow = memo(({ trade, visibleColumns }) => {
   return (
@@ -23,32 +23,6 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
       {visibleColumns.dateEnd && (
         <td className="p-2.5 text-sm text-muted-foreground">
           {trade.formattedDates.end}
-        </td>
-      )}
-      {visibleColumns.sl && (
-        <td className="p-2.5 text-sm">
-          <div>
-            {trade.initialSL && trade.entry ? (
-              <span className="text-danger">
-                {calculatePercentage(trade.entry, trade.initialSL, trade.side)}%
-              </span>
-            ) : (
-              "-"
-            )}
-          </div>
-        </td>
-      )}
-      {visibleColumns.tp && (
-        <td className="p-2.5 text-sm">
-          <div>
-            {trade.maxTP && trade.entry ? (
-              <span className="text-success">
-                {calculatePercentage(trade.entry, trade.maxTP, trade.side)}%
-              </span>
-            ) : (
-              "-"
-            )}
-          </div>
         </td>
       )}
       {visibleColumns.rr && (

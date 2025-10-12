@@ -1,10 +1,10 @@
 import React from "react"
 import useAppStore from "@/store/useAppStore"
 import {
-  TradingDaysCard,
-  ProfitTargetCard,
-  ConsistencyRuleCard,
-  DrawdownSettingsCard
+  TradingDaysConfigCard,
+  ProfitTargetConfigCard,
+  ConsistencyRuleConfigCard,
+  DrawdownConfigCard
 } from "@/components/configuration"
 
 const Configuration = () => {
@@ -32,19 +32,19 @@ const Configuration = () => {
   return (
     <div className="w-full">
       <div className="flex flex-col gap-2">
-        <TradingDaysCard
+        <TradingDaysConfigCard
           config={config}
           updateConfigField={updateConfigField}
         />
-        <ProfitTargetCard
+        <ProfitTargetConfigCard
           config={config}
           updateProfitTarget={updateProfitTarget}
         />
-        <ConsistencyRuleCard
+        <ConsistencyRuleConfigCard
           config={config}
           updateConfigField={updateConfigField}
         />
-        <DrawdownSettingsCard
+        <DrawdownConfigCard
           config={config}
           updateConfigField={updateConfigField}
         />

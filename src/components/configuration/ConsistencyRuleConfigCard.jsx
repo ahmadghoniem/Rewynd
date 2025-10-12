@@ -3,20 +3,22 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import NumberInput from "./NumberInput"
 
-const ProfitTargetCard = ({ config, updateProfitTarget }) => {
+const ConsistencyRuleConfigCard = ({ config, updateConfigField }) => {
   return (
     <Card>
       <CardContent className="flex flex-col gap-2 py-0">
         <div className="space-y-2">
           <Label className="text-sm font-medium text-muted-foreground">
-            Profit Target
+            Consistency Rule
           </Label>
           <NumberInput
-            value={config.profitTargets?.phase1 || 0}
-            onChange={updateProfitTarget}
-            min={1}
-            max={50}
-            step={1}
+            value={
+              config.consistencyRule !== undefined ? config.consistencyRule : 15
+            }
+            onChange={(value) => updateConfigField("consistencyRule", value)}
+            min={0}
+            max={60}
+            step={5}
             suffix="%"
           />
         </div>
@@ -25,4 +27,4 @@ const ProfitTargetCard = ({ config, updateProfitTarget }) => {
   )
 }
 
-export default ProfitTargetCard
+export default ConsistencyRuleConfigCard

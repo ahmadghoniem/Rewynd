@@ -8,6 +8,9 @@ const __dirname = path.dirname(__filename)
 // Files to copy from current directory to dist
 const filesToCopy = ["background.js", "content.js", "utils.js"]
 
+// Files to copy from public directory to dist
+const publicFilesToCopy = ["favicon.png"]
+
 console.log("Copying extension files to dist...")
 
 filesToCopy.forEach((file) => {
@@ -19,6 +22,22 @@ filesToCopy.forEach((file) => {
     console.log(`✓ Copied ${file} to dist/`)
   } else {
     console.log(`✗ File not found: ${file}`)
+  }
+})
+
+// Copy files from public directory
+console.log("Copying public files to dist...")
+const publicDir = path.join(__dirname, "..", "..", "public")
+
+publicFilesToCopy.forEach((file) => {
+  const sourcePath = path.join(publicDir, file)
+  const destPath = path.join(__dirname, "..", "..", "dist", file)
+
+  if (fs.existsSync(sourcePath)) {
+    fs.copyFileSync(sourcePath, destPath)
+    console.log(`✓ Copied ${file} from public/ to dist/`)
+  } else {
+    console.log(`✗ File not found: ${file} in public/`)
   }
 })
 

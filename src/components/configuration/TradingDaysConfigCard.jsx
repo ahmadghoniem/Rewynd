@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import NumberInput from "./NumberInput"
 
-const TradingDaysCard = ({ config, updateConfigField }) => {
+const TradingDaysConfigCard = ({ config, updateConfigField }) => {
   return (
     <Card>
       <CardContent className="flex flex-col gap-2 py-0">
@@ -41,4 +41,4 @@ const TradingDaysCard = ({ config, updateConfigField }) => {
   )
 }
 
-export default TradingDaysCard
+export default TradingDaysConfigCard

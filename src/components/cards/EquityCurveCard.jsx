@@ -132,7 +132,7 @@ export default function EquityCurveCard({
                 tickFormatter={(value) => {
                   if (!value) return ""
                   const [, month, day] = value.split("-")
-                  return `${month}/${day}`
+                  return `${parseInt(month)}/${parseInt(day)}`
                 }}
               />
               <ChartTooltip

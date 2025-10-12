@@ -155,7 +155,7 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error("Error exporting data:", error)
-      alert("Failed to export data. Please try again.")
+      alert("Failed to export session data. Please try again.")
     }
   }
 
@@ -240,11 +240,11 @@ const AnalyticsHeader = ({ showConfiguration, onToggleConfiguration }) => {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleImportClick}>
                 <Upload className="h-3 w-3 mr-2" />
-                Import Data
+                Import Session Data
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExport}>
                 <Download className="h-3 w-3 mr-2" />
-                Export Data
+                Export Session data
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

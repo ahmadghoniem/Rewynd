@@ -15,7 +15,7 @@ import {
   formatCurrency as defaultFormatCurrency
 } from "@/lib/utils"
 
-const ProfitTargetsCard = (props) => {
+const ProfitTargetCard = (props) => {
   const [showAmounts, setShowAmounts] = useState(false)
   const config = useAppStore((state) => state.config) || {}
   const sessionData = useAppStore((state) => state.sessionData) || {
@@ -147,7 +147,7 @@ const ProfitTargetsCard = (props) => {
             </span>
           </TooltipTrigger>
           <TooltipContent sideOffset={6}>
-            The profit targets for each phase of the challenge.
+            The profit target for the challenge.
           </TooltipContent>
         </Tooltip>
       </CardHeader>
@@ -203,4 +203,4 @@ const ProfitTargetsCard = (props) => {
   )
 }
 
-export default ProfitTargetsCard
+export default ProfitTargetCard

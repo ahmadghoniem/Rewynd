@@ -54,8 +54,7 @@ const MinimumProfitableDaysCard = (props) => {
             </span>
           </TooltipTrigger>
           <TooltipContent sideOffset={6}>
-            The minimum number of profitable days required to complete the
-            challenge.
+            Minimum profitable days required. A profitable day is &gt;0.5% gain.
           </TooltipContent>
         </Tooltip>
       </CardHeader>

@@ -57,7 +57,6 @@
   /* Card backgrounds and text */
   --card: #f8f9fa; /* Card background: very light gray */
   --card-foreground: #2d3748; /* Card text: dark gray */
-  --card-border: #e2e8f0; /* Card border: light gray */
 
   /* Primary: Use for main actions, key stats, and primary highlights */
   --primary: #a78bfa; /* Keep the same violet primary color */
@@ -93,16 +92,8 @@
   /* Divider color */
   --divider: #e2e8f0; /* Divider: light gray */
 
-  /* Chart colors */
-  --chart-1: #a78bfa; /* Chart violet (same as primary) */
-  --chart-2: #3b82f6; /* Chart blue */
-  --chart-3: #10b981; /* Chart green */
-  --chart-4: #f59e0b; /* Chart amber */
-  --chart-5: #ef4444; /* Chart red */
-
   /* Inputs */
   --input: #ffffff; /* Input background: white */
-  --input-border: #d1d5db; /* Input border: light gray */
 
   /* Status colors */
   --success: #10b981; /* Success green: bright green */

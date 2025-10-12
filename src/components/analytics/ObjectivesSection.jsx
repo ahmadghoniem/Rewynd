@@ -1,7 +1,7 @@
 import React from "react"
 
 import MaxDrawdownCard from "@/components/cards/MaxDrawdownCard"
-import ProfitTargetsCard from "@/components/cards/ProfitTargetsCard"
+import ProfitTargetCard from "@/components/cards/ProfitTargetCard"
 import DailyDrawdownCard from "@/components/cards/DailyDrawdownCard"
 import MinimumTradingDaysCard from "@/components/cards/MinimumTradingDaysCard"
 import MinimumProfitableDaysCard from "@/components/cards/MinimumProfitableDaysCard"
@@ -13,7 +13,7 @@ const ObjectivesSection = () => {
     <div className="flex flex-col gap-2">
       <MinimumTradingDaysCard />
       <MinimumProfitableDaysCard />
-      <ProfitTargetsCard />
+      <ProfitTargetCard />
       <ConsistencyRuleCard />
       <DailyDrawdownCard />
       <MaxDrawdownCard />

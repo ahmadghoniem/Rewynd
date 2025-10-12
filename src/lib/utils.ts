@@ -100,15 +100,6 @@ export const formatDateRange = (dateStart: string, dateEnd: string): string => {
 }
 
 /**
- * Formats a timestamp for display
- */
-export const formatLastUpdated = (timestamp: number | null): string => {
-  if (!timestamp) return "Never"
-  const date = new Date(timestamp)
-  return date.toLocaleString()
-}
-
-/**
  * Calculates hold time from trade start and end dates
  */
 export const calculateHoldTime = (trade: any): string | null => {
@@ -184,30 +175,6 @@ export const formatNumber = (number: any): string => {
   return num.toFixed(2)
 }
 
-/**
- * Calculates percentage for TP and SL
- */
-export const calculatePercentage = (
-  entry: any,
-  target: any,
-  side: string = "buy"
-): string | null => {
-  if (!entry || !target) return null
-
-  const entryNum = cleanNumber(entry)
-  const targetNum = cleanNumber(target)
-
-  if (isNaN(entryNum) || isNaN(targetNum)) return null
-
-  // For sell trades, the calculation is inverted
-  const percentage =
-    side?.toLowerCase() === "sell"
-      ? ((entryNum - targetNum) / entryNum) * 100
-      : ((targetNum - entryNum) / entryNum) * 100
-
-  return percentage.toFixed(2)
-}
-
 // ============================================================================
 // STYLING AND UI UTILITIES
 // ============================================================================
@@ -219,15 +186,6 @@ export const getPnLColor = (realized: any): string => {
   const amount = parsePnL(realized)
   if (amount === 0) return "text-muted-foreground"
   return amount > 0 ? "text-success" : "text-danger"
-}
-
-/**
- * Gets status color based on value
- */
-export const getStatusColor = (value: number): string => {
-  if (value > 0) return "text-success"
-  if (value < 0) return "text-danger"
-  return "text-muted-foreground"
 }
 
 /**
@@ -252,15 +210,6 @@ export const getPnLBadge = (realized: any): string => {
 // ============================================================================
 
 /**
- * Gets total profit target from profit targets object
- */
-export const getTotalProfitTarget = (
-  profitTargets: Record<string, number>
-): number => {
-  return profitTargets.phase1 || 0
-}
-
-/**
  * Gets target amounts for profit targets
  */
 export const getTargetAmounts = (
@@ -269,59 +218,6 @@ export const getTargetAmounts = (
 ): Record<string, number> => {
   return {
     phase1: (capital * (profitTargets.phase1 || 0)) / 100
-  }
-}
-
-/**
- * Calculates performance metrics
- */
-export const calculatePerformance = (displayData: {
-  capital: number
-  realizedPnL: number
-  balance?: number
-}) => {
-  if (!displayData.capital || displayData.realizedPnL === undefined) {
-    return {
-      profitPercentage: 0,
-      profitRatio: 0,
-      status: "neutral" as const
-    }
-  }
-
-  const profitPercentage = (displayData.realizedPnL / displayData.capital) * 100
-  const profitRatio = displayData.realizedPnL / displayData.capital
-
-  let status: "positive" | "negative" | "neutral" = "neutral"
-  if (profitPercentage > 0) {
-    status = "positive"
-  } else if (profitPercentage < 0) {
-    status = "negative"
-  }
-
-  return {
-    profitPercentage,
-    profitRatio,
-    status
-  }
-}
-
-/**
- * Calculates target progress
- */
-export const calculateTargetProgress = (
-  profitTargets: Record<string, number>,
-  capital: number,
-  realizedPnL: number
-) => {
-  const totalTarget = getTotalProfitTarget(profitTargets)
-  const targetAmount = (totalTarget / 100) * capital
-  const progress = Math.min(100, (realizedPnL / targetAmount) * 100)
-
-  return {
-    totalTarget,
-    targetAmount,
-    progress,
-    status: progress >= 100 ? "completed" : "in-progress"
   }
 }
 
@@ -669,55 +565,6 @@ export const calculateProfitableDaysMetrics = (
   }
 }
 
-/**
- * Returns the equity at the end of the previous day.
- * @param trades Array of trade objects (must have dateStart and realized fields)
- * @param initialCapital Starting account size
- * @returns previousEOD (number)
- */
-export function getPreviousEOD(trades: any[], initialCapital: number): number {
-  if (!trades || trades.length === 0 || !initialCapital) return initialCapital
-
-  // Group trades by day
-  const dayMap: Record<string, number> = {}
-
-  try {
-    trades.forEach((trade) => {
-      if (!trade || !trade.dateStart || !trade.realized) return
-
-      const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
-      const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
-      if (!dayMap[date]) dayMap[date] = 0
-      dayMap[date] += realized
-    })
-  } catch (error) {
-    console.warn("Error processing trades in getPreviousEOD:", error)
-    return initialCapital
-  }
-
-  // Get all days sorted
-  const allDays = Object.keys(dayMap).sort()
-  if (allDays.length === 0) return initialCapital
-
-  // Get yesterday (previous day to today, or last day if no today trades)
-  const today = new Date().toISOString().split("T")[0]
-  let prevDay = allDays[allDays.length - 1]
-
-  if (allDays.includes(today)) {
-    const todayIdx = allDays.indexOf(today)
-    prevDay = todayIdx > 0 ? allDays[todayIdx - 1] : allDays[0]
-  }
-
-  // Sum realized PnL up to and including prevDay
-  let runningPnL = 0
-  for (const day of allDays) {
-    if (day > prevDay) break
-    runningPnL += dayMap[day]
-  }
-
-  return initialCapital + runningPnL
-}
-
 // ============================================================================
 // CONSISTENCY RULE CALCULATIONS
 // ============================================================================
@@ -918,41 +765,6 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
   }
 }
 
-/**
- * Shortens an address for display (e.g., "TQn9Y2khDD95J42FQtQTdwVVRjqQZ6Zg9g" -> "TQn9Y2...Z6Zg9g")
- */
-export const shortenAddress = (address: string): string => {
-  if (!address || address.length < 12) return address
-  return `${address.slice(0, 6)}...${address.slice(-6)}`
-}
-
 // ============================================================================
 // URL AND SESSION UTILITIES
 // ============================================================================
-
-/**
- * Extracts the session ID from the current URL
- * In production: extracts from fxreplay.com URL path
- * In development: uses a mock session ID for testing
- */
-export function getSessionIdFromUrl(): string {
-  // Check if we're in development mode (localhost)
-  if (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
-  ) {
-    // In development, use the mock session ID from the example URL
-    return "834d7ae1-0b55-409a-bd3c-56f3904d44d8"
-  }
-
-  // In production, extract from the URL path
-  const pathSegments = window.location.pathname.split("/")
-  const lastSegment = pathSegments[pathSegments.length - 1]
-
-  // The session ID is the full UUID from the URL
-  // Example: https://app.fxreplay.com/en-US/auth/chart/834d7ae1-0b55-409a-bd3c-56f3904d44d8
-  // We want the full UUID: 834d7ae1-0b55-409a-bd3c-56f3904d44d8
-  const sessionId = lastSegment
-
-  return sessionId || "834d7ae1-0b55-409a-bd3c-56f3904d44d8" // fallback to the example session ID
-}

@@ -17,38 +17,38 @@ const DonationsDialog = ({ open, onOpenChange }) => {
       name: "Solana",
       address: "F5PNVTk6KcLaVbDH5GY4pVGf8JPJcx7RJS8FyuvdrL2Z",
       symbol: "SOL",
-      icon: "/solana-SOL-logo.svg"
+      icon: "/cryptochains-icons/solana.png"
     },
     {
       name: "Ethereum",
       address: "0x1c1CB2484Af7BF22eF4247671626eCeed04E8169",
       symbol: "ETH",
-      icon: "/ethereum-ETH-logo.png"
+      icon: "/cryptochains-icons/ethereum.png"
     },
     {
       name: "Base",
       address: "0x1c1CB2484Af7BF22eF4247671626eCeed04E8169",
       symbol: "BASE",
-      icon: "/base-BASE-logo.png"
+      icon: "/cryptochains-icons/base.png"
     },
     {
       name: "Sui",
       address:
         "0x47c969b1b79ddf7fbdafb3c52b22b57412ef9368eb4c563460bdda3098f329fb",
       symbol: "SUI",
-      icon: "/sui-SUI-logo.png"
+      icon: "/cryptochains-icons/sui.png"
     },
     {
       name: "Polygon",
       address: "0x1c1CB2484Af7BF22eF4247671626eCeed04E8169",
       symbol: "MATIC",
-      icon: "/polygon-MATIC-logo.png"
+      icon: "/cryptochains-icons/polygon.png"
     },
     {
       name: "Bitcoin",
       address: "bc1qy537v6fqn9p3jqv2dtknfd5uumyrwzes5nvru2",
       symbol: "BTC",
-      icon: "/bitcoin-BTC-logo.png"
+      icon: "/cryptochains-icons/bitcoin.png"
     }
   ]
 

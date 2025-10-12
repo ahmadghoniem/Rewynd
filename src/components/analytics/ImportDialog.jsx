@@ -67,7 +67,7 @@ const ImportDialog = ({ open, onOpenChange }) => {
         setImportData(null)
         setError(null)
       } else {
-        setError("Failed to import data. Please try again.")
+        setError("Failed to import session data. Please try again.")
       }
     } catch (err) {
       setError("An error occurred during import.")
@@ -100,7 +100,7 @@ const ImportDialog = ({ open, onOpenChange }) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Import Data
+            Import session Data
           </DialogTitle>
           <DialogDescription>
             Import previously exported FxReplay data. This will replace all
