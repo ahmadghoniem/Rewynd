@@ -2,43 +2,73 @@ import React, { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, getPnLColor } from "@/lib/utils"
 
-import { Clock, History } from "lucide-react"
+// Function to get color for profitable days (percentageChange > +0.5%)
+const getProfitableDayColor = (percentageChange) => {
+  if (percentageChange > 0.5) {
+    return "text-yellow-600 dark:text-yellow-400"
+  }
+  return getPnLColor(percentageChange > 0 ? 1 : -1) // Use default PnL colors for other cases
+}
+
+import { Clock, Calendar } from "lucide-react"
 import { cn, parseTradeDate } from "@/lib/utils"
+import useAppStore from "@/store/useAppStore"
 
 const DailyRecap = ({ extractedTrades = [], className }) => {
   const [dailyData, setDailyData] = useState([])
+  const sessionData = useAppStore((state) => state.sessionData)
 
   const scrollRef = useRef(null)
+
+  const calculateDailyAnalysis = useCallback(
+    (trades) => {
+      const dailyGroups = {}
+      const startingBalance = parseFloat(
+        typeof sessionData?.balance === "string"
+          ? sessionData.balance.replace(/[$,]/g, "")
+          : sessionData?.balance || "0"
+      )
+
+      trades.forEach((trade) => {
+        const date = parseTradeDate(trade.dateStart)
+        const dateKey = date.toISOString().split("T")[0]
+        if (!dailyGroups[dateKey]) {
+          dailyGroups[dateKey] = {
+            date: date,
+            dateKey: dateKey,
+            trades: [],
+            totalPnL: 0,
+            startingBalance: startingBalance
+          }
+        }
+        const pnl = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
+        dailyGroups[dateKey].trades.push(trade)
+        dailyGroups[dateKey].totalPnL += pnl
+      })
+
+      // Calculate cumulative balance and percentage for each day
+      const dailyArray = Object.values(dailyGroups).sort(
+        (a, b) => b.date - a.date
+      )
+
+      // Calculate running balance and percentage for each day
+      let runningBalance = startingBalance
+      dailyArray.forEach((day) => {
+        day.percentageChange =
+          runningBalance > 0 ? (day.totalPnL / runningBalance) * 100 : 0
+        runningBalance += day.totalPnL
+      })
+
+      setDailyData(dailyArray)
+    },
+    [sessionData]
+  )
 
   useEffect(() => {
     if (extractedTrades && extractedTrades.length > 0) {
       calculateDailyAnalysis(extractedTrades)
     }
-  }, [extractedTrades])
-
-  const calculateDailyAnalysis = (trades) => {
-    const dailyGroups = {}
-    trades.forEach((trade) => {
-      const date = parseTradeDate(trade.dateStart)
-      const dateKey = date.toISOString().split("T")[0]
-      if (!dailyGroups[dateKey]) {
-        dailyGroups[dateKey] = {
-          date: date,
-          dateKey: dateKey,
-          trades: [],
-          totalPnL: 0
-        }
-      }
-      const pnl = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
-      dailyGroups[dateKey].trades.push(trade)
-      dailyGroups[dateKey].totalPnL += pnl
-    })
-    // Convert to sorted array (descending by date)
-    const dailyArray = Object.values(dailyGroups).sort(
-      (a, b) => b.date - a.date
-    )
-    setDailyData(dailyArray)
-  }
+  }, [extractedTrades, calculateDailyAnalysis])
 
   // Drag-to-scroll logic
   const isDragging = useRef(false)
@@ -101,7 +131,7 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
             {dailyData.map((day) => (
               <div
                 key={day.dateKey}
-                className="group bg-muted/30 relative border border-border/40 rounded-lg p-4 hover:border-border/60 transition-all duration-200 "
+                className="group bg-muted/30 relative border border-border/40 rounded-lg p-3 hover:border-border/60 transition-all duration-200 "
                 style={{
                   scrollSnapAlign: "start"
                 }}
@@ -109,7 +139,7 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
                 {/* Date and PnL Row */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <History className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
                     <span className="text-sm font-medium text-foreground/90">
                       {day.date.toLocaleDateString("en-US", {
                         weekday: "short",
@@ -118,12 +148,29 @@ const DailyRecap = ({ extractedTrades = [], className }) => {
                       })}
                     </span>
                   </div>
-                  <div
-                    className={`text-lg font-semibold tabular-nums ${getPnLColor(
-                      day.totalPnL
-                    )}`}
-                  >
-                    {formatCurrency(day.totalPnL)}
+                  <div className="flex flex-col items-end">
+                    <div
+                      className={`text-base font-semibold tabular-nums ${
+                        day.percentageChange !== undefined &&
+                        day.percentageChange > 0.5
+                          ? getProfitableDayColor(day.percentageChange)
+                          : getPnLColor(day.totalPnL)
+                      }`}
+                    >
+                      {formatCurrency(day.totalPnL)}
+                    </div>
+                    {day.percentageChange !== undefined && (
+                      <div
+                        className={`text-xs font-medium tabular-nums ${
+                          day.percentageChange > 0.5
+                            ? getProfitableDayColor(day.percentageChange)
+                            : getPnLColor(day.totalPnL)
+                        }`}
+                      >
+                        ({day.percentageChange >= 0 ? "+" : ""}
+                        {day.percentageChange.toFixed(2)}%)
+                      </div>
+                    )}
                   </div>
                 </div>
 

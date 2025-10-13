@@ -2,7 +2,6 @@ import React, { useEffect } from "react"
 import AnalyticsView from "./analytics"
 import { ThemeProvider } from "./ThemeContext"
 import useAppStore from "./store/useAppStore"
-import HeaderCard from "./components/cards/HeaderCard"
 
 /* eslint-disable no-undef */
 
@@ -55,8 +54,6 @@ const AppContent = () => {
   return (
     <ThemeProvider>
       <div className="min-h-screen mx-auto bg-background transition-colors duration-200">
-        {/* Header */}
-        <HeaderCard />
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <AnalyticsView />

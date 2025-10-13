@@ -6,8 +6,13 @@ import { Table, AlertTriangle, Eye, EyeOff, Download } from "lucide-react"
 import { preprocessTradeData, formatNumber } from "@/lib/utils"
 import TradeRow from "./TradeRow"
 import Pagination from "@/components/ui/pagination"
+import useAppStore from "@/store/useAppStore"
 
 const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
+  // Get session data for export filename
+  const sessionData = useAppStore((state) => state.sessionData)
+  const sessionId = sessionData?.id || "unknown"
+
   // Consolidated state management
   const [tableState, setTableState] = useState({
     visibleColumns: {
@@ -157,15 +162,14 @@ const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute(
-      "download",
-      `trade-history-${new Date().toISOString().split("T")[0]}.csv`
-    )
+    const timestamp = new Date().toISOString().split("T")[0]
+    const shortSessionId = sessionId ? sessionId.slice(-8) : "unknown"
+    link.setAttribute("download", `rewynd-${shortSessionId}-${timestamp}.csv`)
     link.style.visibility = "hidden"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }, [processedTrades, columnDefinitions])
+  }, [processedTrades, columnDefinitions, sessionId])
 
   // Pagination calculations
   const pageSize = 5

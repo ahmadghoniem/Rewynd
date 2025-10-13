@@ -165,7 +165,7 @@ const ImportDialog = ({ open, onOpenChange }) => {
           )}
 
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="flex items-center gap-2 p-3 bg-danger/10 border border-destructive/20 rounded-lg">
               <AlertCircle className="h-4 w-4 text-destructive" />
               <span className="text-sm text-destructive">{error}</span>
             </div>

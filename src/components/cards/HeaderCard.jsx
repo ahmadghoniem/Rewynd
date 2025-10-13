@@ -1,139 +1,127 @@
-import React, { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { RefreshCw, Sun, Moon, Check } from "lucide-react"
-import { useTheme } from "../../ThemeContext"
-import useAppStore from "../../store/useAppStore"
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { FileText, Settings } from "lucide-react";
+import useAppStore from "@/store/useAppStore";
+import NotesDialog from "../analytics/NotesDialog";
+import SessionDataManager from "./SessionDataManager";
+import SessionChangeManager from "./SessionChangeManager";
+import StatusBadge from "@/components/ui/status-badge";
+import { useTheme } from "@/ThemeContext";
+import {
+  ThemeToggleButton,
+  useThemeTransition,
+} from "@/components/ui/shadcn-io/theme-toggle-button";
 
-const HeaderCard = () => {
-  const { isDark, toggleTheme } = useTheme()
-  const loadSessionData = useAppStore((state) => state.loadSessionData)
-  const loadTradeData = useAppStore((state) => state.loadTradeData)
-  const [isSynced, setIsSynced] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
+const HeaderCard = ({ showConfiguration, onToggleConfiguration }) => {
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const { isDark, toggleTheme } = useTheme();
+  const { startTransition } = useThemeTransition();
+  const capital = useAppStore((state) => state.sessionData.capital);
+  const objectives = useAppStore((state) => state.objectives);
+  const sessionData = useAppStore((state) => state.sessionData);
 
-  const handleSync = async () => {
-    if (!window.chrome?.tabs) {
-      alert("Chrome extension messaging not available.")
-      return
+  // Get session ID from global state
+  const sessionId = sessionData?.id || "unknown";
+
+  // Format capital for display (default to 100K if not available)
+  const formattedCapital = capital ? `${(capital / 1000).toFixed(0)}K` : "100K";
+
+  // Create the header text with dynamic values
+  // Use last 8 characters of session ID for cleaner display
+  const shortSessionId = sessionId ? sessionId.slice(-8) : "unknown";
+  const headerText = `#${shortSessionId}-$${formattedCapital}`;
+
+  // Calculate badge status based on objectives
+  const getBadgeStatus = () => {
+    // Check if all trading objectives are met
+    const allObjectivesMet =
+      objectives.minimumTradingDays &&
+      objectives.minimumProfitableDays &&
+      objectives.profitTargets &&
+      objectives.consistencyRule &&
+      objectives.dailyDrawdown &&
+      objectives.maxDrawdown;
+
+    // Check if any breaking rules are violated (excluding consistency rule)
+    // Only maxDailyLossBroken and maxStaticLossBroken cause failure
+    const anyBreakingRulesViolated =
+      objectives.maxDailyLossBroken || objectives.maxStaticLossBroken;
+
+    if (allObjectivesMet) {
+      return "funded";
+    } else if (anyBreakingRulesViolated) {
+      return "failed";
+    } else {
+      return "in-progress";
     }
+  };
 
-    setIsSyncing(true)
-    setIsSynced(false)
+  // Get current badge status
+  const badgeStatus = getBadgeStatus();
 
-    try {
-      // eslint-disable-next-line no-undef
-      const [currentTab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-      })
-      // eslint-disable-next-line no-undef
-      const [fxReplayTab] = await chrome.tabs.query({
-        url: "https://app.fxreplay.com/en-US/auth/chart/*"
-      })
-
-      if (!fxReplayTab) {
-        alert("Please open a FxReplay tab to refresh data.")
-        return
-      }
-
-      // eslint-disable-next-line no-undef
-      await chrome.tabs.update(fxReplayTab.id, { active: true })
-
-      const [sessionResponse, tradeResponse] = await Promise.all([
-        // eslint-disable-next-line no-undef
-        chrome.tabs.sendMessage(fxReplayTab.id, {
-          type: "EXTRACT_SESSION_DATA"
-        }),
-        // eslint-disable-next-line no-undef
-        chrome.tabs.sendMessage(fxReplayTab.id, {
-          type: "EXTRACT_TRADES",
-          forceRefresh: true
-        })
-      ])
-
-      if (sessionResponse?.success && tradeResponse?.success) {
-        await Promise.all([loadSessionData(), loadTradeData()])
-
-        try {
-          // eslint-disable-next-line no-undef
-          await chrome.tabs.sendMessage(fxReplayTab.id, {
-            type: "MANUAL_SYNC"
-          })
-        } catch (syncError) {
-          console.warn("Manual sync failed:", syncError.message)
-        }
-
-        setIsSynced(true)
-        alert("Data refreshed successfully!")
-
-        setTimeout(() => {
-          setIsSynced(false)
-        }, 3000)
-      } else {
-        alert("Failed to refresh data. Make sure you have a FxReplay tab open.")
-      }
-
-      if (currentTab?.id !== fxReplayTab.id) {
-        // eslint-disable-next-line no-undef
-        await chrome.tabs.update(currentTab.id, { active: true })
-      }
-    } catch (error) {
-      console.error("Error during sync:", error)
-      alert("Error during sync. Please try again.")
-    } finally {
-      setIsSyncing(false)
-    }
-  }
+  const handleThemeToggle = () => {
+    startTransition(() => {
+      toggleTheme();
+    });
+  };
 
   return (
-    <header className="bg-background border-b border-border/50 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo on the left */}
-          <div className="flex items-center">
-            <img src="/logo.png" alt="Rewynd" className="h-full w-32" />
-          </div>
+    <>
+      <div className="w-full flex items-center justify-between mb-2 p-2.5 border border-border/50 rounded-lg bg-card">
+        <div className="flex items-center gap-3">
+          <img
+            src="/icon.png"
+            alt="Rewynd"
+            className="h-8 w-8 flex-shrink-0"
+            style={{
+              filter: isDark ? "none" : "invert(1)",
+            }}
+          />
+          <div className="h-4 w-px bg-border/50"></div>
+          <h1 className="text-lg font-semibold text-foreground uppercase">
+            {headerText}
+          </h1>
+          <StatusBadge status={badgeStatus} />
+        </div>
 
-          {/* Buttons on the right */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSync}
-              disabled={isSyncing}
-              className={`h-9 px-3 ${isSynced ? "text-green-600" : ""}`}
-              title={isSynced ? "Last sync successful" : "Sync Data"}
-            >
-              {isSyncing ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : isSynced ? (
-                <Check className="h-4 w-4 mr-2" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              <span className="hidden sm:inline">
-                {isSyncing ? "Syncing..." : isSynced ? "Synced" : "Sync"}
-              </span>
-            </Button>
+        <div className="flex items-center gap-2">
+          <SessionChangeManager sessionData={sessionData} />
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="h-9 px-3"
-              title="Toggle Theme"
-            >
-              {isDark ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setNotesDialogOpen(true)}
+            className="h-8 px-3 text-xs font-medium"
+          >
+            <FileText className="h-3 w-3 mr-1.5" />
+            Notes
+          </Button>
+
+          <SessionDataManager sessionId={sessionId} />
+
+          <Button
+            variant={showConfiguration ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleConfiguration}
+            className="h-8 px-3 text-xs font-medium"
+          >
+            <Settings className="h-3 w-3 mr-1.5" />
+            Configuration
+          </Button>
+
+          <ThemeToggleButton
+            theme={isDark ? "dark" : "light"}
+            variant="circle-blur"
+            start="top-right"
+            onClick={handleThemeToggle}
+            className="h-8 w-8"
+          />
         </div>
       </div>
-    </header>
-  )
-}
 
-export default HeaderCard
+      <NotesDialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen} />
+    </>
+  );
+};
+
+export default HeaderCard;
