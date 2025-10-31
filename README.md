@@ -7,8 +7,8 @@ A comprehensive Chrome extension and web application for analyzing FxReplay trad
 ![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-v3-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+<img width="977" height="1018" alt="image" src="https://github.com/user-attachments/assets/cdc647c6-9d77-4223-9d5b-aca72a65f335" />
 
-<img width="851" height="910" alt="image" src="https://github.com/user-attachments/assets/42894dd3-aa4e-48e5-81b1-172613a08f03" />
 
 ## 🚀 Features
 
@@ -288,7 +288,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔄 Changelog
 
-### Version 1.0.0
+### Version 1.0.0-beta
 
 - Initial release with core analytics features
 - Chrome extension with real-time data extraction
