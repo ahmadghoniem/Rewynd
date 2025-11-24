@@ -1,13 +1,24 @@
-import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 import NumberInput from "./NumberInput"
 import DrawdownTypeSelector from "./DrawdownTypeSelector"
 
-const DrawdownConfigCard = ({ config, updateConfigField }) => {
+import useAppStore from "@/store/useAppStore"
+
+const DrawdownConfigCard = () => {
+  const config = useAppStore((state) => state.config)
+  const updateChallengeConfig = useAppStore(
+    (state) => state.updateChallengeConfig
+  )
+
+  const updateConfigField = (field, value) => {
+    updateChallengeConfig({ [field]: value })
+  }
+
   return (
     <Card>
-      <CardContent className="flex flex-col gap-2 py-0">
+      <CardContent className="flex flex-col gap-2.5 py-0">
         <div className="space-y-2">
           <Label className="text-sm font-medium text-muted-foreground">
             Daily Drawdown
@@ -22,6 +33,8 @@ const DrawdownConfigCard = ({ config, updateConfigField }) => {
           />
         </div>
 
+        <Separator />
+
         <div className="space-y-2">
           <Label className="text-sm font-medium text-muted-foreground">
             Max Drawdown
@@ -35,6 +48,8 @@ const DrawdownConfigCard = ({ config, updateConfigField }) => {
             suffix="%"
           />
         </div>
+
+        <Separator />
 
         <div className="space-y-2">
           <Label className="text-sm font-medium text-muted-foreground">

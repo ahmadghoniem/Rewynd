@@ -1,123 +1,120 @@
 # Rewynd - Trading Analytics Dashboard
 
-A comprehensive Chrome extension and web application for analyzing FxReplay trading challenge performance with real-time data extraction, advanced analytics, and objective tracking.
+Rewynd is a Chrome extension for FxReplay traders who want to go beyond backtesting—turn your replay sessions into simulated prop firm challenges and practice hitting profit targets, managing drawdowns, and meeting consistency rules to get funded.
 
 ![Rewynd Dashboard](https://img.shields.io/badge/Status-Active-brightgreen)
 ![React](https://img.shields.io/badge/React-19.1.0-blue)
 ![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-v3-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-
 <img width="851" height="910" alt="image" src="https://github.com/user-attachments/assets/42894dd3-aa4e-48e5-81b1-172613a08f03" />
+## ✨ Core Features
 
-## 🚀 Features
+### 📊 Performance Analytics That Actually Matter
 
-### 📊 Real-Time Analytics
+Track what separates funded traders from the rest:
 
-- **Live Account Tracking**: Automatically extracts and monitors account balance, realized PnL, and capital
-- **Trade History Analysis**: Comprehensive trade data extraction with detailed performance metrics
-- **Performance Metrics**: Win rate, profit factor, average RR, trader expectancy, and more
-- **Equity Curve Visualization**: Interactive charts showing account growth over time
+- **Real-time metrics extraction**: From FxReplay—account balance, realized PnL, and complete trade history automatically synced
+- **Professional-grade statistics**: Win rate, Average R/R, Profit Factor, Trader Expectancy, Average Win/Loss, Win/Loss Streaks (Break-even trades are excluded from streak calculations)
+- **Smart streak tracking**: Break-even trades won't interrupt your win/loss streaks
+- **Enriched Trade History**: Instantly see your risk exposure per trade and hold duration, critical insights you'd otherwise track manually (Break-even trades do not break win/loss streaks)
+- **Daily performance snapshots**: With instant PnL, R/R, and win rate overview
+- **Interactive growth charts**: Visualizing your account performance over time
+- **Built-in trading journal**: With Notion-style editor for documenting your edge
 
-### 🎯 Challenge Objective Tracking
+### 🎯 Realistic Prop Firm Challenges
 
-- **Minimum Trading Days**: Track required trading days for challenge completion
-- **Minimum Profitable Days**: Monitor profitable trading days requirement
-- **Profit Targets**: Real-time progress tracking toward profit goals
-- **Consistency Rule**: Ensure profits are spread across multiple days
-- **Daily Drawdown Monitoring**: Track daily loss limits
-- **Maximum Drawdown**: Monitor overall account drawdown with static/trailing options
+Practice like it's the real thing:
 
-### 🔧 Advanced Configuration
+- **Match any firm's rules**: Fully customizable challenge parameters
+- **Complete objective tracking**:
+  - Minimum trading days & profitable days
+  - Profit targets with live progress bars
+  - Daily & maximum drawdown limits (static/trailing)
+  - Consistency requirements & rule enforcement
+- **Visual status indicators**: Know exactly where you stand (active, failed, funded)
 
-- **Customizable Parameters**: Adjust all challenge requirements to match your specific program
-- **Multiple Drawdown Types**: Support for static, trailing fixed, and trailing scaling drawdown
-- **Preset Management**: Save and load different challenge configurations
-- **Real-time Updates**: Automatic synchronization across browser tabs
+### 💾 Privacy-First Data Management
 
-### 💾 Data Management
+Your edge stays yours:
 
-- **Import/Export**: Backup and restore your trading data and configurations
-- **Notes System**: Add personal notes and observations
-- **Sample Data**: Test the application with provided sample trading data
-- **Cross-tab Sync**: Seamless data synchronization across multiple browser tabs
-
-### 🎨 User Experience
-
-- **Dark/Light Theme**: Toggle between themes for comfortable viewing
-- **Responsive Design**: Optimized for desktop and mobile viewing
-- **Modern UI**: Clean, intuitive interface built with React and Tailwind CSS
-- **Real-time Status**: Visual indicators for challenge progress and status
+- 🔒 **100% local storage**: No external servers, no data collection
+- 🔄 **Auto-sync after each trade**: Always up to date
+- 💾 **Complete backup system**: Export/import sessions, configs, and notes
+- 📊 **CSV export**: Analyze your data anywhere
+- ⚡ **Manual refresh**: Force sync anytime you need it
 
 ## 🛠️ Technology Stack
 
 ### Frontend
 
-- **React 19.1.0** - Modern React with latest features
-- **Tailwind CSS 4.1.11** - Utility-first CSS framework
-- **Zustand 5.0.6** - Lightweight state management
-- **Recharts 2.15.4** - Data visualization library
-- **Radix UI** - Accessible component primitives
-- **Lexical** - Rich text editor for notes
+- **React 19.1.0**: Modern React with latest features
+- **Tailwind CSS 4.1.11**: Utility-first CSS framework
+- **Zustand 5.0.6**: Lightweight state management
+- **Recharts 2.15.4**: Data visualization library
+- **Radix UI**: Accessible component primitives
+- **Lexical**: Rich text editor for notes
 
 ### Chrome Extension
 
-- **Manifest V3** - Latest Chrome extension manifest
-- **Content Scripts** - Real-time data extraction from FxReplay
-- **Background Service Worker** - Data storage and synchronization
-- **Chrome Storage API** - Persistent data storage
+- **Manifest V3**: Latest Chrome extension manifest
+- **Content Scripts**: Real-time data extraction from FxReplay
+- **Background Service Worker**: Data storage and synchronization
+- **Chrome Storage API**: Persistent data storage
 
 ### Development Tools
 
-- **Vite 7.0.4** - Fast build tool and development server
-- **ESLint** - Code linting and formatting
-- **TypeScript** - Type safety and better development experience
+- **Vite 7.0.4**: Fast build tool and development server
+- **ESLint**: Code linting and formatting
+- **TypeScript**: Type safety and better development experience
+- **Cursor**: AI enhanced code writing features
 
-## 📦 Installation
+## 📥 Installation
 
-### Prerequisites
+### For Users
+
+1. **Download the latest release**:
+   - Go to [Releases](https://github.com/ahmadghoniem/Rewynd/releases)
+   - Download the latest `rewynd-extension.zip`
+
+2. **Extract the ZIP file**
+
+3. **Load the extension**:
+   - Open your browser and navigate to the extensions page:
+     - Chrome/Brave: `chrome://extensions/`
+     - Edge: `edge://extensions/`
+     - Opera: `opera://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked"
+   - Select the extracted dist folder
+
+4. **Access the dashboard**:
+   - Click the extension icon in your browser toolbar
+
+### For Developers
+
+#### Prerequisites
 
 - Node.js 18+
-- Chrome browser
+- Chromium-based browser (Chrome, Brave, Edge, Opera, etc.)
 - Active FxReplay account
 
-### Development Setup
+#### Development Setup
 
-1. **Clone the repository**
-
-   ```bash
+1. **Clone and install**
+```bash
    git clone https://github.com/ahmadghoniem/Rewynd.git
    cd Rewynd
-   ```
-
-2. **Install dependencies**
-
-   ```bash
    npm install
-   ```
+```
 
-3. **Start development server**
-
-   ```bash
-   npm run dev
-   ```
-
-4. **Build the Chrome extension**
-   ```bash
+2. **Build the extension**
+```bash
    npm run build:extension
-   ```
+```
 
-### Chrome Extension Installation
-
-1. **Load the extension**
-
-   - Open Chrome and navigate to `chrome://extensions/`
-   - Enable "Developer mode" in the top right
-   - Click "Load unpacked" and select the `dist` folder
-
-2. **Access the dashboard**
-   - Click the extension icon in your Chrome toolbar
-   - Or navigate to the extension's popup page
+3. **Load and use the extension**
+   - Follow steps 3-4 from the [For Users](#for-users) section above
 
 ## 🚀 Usage
 
@@ -125,8 +122,7 @@ A comprehensive Chrome extension and web application for analyzing FxReplay trad
 
 1. **Open FxReplay Dashboard**
 
-   - Navigate to your FxReplay challenge dashboard
-   - Ensure you're logged in and can see your trading data
+   - Navigate to an active FxReplay backtesting session
 
 2. **Configure Challenge Parameters**
 
@@ -139,61 +135,10 @@ A comprehensive Chrome extension and web application for analyzing FxReplay trad
      - Maximum drawdown limits
      - Consistency rule percentage
 
-3. **Extract Trading Data**
-   - Click "Refresh Data" to extract current account and trade data
-   - Or use "Sample Data" to test with provided example data
+3. **Sync Your Data**
+   - Click the Sync button to extract your trading data
+   - If the data looks incorrect, simply click Sync again to refresh
 
-### Daily Usage
-
-1. **Monitor Progress**
-
-   - View real-time account balance and PnL
-   - Check objective completion status
-   - Monitor drawdown levels
-
-2. **Analyze Performance**
-
-   - Review trade history and statistics
-   - Analyze equity curve progression
-   - Check consistency rule compliance
-
-3. **Manage Data**
-   - Add notes for important observations
-   - Export data for backup
-   - Import data when switching devices
-
-## 📊 Key Metrics Explained
-
-### Performance Metrics
-
-- **Win Rate**: Percentage of profitable trades
-- **Profit Factor**: Ratio of gross profit to gross loss
-- **Average RR**: Average risk-to-reward ratio
-- **Trader Expectancy**: Expected profit per trade
-
-### Challenge Objectives
-
-- **Minimum Trading Days**: Required number of days with at least one trade
-- **Minimum Profitable Days**: Required number of days with net profit
-- **Profit Targets**: Percentage profit required to complete challenge
-- **Consistency Rule**: Maximum percentage of total profits from a single day
-- **Daily Drawdown**: Maximum allowed daily loss percentage
-- **Maximum Drawdown**: Overall account drawdown limit
-
-## 🔧 Configuration Options
-
-### Drawdown Types
-
-- **Static**: Fixed percentage based on initial capital
-- **Trailing Fixed**: Percentage based on current balance
-- **Trailing Scaling**: Percentage that scales with account growth
-
-### Data Management
-
-- **Auto-sync**: Automatic data extraction when account changes
-- **Manual Refresh**: Force refresh all data
-- **Import/Export**: Backup and restore functionality
-- **Cross-tab Sync**: Real-time updates across browser tabs
 
 ## 🏗️ Project Structure
 
@@ -202,58 +147,34 @@ Rewynd/
 ├── src/
 │   ├── components/
 │   │   ├── analytics/          # Analytics dashboard components
-│   │   ├── cards/             # Individual metric cards
-│   │   ├── configuration/     # Challenge configuration UI
-│   │   ├── editor/           # Rich text editor components
-│   │   └── ui/               # Reusable UI components
-│   ├── extension/            # Chrome extension files
-│   │   ├── background.js     # Background service worker
-│   │   ├── content.js        # Content script for data extraction
-│   │   └── utils.js          # Extension utilities
-│   ├── lib/                  # Utility functions
-│   ├── store/                # Zustand state management
-│   └── assets/               # Static assets
-├── public/                   # Public assets and fonts
-├── dist/                     # Built extension files
-└── manifest.json            # Chrome extension manifest
+│   │   ├── cards/              # Individual metric cards (20+ components)
+│   │   ├── configuration/      # Challenge configuration UI
+│   │   ├── blocks/             # Block editor components
+│   │   ├── editor/             # Rich text editor components
+│   │   └── ui/                 # Reusable UI components (shadcn)
+│   ├── extension/              # Chrome extension files
+│   │   ├── background.js       # Background service worker
+│   │   ├── content.js          # Content script for data extraction
+│   │   ├── utils.js            # Extension utilities
+│   │   └── build-extension.js  # Build script
+│   ├── store/                  # Zustand state management
+│   ├── lib/                    # Utility functions
+│   ├── assets/                 # Static assets
+│   ├── App.jsx                 # Main app component
+│   ├── Configuration.jsx       # Configuration page
+│   ├── analytics.jsx           # Analytics page
+│   ├── ThemeContext.jsx        # Theme provider
+│   └── main.jsx                # App entry point
+├── public/                     # Public assets
+│   ├── cryptochains-icons/     # Blockchain network icons
+│   ├── fonts/                  # Satoshi font family
+│   └── *.png                   # App icons and logo
+├── components.json             # shadcn/ui config
+├── manifest.json               # Chrome extension manifest
+├── vite.config.js              # Vite bundler config
+├── tsconfig.json               # TypeScript config
+└── package.json
 ```
-
-## 🔌 API Integration
-
-### FxReplay Data Extraction
-
-The extension automatically extracts data from FxReplay's web interface:
-
-- Account balance and PnL
-- Trade history with detailed metrics
-- Real-time updates via DOM observation
-
-### Data Storage
-
-- **Chrome Storage**: Persistent storage for all user data
-- **Cross-tab Communication**: Real-time data synchronization
-- **Export/Import**: JSON-based data portability
-
-## 🚨 Important Notes
-
-### Browser Compatibility
-
-- **Chrome/Chromium**: Full support
-- **Firefox**: Limited support (extension API differences)
-- **Safari**: Not supported (different extension model)
-
-### Data Privacy
-
-- All data is stored locally in your browser
-- No data is sent to external servers
-- Export/import functionality is client-side only
-
-### FxReplay Integration
-
-- Requires active FxReplay account
-- Works with standard FxReplay challenge programs
-- May require updates if FxReplay changes their interface
-
 ## 🤝 Contributing
 
 1. **Fork the repository**
@@ -262,39 +183,11 @@ The extension automatically extracts data from FxReplay's web interface:
 4. **Push to the branch**: `git push origin feature/amazing-feature`
 5. **Open a Pull Request**
 
-### Development Guidelines
-
-- Follow existing code style and patterns
-- Add tests for new features
-- Update documentation for API changes
-- Ensure cross-browser compatibility
 
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- **FxReplay** for providing the trading platform
-- **React Team** for the amazing framework
-- **Tailwind CSS** for the utility-first CSS framework
-- **Chrome Extension Community** for documentation and examples
-
-## 📞 Support
-
-- **Issues**: Report bugs and feature requests on GitHub
-- **Discussions**: Join community discussions
-- **Documentation**: Check the wiki for detailed guides
-
-## 🔄 Changelog
-
-### Version 1.0.0
-
-- Initial release with core analytics features
-- Chrome extension with real-time data extraction
-- Comprehensive challenge objective tracking
-- Import/export functionality
-- Dark/light theme support
 
 ---
 

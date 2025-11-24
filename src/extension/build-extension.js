@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Files to copy from current directory to dist
-const filesToCopy = ["background.js", "content.js", "utils.js"]
+const filesToCopy = ["background.js", "content.js"]
 
 // Files to copy from public directory to dist
 const publicFilesToCopy = ["favicon.png"]

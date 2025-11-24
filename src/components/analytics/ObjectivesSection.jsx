@@ -11,12 +11,12 @@ const ObjectivesSection = () => {
   // All cards/sections below should use Zustand or local logic for their own data
   return (
     <div className="flex flex-col gap-2">
-      <MinimumTradingDaysCard />
-      <MinimumProfitableDaysCard />
       <ProfitTargetCard />
-      <ConsistencyRuleCard />
       <DailyDrawdownCard />
       <MaxDrawdownCard />
+      <MinimumTradingDaysCard />
+      <MinimumProfitableDaysCard />
+      <ConsistencyRuleCard />
     </div>
   )
 }

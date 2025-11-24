@@ -1,36 +1,36 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import useAppStore from "@/store/useAppStore";
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
+import useAppStore from "@/store/useAppStore"
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  TooltipTrigger
+} from "@/components/ui/tooltip"
 
 const SessionChangeManager = ({ sessionData }) => {
-  const [pendingSessionChange, setPendingSessionChange] = useState(null);
-  const switchToNewSession = useAppStore((state) => state.switchToNewSession);
+  const [pendingSessionChange, setPendingSessionChange] = useState(null)
+  const switchToNewSession = useAppStore((state) => state.switchToNewSession)
 
   // Check for session changes when component loads and periodically
   useEffect(() => {
     const checkSessionChange = async () => {
-      const currentSessionId = sessionData?.id;
+      const currentSessionId = sessionData?.id
 
       // Get session ID from the active FxReplay tab
-      let urlSessionId = null;
+      let urlSessionId = null
       try {
         if (chrome?.tabs) {
           const [fxReplayTab] = await chrome.tabs.query({
-            url: "https://app.fxreplay.com/en-US/auth/chart/*",
-          });
+            url: "https://app.fxreplay.com/*/auth/testing/chart/*"
+          })
           if (fxReplayTab) {
-            const pathSegments = fxReplayTab.url.split("/");
-            urlSessionId = pathSegments[pathSegments.length - 1];
+            const pathSegments = fxReplayTab.url.split("/")
+            urlSessionId = pathSegments[pathSegments.length - 1]
           }
         }
       } catch (error) {
-        console.error("Error getting FxReplay tab URL:", error);
+        console.error("Error getting FxReplay tab URL:", error)
       }
 
       if (
@@ -41,51 +41,44 @@ const SessionChangeManager = ({ sessionData }) => {
         // Session has changed - show switch button
         setPendingSessionChange({
           currentSessionId,
-          newSessionId: urlSessionId,
-          newSessionData: {
-            id: urlSessionId,
-            balance: null,
-            realizedPnL: null,
-            capital: null,
-            lastUpdated: Date.now(),
-          },
-        });
+          newSessionId: urlSessionId
+        })
       } else if (
         currentSessionId &&
         urlSessionId &&
         currentSessionId === urlSessionId
       ) {
         // Session is the same - clear any pending change
-        setPendingSessionChange(null);
+        setPendingSessionChange(null)
       }
-    };
+    }
 
     // Check immediately and also when sessionData changes
-    checkSessionChange();
+    checkSessionChange()
 
     // Set up periodic check every 2 seconds while popup is open
-    const interval = setInterval(checkSessionChange, 2000);
+    const interval = setInterval(checkSessionChange, 2000)
 
     return () => {
-      clearInterval(interval);
-    };
-  }, [sessionData?.id]);
+      clearInterval(interval)
+    }
+  }, [sessionData?.id])
 
   const handleSwitchSession = async () => {
     if (pendingSessionChange) {
       try {
-        await switchToNewSession(pendingSessionChange.newSessionData);
-        setPendingSessionChange(null);
+        await switchToNewSession(pendingSessionChange.newSessionId)
+        setPendingSessionChange(null)
         // Data is now refreshed automatically, no need to reload
       } catch (error) {
-        console.error("Error switching session:", error);
-        alert("Failed to switch session. Please try again.");
+        console.error("Error switching session:", error)
+        alert("Failed to switch session. Please try again.")
       }
     }
-  };
+  }
 
   if (!pendingSessionChange) {
-    return null;
+    return null
   }
 
   return (
@@ -104,17 +97,20 @@ const SessionChangeManager = ({ sessionData }) => {
       <TooltipContent>
         <div className="text-xs">
           <div>
-            Current:{" "}
-            {pendingSessionChange.currentSessionId?.slice(-8) || "None"}
+            Current: #
+            {pendingSessionChange.currentSessionId?.slice(-8).toUpperCase() ||
+              "NONE"}
           </div>
-          <div>New: {pendingSessionChange.newSessionId?.slice(-8)}</div>
+          <div>
+            New: #{pendingSessionChange.newSessionId?.slice(-8).toUpperCase()}
+          </div>
           <div className="text-muted-foreground mt-1">
             This will clear all current data
           </div>
         </div>
       </TooltipContent>
     </Tooltip>
-  );
-};
+  )
+}
 
-export default SessionChangeManager;
+export default SessionChangeManager

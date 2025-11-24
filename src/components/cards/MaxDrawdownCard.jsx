@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Info } from "lucide-react"
 import { ProgressBar } from "../ui/progressbar"
@@ -94,7 +94,7 @@ const MaxDrawdownCard = ({ className }) => {
               ? formatCurrency(maxDrawdownAmount)
               : `${maxDrawdownUsed.toFixed(2)}%`}
           </span>
-          <span className="text-base text-muted-foreground">
+          <span className="text-xl text-muted-foreground">
             /{" "}
             {showAmounts
               ? formatCurrency(maxDrawdownTargetAmount)

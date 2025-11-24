@@ -1,11 +1,8 @@
-"use client"
-
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   ResponsiveContainer,
   Cell
 } from "recharts"
@@ -17,7 +14,12 @@ import {
   TooltipTrigger,
   TooltipContent
 } from "@/components/ui/tooltip"
-import { parseTradeDate, formatCurrency, cn } from "@/lib/utils"
+import {
+  parseTradeDate,
+  formatCurrency,
+  cn,
+  getLocalDateKey
+} from "@/lib/utils"
 import useAppStore from "@/store/useAppStore"
 
 export default function DailyPnLChart({ className }) {
@@ -30,9 +32,10 @@ export default function DailyPnLChart({ className }) {
     const dailyGroups = {}
 
     trades.forEach((trade) => {
-      const dateStr = trade.dateStart || trade.date || ""
+      // Use dateEnd because that's when P&L is realized
+      const dateStr = trade.dateEnd || trade.dateStart || trade.date || ""
       const dateObj = parseTradeDate(dateStr)
-      const dayKey = dateObj.toISOString().split("T")[0]
+      const dayKey = getLocalDateKey(dateObj)
 
       let realized = 0
       if (typeof trade.realized === "string") {

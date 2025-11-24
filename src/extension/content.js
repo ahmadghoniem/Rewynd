@@ -1,587 +1,409 @@
 // content.js - Enhanced content script with account tracking
-// Requires: utils.js
-/* eslint-disable no-undef */
+
 
 (function () {
-  // Session tracking functionality
+  // ============================================
+  // CONSTANTS & CONFIGURATION
+  // ============================================
+  const SELECTORS = {
+    ACCOUNT_SECTION: "div.hidden.lg\\:\\!flex.justify-end.items-center.gap-4.w-full.grow",
+    ACCOUNT_SPAN: "span.select-none.text-sm",
+    TAB_LIST: ".p-tablist-tab-list",
+    CLOSED_POSITION_TABLE: "lib-closed-position-table",
+    PAGINATION_BAR: "fxr-ui-pagination-bar",
+    TABLE: "table[fxr-ui-table]",
+    OVERLAY: "fxr-ui-card.max-h-80.ng-star-inserted"
+  };
 
-  // Extracts account balance, realized PnL, and calculates initial capital from FXReplay DOM
-  function extractSessionData() {
-    // Find account section with multiple fallback selectors
-    let accountSection = document.querySelector(
-      "div.hidden.lg\\:\\!flex.justify-end.items-center.gap-4.w-full.grow"
-    );
+  const TIMING = {
+    DEBOUNCE_TRACKING: 300,
+    DEBOUNCE_EXTRACTION: 500,
+    PAGE_NAVIGATION: 25,
+    TABLE_UPDATE_CHECK: 50,
+    TABLE_UPDATE_TIMEOUT: 500
+  };
 
-    if (!accountSection) {
-      return null;
+  // ============================================
+  // STATE MANAGEMENT
+  // ============================================
+  let accountObserver = null;
+  let extractionTimeout = null;
+  let isExtracting = false;
+
+  // ============================================
+  // UTILITY FUNCTIONS
+  // ============================================
+
+  // Creates a debouncer that delays function execution
+  function createDebouncer(delay) {
+    let timeout;
+    return (fn) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(fn, delay);
+    };
+  }
+
+  const debounceExtraction = createDebouncer(TIMING.DEBOUNCE_EXTRACTION);
+  const debounceTracking = createDebouncer(TIMING.DEBOUNCE_TRACKING);
+
+  // Gets account section with fresh DOM query
+  function getAccountSection() {
+    return document.querySelector(SELECTORS.ACCOUNT_SECTION);
+  }
+
+  // Parses numeric value from text like "Account Balance: $1,234.56"
+  function parseNumericValue(text, label) {
+    const regex = new RegExp(`${label}:\\s*-?\\$?([\\d,.]+)`, "i");
+    const match = text.match(regex);
+    if (match) {
+      const value = parseFloat(match[1].replace(/,/g, ""));
+      return text.includes("-") ? -Math.abs(value) : value;
     }
+    return null;
+  }
 
-    // Extract data from spans
-    const spans = accountSection.querySelectorAll("span.select-none.text-sm");
-    let accountBalance = null;
-    let realizedPnL = null;
-
-    spans.forEach((span) => {
-      const text = span.textContent.trim();
-
-      if (text.includes("Account Balance:")) {
-        const match = text.match(/Account Balance:\s*\$?([\d,.-]+)/);
-        if (match) {
-          accountBalance = parseFloat(match[1].replace(/,/g, ""));
-        }
-      } else if (text.includes("Realized PnL:")) {
-        // Handle both negative and positive formats
-        const match = text.match(/Realized PnL:\s*-?\$?([\d,.-]+)/);
-        if (match) {
-          const value = parseFloat(match[1].replace(/,/g, ""));
-          realizedPnL = text.includes("-") ? -value : value;
-        }
+  // Sends message to background script and returns promise
+  function sendToBackground(type, data) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.runtime.sendMessage({ type, data }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(response);
+          }
+        });
+      } catch (error) {
+        reject(error);
       }
     });
-
-    // Calculate account size
-    const initialCapital =
-      accountBalance && realizedPnL !== null
-        ? accountBalance - realizedPnL
-        : accountBalance;
-
-    // Extract session ID from URL
-    const sessionId =
-      window.location.pathname.split("/").pop() ||
-      "834d7ae1-0b55-409a-bd3c-56f3904d44d8";
-
-    const result = {
-      id: sessionId,
-      balance: accountBalance,
-      realizedPnL: realizedPnL || 0,
-      capital: initialCapital,
-      lastUpdated: Date.now(),
-    };
-
-    return result;
   }
 
-  // Saves session data to store or sends to background script via Chrome messaging
-  function saveSessionData(data) {
-    try {
-      if (window.useAppStore) {
-        window.useAppStore.getState().saveSessionData(data);
-      } else {
-        chrome.runtime.sendMessage(
-          {
-            type: "SESSION_DATA_UPDATE",
-            data: data,
-          },
-          (response) => {
-            if (chrome.runtime.lastError) {
-              console.error(
-                "Error sending session data:",
-                chrome.runtime.lastError
-              );
-              return;
-            }
-            if (response && response.success) {
-              // Session data sent successfully
-            }
-          }
-        );
+  // Creates lightweight snapshot of table for comparison
+  function getTableSnapshot(tableBody) {
+    if (!tableBody) return "";
+    const rows = tableBody.querySelectorAll("tr");
+    return `${rows.length}-${rows[0]?.innerText || ""}`;
+  }
+
+  // ============================================
+  // PAGINATION MANAGER
+  // ============================================
+  const Pagination = {
+    // Gets pagination button (prev/next)
+    getButton(type) {
+      const table = document.querySelector(SELECTORS.CLOSED_POSITION_TABLE);
+      return table?.querySelector(`button[data-test="${type}"]`);
+    },
+
+    // Returns current page number
+    getCurrentPage() {
+      const table = document.querySelector(SELECTORS.CLOSED_POSITION_TABLE);
+      const spans = table?.querySelectorAll("button[fxr-ui-button] span");
+      if (spans && spans.length >= 2) {
+        const pageNumber = parseInt(spans[1].textContent.trim());
+        return isNaN(pageNumber) ? 1 : pageNumber;
       }
-    } catch (error) {
-      console.error("Error saving session data:", error);
+      return 1;
+    },
+
+    // Returns total number of pages
+    getTotalPages() {
+      const table = document.querySelector(SELECTORS.CLOSED_POSITION_TABLE);
+      const match = table?.textContent.match(/of (\d+)/);
+      return match ? parseInt(match[1]) : 1;
+    },
+
+    // Navigates to specific page number
+    async goToPage(targetPage) {
+      let current = this.getCurrentPage();
+      if (current === targetPage) return;
+
+      const direction = targetPage < current ? "prev" : "next";
+      const button = this.getButton(direction);
+      if (!button) return;
+
+      const steps = Math.abs(targetPage - current);
+      for (let i = 0; i < steps; i++) {
+        if (button.disabled) break;
+        button.click();
+        await new Promise(resolve => setTimeout(resolve, TIMING.PAGE_NAVIGATION));
+        current = this.getCurrentPage();
+        if (current === targetPage) break;
+      }
+    },
+
+    // Clicks next button and returns success status
+    goToNext() {
+      const button = this.getButton("next");
+      if (button && !button.disabled) {
+        button.click();
+        return true;
+      }
+      return false;
     }
+  };
+
+  // ============================================
+  // SESSION DATA EXTRACTION
+  // ============================================
+
+  // Extracts account balance, realized P&L, and calculates initial capital
+  function extractSessionData() {
+    const section = getAccountSection();
+    if (!section) return null;
+
+    const spans = section.querySelectorAll(SELECTORS.ACCOUNT_SPAN);
+    const data = { accountBalance: null, realizedPnL: null };
+
+    // Loop through spans to find balance and P&L
+    for (const span of spans) {
+      const text = span.textContent.trim();
+      const lowerText = text.toLowerCase();
+
+      if (!data.accountBalance && lowerText.includes("account balance:")) {
+        data.accountBalance = parseNumericValue(text, "Account Balance");
+      }
+
+      if (!data.realizedPnL && lowerText.includes("realized pnl:")) {
+        data.realizedPnL = parseNumericValue(text, "Realized PnL");
+      }
+
+      // Exit early when both values found
+      if (data.accountBalance !== null && data.realizedPnL !== null) break;
+    }
+
+    return {
+      id: window.location.pathname.split("/").pop(),
+      balance: data.accountBalance,
+      realizedPnL: data.realizedPnL ?? 0,
+      capital: data.accountBalance !== null && data.realizedPnL !== null
+        ? Math.round(data.accountBalance - data.realizedPnL)
+        : data.accountBalance,
+      lastUpdated: Date.now()
+    };
   }
 
-  // Track extraction state to prevent race conditions
-  let isExtracting = false;
-  let extractionTimeout = null;
-
-  // Monitors session data changes and triggers trade extraction with debouncing
+  // Tracks session data changes and triggers trade extraction
   function trackSessionData() {
     const data = extractSessionData();
-    if (data) {
-      saveSessionData(data);
+    if (!data) return;
 
-      // Debounce trade extraction to prevent race conditions
-      if (extractionTimeout) {
-        clearTimeout(extractionTimeout);
-      }
+    // Send session data to background
+    sendToBackground("SESSION_DATA_UPDATE", data).catch(error => {
+      console.error("Error saving session data:", error);
+    });
 
-      extractionTimeout = setTimeout(() => {
-        if (!isExtracting) {
-          isExtracting = true;
-          extractTradeHistory(false)
-            .then((trades) => {
-              if (trades) {
-                saveTradeData(trades);
-              }
-            })
-            .catch((error) => {
-              console.error(
-                "Error extracting trades after account change:",
-                error
-              );
-            })
-            .finally(() => {
-              isExtracting = false;
+    // Prevent race conditions by checking flag before debouncing
+    if (isExtracting) return;
+
+    isExtracting = true;
+    debounceExtraction(() => {
+      extractTradeHistory(false)
+        .then(trades => {
+          if (trades) {
+            return sendToBackground("TRADE_DATA_UPDATE", {
+              trades,
+              forceRefresh: false,
+              lastUpdated: Date.now(),
+              url: window.location.href
             });
-        }
-      }, 500);
-    }
-  }
-
-  // Extracts all trade history from FXReplay closed positions table with pagination support
-  function extractTradeHistory(forceRefresh = false) {
-    return new Promise((resolve) => {
-      // Switches to the "Closed positions" tab to access trade history
-      function switchToClosedPositionsTab() {
-        const tabList = document.querySelector(".p-tablist-tab-list");
-        if (!tabList) return false;
-
-        const tabs = tabList.querySelectorAll("p-tab");
-        const closedPositionsTab = Array.from(tabs).find(
-          (tab) =>
-            tab.textContent && tab.textContent.includes("Closed positions")
-        );
-
-        if (!closedPositionsTab) return false;
-
-        if (closedPositionsTab.getAttribute("data-p-active") === "true") {
-          return true;
-        }
-
-        closedPositionsTab.click();
-        return true;
-      }
-
-      const tabSwitched = switchToClosedPositionsTab();
-      if (!tabSwitched) {
-        resolve(null);
-        return;
-      }
-
-      const closedPositionTable = document.querySelector(
-        "lib-closed-position-table"
-      );
-      if (!closedPositionTable) {
-        resolve(null);
-        return;
-      }
-
-      const table = closedPositionTable.querySelector("table[fxr-ui-table]");
-      if (!table) {
-        resolve(null);
-        return;
-      }
-
-      // Sets pagination to show maximum rows per page for complete data extraction
-      function setRowsPerPageToMax() {
-        const paginationBar = closedPositionTable.querySelector(
-          "fxr-ui-pagination-bar"
-        );
-        if (!paginationBar) return false;
-
-        const button = paginationBar.querySelector("button[cdkoverlayorigin]");
-        if (!button) return false;
-
-        button.click();
-
-        const overlay = document.querySelector(
-          "fxr-ui-card.max-h-80.ng-star-inserted"
-        );
-        if (overlay) {
-          const options = Array.from(overlay.querySelectorAll("button"));
-          if (options.length > 0) {
-            // Select the last option
-            const lastOption = options[options.length - 1];
-            lastOption.click();
           }
-        }
-
-        return true;
-      }
-
-      setRowsPerPageToMax();
-
-      // Extracts trade data from the currently visible table rows
-      function extractTradesFromCurrentPage() {
-        const rows = table.querySelectorAll("tbody tr");
-        const trades = [];
-
-        rows.forEach((row, rowIndex) => {
-          const cells = row.querySelectorAll("td");
-          const trade = {
-            rowIndex: rowIndex,
-            asset: cells[1]?.textContent?.trim() || "",
-            side: cells[2]?.textContent?.trim() || "",
-            dateStart: cells[3]?.textContent?.trim() || "",
-            dateEnd: cells[4]?.textContent?.trim() || "",
-            entry: cells[5]?.textContent?.trim() || "",
-            initialSL: cells[6]?.textContent?.trim() || "",
-            maxTP: cells[7]?.textContent?.trim() || "",
-            maxRR: cells[8]?.textContent?.trim() || "",
-            size: cells[9]?.textContent?.trim() || "",
-            closeAvg: cells[10]?.textContent?.trim() || "",
-            realized: cells[11]?.textContent?.trim() || "",
-            commission: cells[12]?.textContent?.trim() || "$0.00",
-          };
-          trades.push(trade);
+        })
+        .catch(error => {
+          console.error("Error extracting trades after account change:", error);
+        })
+        .finally(() => {
+          isExtracting = false;
         });
-
-        return trades;
-      }
-
-      // Gets total number of pages from pagination controls
-      function getPaginationInfo() {
-        const paginationText = closedPositionTable.textContent;
-        const pageMatch = paginationText.match(/of (\d+)/);
-        return pageMatch ? parseInt(pageMatch[1]) : 1;
-      }
-
-      // Navigates to the next page of trade history
-      function goToNextPage() {
-        const nextButton = closedPositionTable.querySelector(
-          'button[data-test="next"]'
-        );
-        if (nextButton && !nextButton.disabled) {
-          nextButton.click();
-          return true;
-        }
-        return false;
-      }
-
-      // Returns to page 1 by clicking previous button multiple times
-      async function goToPage1() {
-        let currentPage = getCurrentPage();
-        if (currentPage === 1) return;
-
-        const prevButton = closedPositionTable.querySelector(
-          'button[data-test="prev"]'
-        );
-        if (!prevButton) {
-          console.warn("Previous button not found");
-          return;
-        }
-
-        const pagesToGoBack = currentPage - 1;
-        for (let i = 0; i < pagesToGoBack; i++) {
-          if (prevButton.disabled) {
-            console.warn("Previous button disabled");
-            break;
-          }
-
-          prevButton.click();
-          await new Promise((resolve) => setTimeout(resolve, 25));
-          currentPage = Math.max(1, currentPage - 1);
-
-          if (currentPage === 1) break;
-        }
-
-        if (currentPage !== 1) {
-          const finalPage = getCurrentPage();
-          if (finalPage !== 1) {
-            console.warn(`Failed to reach page 1. Current page: ${finalPage}`);
-          }
-        }
-      }
-
-      // Gets the current page number from pagination controls
-      function getCurrentPage() {
-        const pageDropdowns = closedPositionTable.querySelectorAll(
-          "button[fxr-ui-button] span"
-        );
-        if (pageDropdowns && pageDropdowns.length >= 2) {
-          const pageText = pageDropdowns[1].textContent.trim();
-          const pageNumber = parseInt(pageText);
-          return isNaN(pageNumber) ? 1 : pageNumber;
-        }
-        return 1;
-      }
-
-      // Waits for table content to update after pagination using MutationObserver
-      async function waitForTableUpdate(
-        tableBody,
-        oldContent,
-        maxWaitMs = 500,
-        retryCount = 0,
-        maxRetries = 3
-      ) {
-        if (!tableBody) {
-          return false;
-        }
-
-        // Quick initial check - sometimes the table updates immediately
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        let newContent = Array.from(tableBody.querySelectorAll("tr"))
-          .map((row) => row.innerText)
-          .join("|");
-        if (newContent !== oldContent) {
-          return true;
-        }
-
-        // Use MutationObserver for more efficient detection
-        return new Promise((resolve) => {
-          const observer = new MutationObserver(() => {
-            setTimeout(() => {
-              const currentContent = Array.from(
-                tableBody.querySelectorAll("tr")
-              )
-                .map((row) => row.innerText)
-                .join("|");
-
-              if (currentContent !== oldContent) {
-                observer.disconnect();
-                resolve(true);
-              }
-            }, 50);
-          });
-
-          observer.observe(tableBody, {
-            childList: true,
-            subtree: true,
-            characterData: true,
-          });
-
-          setTimeout(async () => {
-            observer.disconnect();
-
-            if (retryCount < maxRetries) {
-              await new Promise((resolve) => setTimeout(resolve, 200));
-              const retryResult = await waitForTableUpdate(
-                tableBody,
-                oldContent,
-                maxWaitMs,
-                retryCount + 1,
-                maxRetries
-              );
-              resolve(retryResult);
-            } else {
-              console.warn(`Table update failed after ${maxRetries} retries`);
-              resolve(false);
-            }
-          }, maxWaitMs);
-        });
-      }
-
-      // Main function that extracts all trades from all pages with pagination handling
-      async function extractAllTrades() {
-        const allTrades = [];
-        const totalPages = getPaginationInfo();
-        const tableBody = closedPositionTable.querySelector(
-          "table[fxr-ui-table] tbody"
-        );
-
-        const currentPage = getCurrentPage();
-        if (currentPage !== 1) {
-          await goToPage1();
-        }
-
-        if (forceRefresh) {
-          for (let page = 1; page <= totalPages; page++) {
-            if (page > 1) {
-              const oldContent = tableBody
-                ? Array.from(tableBody.querySelectorAll("tr"))
-                    .map((row) => row.innerText)
-                    .join("|")
-                : "";
-
-              const hasNext = goToNextPage();
-              if (!hasNext) break;
-
-              await new Promise((resolve) => setTimeout(resolve, 50));
-              const updated = await waitForTableUpdate(tableBody, oldContent);
-              if (!updated) {
-                console.warn(
-                  `Table update failed on page ${page} after all retries`
-                );
-              }
-            } else {
-              await new Promise((resolve) => setTimeout(resolve, 50));
-            }
-
-            const pageTrades = extractTradesFromCurrentPage();
-            allTrades.push(...pageTrades);
-          }
-        } else {
-          const pageTrades = extractTradesFromCurrentPage();
-          allTrades.push(...pageTrades);
-        }
-
-        if (forceRefresh) {
-          const currentPage = getCurrentPage();
-          if (currentPage !== 1) {
-            await goToPage1();
-            const finalPage = getCurrentPage();
-            if (finalPage !== 1) {
-              console.warn(
-                `Failed to return to page 1. Current page: ${finalPage}`
-              );
-            }
-          }
-        }
-
-        return allTrades;
-      }
-
-      extractAllTrades().then((allTrades) => {
-        resolve(allTrades);
-      });
     });
   }
 
-  // Saves extracted trade data to store or sends to background script
-  function saveTradeData(trades, forceRefresh = false) {
-    try {
-      const data = {
-        trades: trades,
-        lastUpdated: Date.now(),
-        url: window.location.href,
-      };
+  // ============================================
+  // TRADE HISTORY EXTRACTION
+  // ============================================
 
-      if (window.useAppStore) {
-        if (forceRefresh) {
-          window.useAppStore.getState().saveTradeData(data);
-        } else {
-          window.useAppStore.getState().updateTradeData(trades);
-        }
-      } else {
-        chrome.runtime.sendMessage(
-          {
-            type: "TRADE_DATA_UPDATE",
-            data: { ...data, forceRefresh: forceRefresh },
-          },
-          (response) => {
-            if (chrome.runtime.lastError) {
-              console.error(
-                "Error sending trade data:",
-                chrome.runtime.lastError
-              );
-              return;
-            }
-            if (response && response.success) {
-              // Trade data sent successfully
-            }
-          }
-        );
-      }
-    } catch (error) {
-      console.error("Error saving trade data:", error);
-    }
+  // Switches UI to "Closed positions" tab
+  function switchToClosedPositionsTab() {
+    const tabList = document.querySelector(SELECTORS.TAB_LIST);
+    if (!tabList) return false;
+
+    const tabs = tabList.querySelectorAll("p-tab");
+    const closedPositionsTab = Array.from(tabs).find(
+      tab => tab.textContent?.toLowerCase().includes("closed positions")
+    );
+
+    if (!closedPositionsTab) return false;
+    if (closedPositionsTab.getAttribute("data-p-active") === "true") return true;
+
+    closedPositionsTab.click();
+    return true;
   }
 
-  // Store observer for cleanup
-  let accountObserver = null;
+  // Sets pagination to show maximum rows per page
+  function setRowsPerPageToMax() {
+    const table = document.querySelector(SELECTORS.CLOSED_POSITION_TABLE);
+    const paginationBar = table?.querySelector(SELECTORS.PAGINATION_BAR);
+    const button = paginationBar?.querySelector("button[cdkoverlayorigin]");
 
-  // Sets up MutationObserver to watch for account section changes
+    if (!button) return false;
+    button.click();
+
+    const overlay = document.querySelector(SELECTORS.OVERLAY);
+    const options = overlay?.querySelectorAll("button");
+
+    if (options && options.length > 0) {
+      options[options.length - 1].click();
+    }
+
+    return true;
+  }
+
+  // Extracts trade data from visible table rows
+  function extractTradesFromCurrentPage() {
+    const table = document.querySelector(SELECTORS.CLOSED_POSITION_TABLE);
+    const rows = table?.querySelectorAll("tbody tr") || [];
+
+    return Array.from(rows).map((row, rowIndex) => {
+      const cells = row.querySelectorAll("td");
+      return {
+        rowIndex,
+        asset: cells[1]?.textContent?.trim() || "",
+        side: cells[2]?.textContent?.trim() || "",
+        dateStart: cells[3]?.textContent?.trim() || "",
+        dateEnd: cells[4]?.textContent?.trim() || "",
+        entry: cells[5]?.textContent?.trim() || "",
+        initialSL: cells[6]?.textContent?.trim() || "",
+        maxTP: cells[7]?.textContent?.trim() || "",
+        maxRR: cells[8]?.textContent?.trim() || "",
+        size: cells[9]?.textContent?.trim() || "",
+        closeAvg: cells[10]?.textContent?.trim() || "",
+        realized: cells[11]?.textContent?.trim() || "",
+        commission: cells[12]?.textContent?.trim() || "$0.00"
+      };
+    });
+  }
+
+  // Waits for table DOM to update with simple timeout loop
+  async function waitForTableUpdate(tableBody, oldSnapshot, maxWaitMs = TIMING.TABLE_UPDATE_TIMEOUT) {
+    if (!tableBody) return false;
+
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWaitMs) {
+      await new Promise(resolve => setTimeout(resolve, TIMING.TABLE_UPDATE_CHECK));
+
+      const newSnapshot = getTableSnapshot(tableBody);
+      if (newSnapshot !== oldSnapshot) return true;
+    }
+
+    console.warn("Table update timeout reached");
+    return false;
+  }
+
+  // Extracts trades from all pages or just current page
+  async function extractAllTrades(forceRefresh) {
+    const allTrades = [];
+    const table = document.querySelector(SELECTORS.CLOSED_POSITION_TABLE);
+    const tableBody = table?.querySelector("tbody");
+
+    // Always start from page 1
+    await Pagination.goToPage(1);
+
+    if (forceRefresh) {
+      const totalPages = Pagination.getTotalPages();
+
+      for (let page = 1; page <= totalPages; page++) {
+        // Only navigate if not first page
+        if (page > 1) {
+          const oldSnapshot = getTableSnapshot(tableBody);
+          if (!Pagination.goToNext()) break;
+          await new Promise(resolve => setTimeout(resolve, TIMING.TABLE_UPDATE_CHECK));
+          await waitForTableUpdate(tableBody, oldSnapshot);
+        }
+
+        const pageTrades = extractTradesFromCurrentPage();
+        allTrades.push(...pageTrades);
+      }
+
+      // Return to page 1
+      await Pagination.goToPage(1);
+    } else {
+      // Extract only current page
+      const pageTrades = extractTradesFromCurrentPage();
+      allTrades.push(...pageTrades);
+    }
+
+    return allTrades;
+  }
+
+  // Main entry point for trade extraction
+  async function extractTradeHistory(forceRefresh = false) {
+    const tabSwitched = switchToClosedPositionsTab();
+    if (!tabSwitched) return null;
+
+    const table = document.querySelector(SELECTORS.CLOSED_POSITION_TABLE);
+    if (!table?.querySelector(SELECTORS.TABLE)) return null;
+
+    setRowsPerPageToMax();
+    return await extractAllTrades(forceRefresh);
+  }
+
+  // ============================================
+  // OBSERVERS & LIFECYCLE
+  // ============================================
+
+  // Sets up observer to watch for account balance changes
   function setupAccountObserver() {
-    // Clean up existing observer to prevent memory leaks
+    // Clean up existing observer to prevent duplicates
     if (accountObserver) {
       accountObserver.disconnect();
       accountObserver = null;
     }
 
-    // Find the account section
-    const accountSection = document.querySelector(
-      "div.hidden.lg\\:\\!flex.justify-end.items-center.gap-4.w-full.grow"
-    );
+    const accountSection = getAccountSection();
     if (!accountSection) {
-      alert("Account section not found. Use the Sync button when ready.");
+      alert("Account section not found. Please refresh the page.");
+      // sendToBackground("SHOW_NOTIFICATION", {
+      //   type: "warning",
+      //   message: "Account section not found. Please refresh the page."
+      // }).catch(console.error);
       return;
     }
 
-    // Find the first relevant span
-    let span = null;
-    try {
-      span = accountSection.querySelector("span.select-none.text-sm");
-    } catch (e) {
-      console.error("Error querying span:", e);
-      return;
-    }
+    const span = accountSection.querySelector(SELECTORS.ACCOUNT_SPAN);
     if (!span) {
       console.warn("No span found in account section");
       return;
     }
 
-    // Create observer for the first span only
-    accountObserver = new MutationObserver((mutations) => {
-      mutations.forEach(() => {
-        // Debounce the trackSessionData call to prevent rapid firing
-        if (extractionTimeout) {
-          clearTimeout(extractionTimeout);
-        }
-        extractionTimeout = setTimeout(() => {
-          trackSessionData();
-        }, 300);
-      });
+    // Watch for text changes in the span
+    accountObserver = new MutationObserver(() => {
+      debounceTracking(() => trackSessionData());
     });
 
     accountObserver.observe(span, {
       characterData: true,
-      childList: true,
       subtree: true,
+      childList: true
     });
+
+    // Notify background that observer is active
+    sendToBackground("OBSERVER_STATUS_UPDATE", { isObserving: true }).catch(
+      error => console.error("Error updating observer status:", error)
+    );
   }
 
-  // Handles messages from background script and popup
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "EXTRACT_TRADES") {
-      if (isExtracting) {
-        sendResponse({
-          success: false,
-          error: "Extraction already in progress",
-        });
-        return true;
-      }
-
-      const forceRefresh = message.forceRefresh || false;
-      isExtracting = true;
-
-      // Async wrapper function
-      const handleExtractTrades = async () => {
-        try {
-          const trades = await extractTradeHistory(forceRefresh);
-          if (trades) {
-            saveTradeData(trades, forceRefresh);
-          }
-          sendResponse({ success: true, trades: trades });
-        } catch (error) {
-          console.error("Error extracting trades:", error);
-          sendResponse({ success: false, error: error.message });
-        } finally {
-          isExtracting = false;
-        }
-      };
-
-      handleExtractTrades();
-      return true;
-    }
-
-    if (message.type === "EXTRACT_SESSION_DATA") {
-      const sessionData = extractSessionData();
-      if (sessionData) {
-        saveSessionData(sessionData);
-        sendResponse({ success: true, data: sessionData });
-      } else {
-        sendResponse({
-          success: false,
-          error: "Failed to extract session data",
-        });
-      }
-      return false;
-    }
-
-    if (message.type === "MANUAL_SYNC") {
-      // Try to find and setup account observer
-      setupAccountObserver();
-      sendResponse({ success: true });
-      return false;
-    }
-  });
-
-  // Cleans up observers and timeouts to prevent memory leaks
+  // Cleans up observers and timeouts on page unload
   function cleanup() {
     if (accountObserver) {
       accountObserver.disconnect();
       accountObserver = null;
+
+      // Update sync status to false when observer stops
+      sendToBackground("SYNC_STATUS_UPDATE", false).catch(
+        error => console.error("Error updating sync status:", error)
+      );
     }
 
     if (extractionTimeout) {
@@ -591,6 +413,89 @@
 
     isExtracting = false;
   }
+
+  // ============================================
+  // MESSAGE HANDLERS
+  // ============================================
+
+  // Map of message types to handler functions
+  const messageHandlers = {
+    // Extracts trades when requested by popup/background
+    async EXTRACT_TRADES({ forceRefresh = false }) {
+      if (isExtracting) {
+        throw new Error("Extraction already in progress");
+      }
+
+      isExtracting = true;
+      try {
+        const trades = await extractTradeHistory(forceRefresh);
+        if (trades) {
+          await sendToBackground("TRADE_DATA_UPDATE", {
+            trades,
+            forceRefresh,
+            lastUpdated: Date.now(),
+            url: window.location.href
+          }).catch(error => {
+            console.error("Error saving trade data:", error);
+          });
+        }
+        return { success: true, trades };
+      } finally {
+        isExtracting = false;
+      }
+    },
+
+    // Extracts session data when requested
+    async EXTRACT_SESSION_DATA() {
+      const data = extractSessionData();
+      if (!data) {
+        throw new Error("Failed to extract session data");
+      }
+
+      // Save session data to background storage
+      await sendToBackground("SESSION_DATA_UPDATE", data).catch(error => {
+        console.error("Error saving session data:", error);
+      });
+
+      return { success: true, data };
+    },
+
+    // Sets up observer when user clicks sync button
+    MANUAL_SYNC() {
+      setupAccountObserver();
+      return { success: true };
+    },
+
+    // Stops the observer when session changes or manually requested
+    STOP_OBSERVER() {
+      if (accountObserver) {
+        accountObserver.disconnect();
+        accountObserver = null;
+        currentSessionId = null;
+        sendToBackground("SYNC_STATUS_UPDATE", false).catch(error =>
+          console.error("Error updating sync status:", error)
+        );
+      }
+      return { success: true };
+    }
+  };
+
+  // Listen for messages from popup or background script
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    const handler = messageHandlers[message.type];
+    if (!handler) return false;
+
+    // Execute handler and send response
+    Promise.resolve(handler(message))
+      .then(sendResponse)
+      .catch(error => sendResponse({ success: false, error: error.message }));
+
+    return true; // Keep message channel open for async response
+  });
+
+  // ============================================
+  // INITIALIZATION
+  // ============================================
 
   window.addEventListener("beforeunload", cleanup);
   window.addEventListener("unload", cleanup);

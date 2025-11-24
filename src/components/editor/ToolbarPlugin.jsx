@@ -48,7 +48,6 @@ import {
   List,
   ListOrdered,
   Quote,
-  Type,
   AlignLeft,
   AlignCenter,
   AlignRight,

@@ -1,6 +1,6 @@
-import React, { memo } from "react"
+import { memo } from "react"
 import { Badge } from "@/components/ui/badge"
-import { formatNumber } from "@/lib/utils"
+import { formatCurrency, getRRDisplayValue } from "@/lib/utils"
 
 const TradeRow = memo(({ trade, visibleColumns }) => {
   return (
@@ -26,34 +26,28 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
         </td>
       )}
       {visibleColumns.rr && (
-        <td className="p-2.5 text-sm text-foreground">
-          {(() => {
-            if (trade.maxRR === "Loss") return <span>-1</span>
-            const rrNum = parseFloat(trade.maxRR)
-            if (!isNaN(rrNum) && rrNum >= -0.1 && rrNum <= 0.1)
-              return <span>0</span>
-            return trade.maxRR
-          })()}
+        <td className="p-2.5 text-sm text-foreground ">
+          <span>{getRRDisplayValue(trade)}</span>
         </td>
       )}
       {visibleColumns.risk && (
-        <td className="p-2.5 text-sm">
+        <td className="p-2.5 text-sm ">
           {trade.riskPercentage ? (
             <div>
               <span className="font-medium">
                 {trade.riskPercentage.percent}%
               </span>
               <div className="text-xs text-muted-foreground">
-                (${formatNumber(trade.riskPercentage.amount)})
+                ({formatCurrency(trade.riskPercentage.amount)})
               </div>
             </div>
           ) : (
-            "-"
+            "N/A"
           )}
         </td>
       )}
       {visibleColumns.realized && (
-        <td className="p-2.5">
+        <td className="p-2.5 ">
           <div className="flex items-center gap-2">
             <span className={`text-sm font-medium ${trade.pnlColor}`}>
               {trade.formattedRealized}
@@ -65,7 +59,7 @@ const TradeRow = memo(({ trade, visibleColumns }) => {
         <td className="p-2.5 text-sm">
           <div>
             <div className="text-foreground">
-              {trade.holdTime || trade.duration || "-"}
+              {trade.heldTime || trade.duration || "-"}
             </div>
           </div>
         </td>

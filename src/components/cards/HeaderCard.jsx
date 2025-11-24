@@ -1,69 +1,48 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { FileText, Settings } from "lucide-react";
-import useAppStore from "@/store/useAppStore";
-import NotesDialog from "../analytics/NotesDialog";
-import SessionDataManager from "./SessionDataManager";
-import SessionChangeManager from "./SessionChangeManager";
-import StatusBadge from "@/components/ui/status-badge";
-import { useTheme } from "@/ThemeContext";
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { FileText, Settings } from "lucide-react"
+import useAppStore from "@/store/useAppStore"
+import NotesDialog from "../analytics/NotesDialog"
+import SessionDataManager from "./SessionDataManager"
+import SessionChangeManager from "./SessionChangeManager"
+import StatusBadge from "@/components/ui/status-badge"
+import SyncButton from "./SyncButton"
+import { useTheme } from "@/ThemeContext"
 import {
   ThemeToggleButton,
-  useThemeTransition,
-} from "@/components/ui/shadcn-io/theme-toggle-button";
+  useThemeTransition
+} from "@/components/ui/shadcn-io/theme-toggle-button"
 
 const HeaderCard = ({ showConfiguration, onToggleConfiguration }) => {
-  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
-  const { isDark, toggleTheme } = useTheme();
-  const { startTransition } = useThemeTransition();
-  const capital = useAppStore((state) => state.sessionData.capital);
-  const objectives = useAppStore((state) => state.objectives);
-  const sessionData = useAppStore((state) => state.sessionData);
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false)
+  const { isDark, toggleTheme } = useTheme()
+  const { startTransition } = useThemeTransition()
+  const capital = useAppStore((state) => state.sessionData.capital)
+  const sessionData = useAppStore((state) => state.sessionData)
+  const isInSync = useAppStore((state) => state.isInSync)
 
   // Get session ID from global state
-  const sessionId = sessionData?.id || "unknown";
+  const sessionId = sessionData?.id
 
   // Format capital for display (default to 100K if not available)
-  const formattedCapital = capital ? `${(capital / 1000).toFixed(0)}K` : "100K";
+  const formattedCapital = capital && `${(capital / 1000).toFixed(0)}K`
 
   // Create the header text with dynamic values
   // Use last 8 characters of session ID for cleaner display
-  const shortSessionId = sessionId ? sessionId.slice(-8) : "unknown";
-  const headerText = `#${shortSessionId}-$${formattedCapital}`;
+  const shortSessionId = sessionId && sessionId.slice(-8)
+  const headerText =
+    sessionId && capital && `#${shortSessionId} -$${formattedCapital}`
 
-  // Calculate badge status based on objectives
-  const getBadgeStatus = () => {
-    // Check if all trading objectives are met
-    const allObjectivesMet =
-      objectives.minimumTradingDays &&
-      objectives.minimumProfitableDays &&
-      objectives.profitTargets &&
-      objectives.consistencyRule &&
-      objectives.dailyDrawdown &&
-      objectives.maxDrawdown;
-
-    // Check if any breaking rules are violated (excluding consistency rule)
-    // Only maxDailyLossBroken and maxStaticLossBroken cause failure
-    const anyBreakingRulesViolated =
-      objectives.maxDailyLossBroken || objectives.maxStaticLossBroken;
-
-    if (allObjectivesMet) {
-      return "funded";
-    } else if (anyBreakingRulesViolated) {
-      return "failed";
-    } else {
-      return "in-progress";
-    }
-  };
+  const getChallengeStatus = useAppStore((state) => state.getChallengeStatus)
 
   // Get current badge status
-  const badgeStatus = getBadgeStatus();
+  const badgeStatus = getChallengeStatus()
 
   const handleThemeToggle = () => {
     startTransition(() => {
-      toggleTheme();
-    });
-  };
+      toggleTheme()
+    })
+  }
 
   return (
     <>
@@ -74,14 +53,17 @@ const HeaderCard = ({ showConfiguration, onToggleConfiguration }) => {
             alt="Rewynd"
             className="h-8 w-8 flex-shrink-0"
             style={{
-              filter: isDark ? "none" : "invert(1)",
+              filter: isDark ? "none" : "invert(1)"
             }}
           />
           <div className="h-4 w-px bg-border/50"></div>
-          <h1 className="text-lg font-semibold text-foreground uppercase">
-            {headerText}
-          </h1>
-          <StatusBadge status={badgeStatus} />
+          {headerText && (
+            <h1 className="text-lg font-semibold text-foreground uppercase">
+              {headerText}
+            </h1>
+          )}
+          {isInSync && <StatusBadge status={badgeStatus} className="h-8" />}
+          <SyncButton />
         </div>
 
         <div className="flex items-center gap-2">
@@ -121,7 +103,7 @@ const HeaderCard = ({ showConfiguration, onToggleConfiguration }) => {
 
       <NotesDialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen} />
     </>
-  );
-};
+  )
+}
 
-export default HeaderCard;
+export default HeaderCard

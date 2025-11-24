@@ -49,6 +49,18 @@ export function parseTradeDate(dateString: string): Date {
 }
 
 /**
+ * Gets a date key (YYYY-MM-DD) using local time components.
+ * This ensures dates are grouped by calendar day in the user's timezone,
+ * not UTC (which would cause same-day trades to split across dates).
+ */
+export function getLocalDateKey(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+/**
  * Formats a date string with consistent formatting
  */
 export const formatDate = (dateStr: string): string => {
@@ -68,41 +80,11 @@ export const formatDate = (dateStr: string): string => {
   }
 }
 
-/**
- * Formats a date range between start and end dates
- */
-export const formatDateRange = (dateStart: string, dateEnd: string): string => {
-  if (!dateStart || !dateEnd) return "-"
-  try {
-    const start = parseTradeDate(dateStart)
-    const end = parseTradeDate(dateEnd)
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "-"
-
-    const pad = (n: number) => n.toString().padStart(2, "0")
-
-    const startDate = `${pad(start.getFullYear() % 100)}/${pad(
-      start.getMonth() + 1
-    )}/${pad(start.getDate())}`
-    const startTime = `${pad(start.getHours())}:${pad(start.getMinutes())}`
-    const endDate = `${pad(end.getFullYear() % 100)}/${pad(
-      end.getMonth() + 1
-    )}/${pad(end.getDate())}`
-    const endTime = `${pad(end.getHours())}:${pad(end.getMinutes())}`
-
-    if (startDate === endDate) {
-      return `${startDate} ${startTime} → ${endTime}`
-    } else {
-      return `${startDate} ${startTime} → ${endDate} ${endTime}`
-    }
-  } catch {
-    return "-"
-  }
-}
 
 /**
- * Calculates hold time from trade start and end dates
+ * Calculates trade duration from trade start and end dates
  */
-export const calculateHoldTime = (trade: any): string | null => {
+export const calculateHeldTime = (trade: any): string | null => {
   if (!trade.dateStart || !trade.dateEnd) return null
 
   try {
@@ -150,29 +132,53 @@ export const parsePnL = (realized: any): number => {
 }
 
 /**
- * Formats currency with consistent formatting
+ * Formats currency with consistent formatting in K format (thousands)
  */
 export const formatCurrency = (amount: number | string): string => {
   if (!amount) return "$0.00"
+
   const numAmount = cleanNumber(amount)
   if (isNaN(numAmount)) return amount.toString()
 
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(numAmount)
+  const absAmount = Math.abs(numAmount)
+  const sign = numAmount < 0 ? "-" : ""
+
+  // Use "K" abbreviation starting from 10,000
+  if (absAmount >= 10000) {
+    const kValue = absAmount / 1000
+    const formatted = (kValue.toFixed(2))
+    return `${sign}$${formatted}K`
+  }
+
+  // Below 10,000 → show normally with commas via toLocaleString
+  const formatted = absAmount.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
+
+  return `${sign}$${formatted}`
 }
 
+
 /**
- * Formats numbers to 2 decimal places
+ * Simple currency formatting with thousands separator (commas) but no K abbreviation
+ * Used for charts and places where full numeric values are preferred over abbreviated format
  */
-export const formatNumber = (number: any): string => {
-  if (number === null || number === undefined || number === "") return "-"
-  const num = cleanNumber(number)
-  if (isNaN(num)) return number.toString()
-  return num.toFixed(2)
+export const simpleFormatCurrency = (amount: number | string): string => {
+  if (!amount) return "$0"
+
+  const numValue = Number(amount)
+  if (isNaN(numValue)) return amount.toString()
+
+  const sign = numValue < 0 ? "-" : ""
+  const absValue = Math.abs(numValue)
+
+  const formatted = absValue.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+
+  return `${sign}$${formatted}`
 }
 
 // ============================================================================
@@ -210,37 +216,34 @@ export const getPnLBadge = (realized: any): string => {
 // ============================================================================
 
 /**
- * Gets target amounts for profit targets
+ * Gets target amount for profit target
  */
-export const getTargetAmounts = (
-  profitTargets: Record<string, number>,
+export const getTargetAmount = (
+  profitTarget: number,
   capital: number
-): Record<string, number> => {
-  return {
-    phase1: (capital * (profitTargets.phase1 || 0)) / 100
-  }
+): number => {
+  return (capital * (profitTarget || 0)) / 100
 }
 
 /**
- * Calculates individual target progress
+ * Calculates target progress
  */
-export const calculateIndividualTargetProgress = (
-  profitTargets: Record<string, number>,
+export const calculateTargetProgress = (
+  profitTarget: number,
   capital: number,
   realizedPnL: number
-): Record<string, number> => {
-  const targetPercentage = profitTargets.phase1 || 0
-  const phaseTargetAmount = (targetPercentage / 100) * capital
+): number => {
+  const targetAmount = ((profitTarget || 0) / 100) * capital
 
   // Handle edge case where there's no target or no capital
-  if (phaseTargetAmount <= 0) {
-    return { phase1: 0 }
+  if (targetAmount <= 0) {
+    return 0
   }
 
-  if (realizedPnL >= phaseTargetAmount) {
-    return { phase1: 100 }
+  if (realizedPnL >= targetAmount) {
+    return 100
   } else {
-    return { phase1: Math.max(0, (realizedPnL / phaseTargetAmount) * 100) }
+    return Math.max(0, (realizedPnL / targetAmount) * 100)
   }
 }
 
@@ -271,57 +274,43 @@ export const calculateHistoricalBalance = (
 }
 
 /**
- * Calculates risk percentage based on entry, sl, lot size, and historical account balance
+ * Calculate actual risk amount for a losing trade
+ * Handles both completed stop loss hits and premature closes
  */
-export const calculateRiskPercentage = (trade: any, accountBalance: number) => {
-  if (!trade.size || !trade.entry || !trade.initialSL || !accountBalance)
-    return null
+const calculateLossRiskAmount = (trade: any): number => {
+  const realized = parsePnL(trade.realized)
+  const entry = cleanNumber(trade.entry)
+  const sl = cleanNumber(trade.initialSL)
+  const close = cleanNumber(trade.closeAvg)
 
-  const sizeNum = cleanNumber(trade.size)
-  const entryNum = cleanNumber(trade.entry)
-  const slNum = cleanNumber(trade.initialSL)
-  if (isNaN(sizeNum) || isNaN(entryNum) || isNaN(slNum)) return null
+  // Hit stop loss: actual risk = realized loss
+  if (close === sl) return Math.abs(realized)
 
-  // Calculate historical balance for this trade
-  const historicalBalance = calculateHistoricalBalance(trade, accountBalance)
+  // Calculate price moves
+  const slMove = Math.abs(entry - sl)
+  const closeMove = Math.abs(entry - close)
 
-  // Risk per trade = (Entry − Stop Loss) × Lot Size
-  let riskPerTrade = 0
-  if (trade.side?.toLowerCase() === "sell") {
-    riskPerTrade = (slNum - entryNum) * sizeNum
-  } else {
-    riskPerTrade = (entryNum - slNum) * sizeNum
+  // Premature close: scale risk by ratio of moves
+  if (slMove > 0 && closeMove > 0) {
+    return (Math.abs(realized) * slMove) / closeMove
   }
-  if (riskPerTrade < 0) riskPerTrade = Math.abs(riskPerTrade)
 
-  // Risk % = (Risk per trade ÷ Historical Balance) × 100
-  const riskPercentage = (riskPerTrade / historicalBalance) * 100
-  return {
-    percent: riskPercentage.toFixed(2),
-    amount: riskPerTrade,
-    historicalBalance: historicalBalance
-  }
+  return Math.abs(realized)
 }
 
 /**
  * Calculates risk percentage based on actual trade history (RR ratio)
+ * Returns null for break-even trades (realizedAmount = 0 or very close to 0)
  */
-export const calculateRiskPercentageFromHistory = (
-  trade: any,
-  accountBalance: number
-) => {
-  if (!trade.realized || !trade.maxRR || !accountBalance) return null
-
+export const calculateRiskPercentage = (trade: any, accountBalance: number) => {
   const realizedAmount = parsePnL(trade.realized)
   const maxRR = cleanNumber(trade.maxRR)
 
-  if (
-    isNaN(realizedAmount) ||
-    isNaN(maxRR) ||
-    realizedAmount <= 0 ||
-    maxRR <= 0
-  )
+  // Check if trade is break-even (realizedAmount is exactly 0)
+  // For exactly 0, we cannot determine the risk amount
+  if (realizedAmount === 0) {
     return null
+  }
 
   // Calculate historical balance for this trade
   const historicalBalance = calculateHistoricalBalance(trade, accountBalance)
@@ -338,19 +327,18 @@ export const calculateRiskPercentageFromHistory = (
     return {
       percent: riskPercentage.toFixed(2),
       amount: actualRiskAmount,
-      method: "historical",
       historicalBalance: historicalBalance
     }
   }
 
-  // For losing trades, use the loss amount as risk
-  const riskAmount = Math.abs(realizedAmount)
+  // For losing trades, calculate actual risk amount
+  const riskAmount = calculateLossRiskAmount(trade)
+
   const riskPercentage = (riskAmount / historicalBalance) * 100
 
   return {
     percent: riskPercentage.toFixed(2),
     amount: riskAmount,
-    method: "loss",
     historicalBalance: historicalBalance
   }
 }
@@ -432,18 +420,18 @@ export const calculateDailyDrawdownMetrics = (
 
   let dailyPnLMap: Record<string, number> = {}
 
-  // Sort trades by date to process chronologically
+  // Sort trades by close date to process chronologically
   const sortedTrades = extractedTrades.sort((a, b) => {
-    const dateA = parseTradeDate(a.dateStart)
-    const dateB = parseTradeDate(b.dateStart)
+    const dateA = parseTradeDate(a.dateEnd || a.dateStart)
+    const dateB = parseTradeDate(b.dateEnd || b.dateStart)
     return dateA.getTime() - dateB.getTime()
   })
 
-  // Group trades by date and calculate daily P&L
+  // Group trades by close date (dateEnd) because that's when P&L is realized
   sortedTrades.forEach((trade) => {
     try {
       const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
-      const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
+      const date = getLocalDateKey(parseTradeDate(trade.dateEnd || trade.dateStart))
 
       if (!dailyPnLMap[date]) {
         dailyPnLMap[date] = 0
@@ -528,11 +516,11 @@ export const calculateProfitableDaysMetrics = (
 
   let dailyPnLMap: Record<string, number> = {}
 
-  // Calculate daily PnL from trades
+  // Calculate daily PnL from trades (grouped by close date when P&L is realized)
   extractedTrades.forEach((trade) => {
     try {
       const realized = parseFloat(trade.realized?.replace(/[$,]/g, "") || "0")
-      const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
+      const date = getLocalDateKey(parseTradeDate(trade.dateEnd || trade.dateStart))
 
       if (!dailyPnLMap[date]) dailyPnLMap[date] = 0
       dailyPnLMap[date] += realized
@@ -570,12 +558,12 @@ export const calculateProfitableDaysMetrics = (
 // ============================================================================
 
 /**
- * Calculate consistency rule compliance with minimum trading days logic
+ * Calculate consistency rule compliance based on daily profit distribution
+ * Ensures no single day contributes more than the threshold percentage of total profits
  */
 export const calculateConsistencyRule = (
   tradesData: any[],
-  threshold: number = 15,
-  minTradingDays: number = 0
+  threshold: number = 15
 ) => {
   if (!tradesData || tradesData.length === 0) {
     return {
@@ -587,9 +575,7 @@ export const calculateConsistencyRule = (
       violationDay: null,
       violationPercentage: 0,
       threshold,
-      minTradingDays,
       tradingDays: 0,
-      scenario: "no_trades",
       message: "No trades available"
     }
   }
@@ -601,10 +587,10 @@ export const calculateConsistencyRule = (
 
   tradesData.forEach((trade) => {
     const realized = parsePnL(trade.realized)
-    // Use the same date format as calculateDailyDrawdownMetrics
-    const date = parseTradeDate(trade.dateStart).toISOString().split("T")[0]
+    // Group by close date (dateEnd) because that's when P&L is realized
+    const date = getLocalDateKey(parseTradeDate(trade.dateEnd || trade.dateStart))
 
-    // Track all trading days (for consistency with MinimumTradingDaysCard)
+    // Track all trading days
     if (!dailyPnLMap[date]) {
       dailyPnLMap[date] = 0
     }
@@ -619,28 +605,7 @@ export const calculateConsistencyRule = (
 
   const tradingDays = Object.keys(dailyPnLMap).length
 
-  // Scenario 1: Minimum trading days are not met
-  if (minTradingDays > 0 && tradingDays < minTradingDays) {
-    return {
-      isConsistent: true,
-      highestDailyPercentage: 0,
-      totalProfits,
-      dailyProfits,
-      dailyPnLMap,
-      violationDay: null,
-      violationPercentage: 0,
-      threshold,
-      minTradingDays,
-      tradingDays,
-      scenario: "min_days_not_met",
-      message: `Need ${
-        minTradingDays - tradingDays
-      } more trading days (${tradingDays}/${minTradingDays})`
-    }
-  }
-
-  // Scenario 2: Minimum trading days have been met OR Scenario 3: No minimum trading days requirement
-  // Calculate daily profit percentages
+  // Calculate daily profit percentages and find violations
   let highestDailyPercentage = 0
   let violationDay: string | null = null
   let violationPercentage = 0
@@ -661,30 +626,14 @@ export const calculateConsistencyRule = (
 
   const isConsistent = highestDailyPercentage <= threshold
 
-  // Determine scenario and message
-  let scenario = "calculating"
+  // Determine message based on current state
   let message = ""
-
-  if (minTradingDays === 0) {
-    // Scenario 3: No minimum trading days requirement
-    scenario = "no_min_requirement"
-    if (totalProfits === 0) {
-      message = "No profits yet"
-    } else if (isConsistent) {
-      message = "Consistent trading!"
-    } else {
-      message = "Spread profits evenly"
-    }
+  if (totalProfits === 0) {
+    message = "No profits yet"
+  } else if (isConsistent) {
+    message = "Consistent trading!"
   } else {
-    // Scenario 2: Minimum trading days have been met
-    scenario = "min_days_met"
-    if (totalProfits === 0) {
-      message = "No profits yet"
-    } else if (isConsistent) {
-      message = "Consistent trading!"
-    } else {
-      message = "Spread profits across more days"
-    }
+    message = "Spread profits evenly"
   }
 
   return {
@@ -696,9 +645,7 @@ export const calculateConsistencyRule = (
     violationDay,
     violationPercentage,
     threshold,
-    minTradingDays,
     tradingDays,
-    scenario,
     message
   }
 }
@@ -706,6 +653,86 @@ export const calculateConsistencyRule = (
 // ============================================================================
 // TRADE DATA PROCESSING
 // ============================================================================
+
+/**
+ * Check if a trade is breakeven based on maxRR value and risk-based analysis
+ * A trade is considered breakeven if:
+ * - maxRR is "N/A", or
+ * - The R/R ratio is between 0 and 0.1 (inclusive), or
+ * - For "Loss" trades: realized P&L is within ±10% of the actual risk amount
+ *   (accounts for premature closes by calculating intended vs actual price movement)
+ *
+ * @param trade - The trade object with maxRR, entry, initialSL, closeAvg, and realized properties
+ * @returns true if the trade is breakeven, false otherwise
+ */
+export const isBreakevenTrade = (trade: any): boolean => {
+  // Check for "N/A" string
+  if (trade.maxRR === "N/A") {
+    return true
+  }
+
+  // Parse the numeric R/R value
+  const rrNum = parseFloat(trade.maxRR)
+
+  // Check if it's within breakeven range (0 to 0.1)
+  if (!isNaN(rrNum) && rrNum >= 0 && rrNum <= 0.1) {
+    return true
+  }
+
+  // For "Loss" string: Check realized P&L vs risk taken
+  if (trade.maxRR === "Loss") {
+    const riskAmount = calculateLossRiskAmount(trade)
+    const realized = parsePnL(trade.realized)
+
+    if (riskAmount > 0) {
+      const realizedRR = realized / riskAmount
+      if (Math.abs(realizedRR) <= 0.1) return true
+    }
+  }
+
+  // Otherwise, it's not breakeven
+  return false
+}
+
+/**
+ * Get the display value for R/R based on maxRR
+ * Returns "B/E" for breakeven trades, "-1" for "Loss" string, or the actual value
+ *
+ * @param trade - The trade object with maxRR, entry, initialSL, closeAvg, and realized properties
+ * @returns The formatted R/R display value
+ */
+export const getRRDisplayValue = (trade: any): string => {
+  const maxRR = trade?.maxRR
+
+  // First check for "N/A"
+  if (maxRR === "N/A") {
+    return "B/E"
+  }
+
+  // Parse the numeric value
+  const rrNum = parseFloat(maxRR)
+
+  // Check if it's within breakeven range (0 to 0.1)
+  if (!isNaN(rrNum) && rrNum >= 0 && rrNum <= 0.1) {
+    return "B/E"
+  }
+
+  // If it's the string "Loss", check if trade is breakeven using risk-based logic
+  if (maxRR === "Loss") {
+    const riskAmount = calculateLossRiskAmount(trade)
+    const realized = parsePnL(trade.realized)
+
+    if (riskAmount > 0) {
+      const realizedRR = realized / riskAmount
+      if (Math.abs(realizedRR) <= 0.1) return "B/E"
+    }
+
+    return "-1"
+  }
+
+  // Otherwise, return the actual maxRR value
+  return maxRR || ""
+}
 
 /**
  * Pre-process trade data with all calculated values
@@ -720,14 +747,13 @@ export const preprocessTradeData = (
     const endDate = parseTradeDate(trade.dateEnd)
 
     // Pre-calculate all derived values
-    const riskPercentage =
-      calculateRiskPercentageFromHistory(trade, accountBalance) ||
-      calculateRiskPercentage(trade, accountBalance)
-    const holdTime = calculateHoldTime(trade)
+    // Prioritize initial SL calculation (most accurate for actual risk taken)
+    // Only use history-based calculation when initial SL data is unavailable
+    const riskPercentage = calculateRiskPercentage(trade, accountBalance)
+    const heldTime = calculateHeldTime(trade)
     const formattedDates = {
       start: formatDate(trade.dateStart),
       end: formatDate(trade.dateEnd),
-      range: formatDateRange(trade.dateStart, trade.dateEnd)
     }
 
     return {
@@ -737,7 +763,7 @@ export const preprocessTradeData = (
       endDate,
       // Pre-calculated values
       riskPercentage,
-      holdTime,
+      heldTime,
       formattedDates,
       // Cached formatted strings
       formattedRealized: formatCurrency(trade.realized),

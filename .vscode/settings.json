@@ -1,0 +1,9 @@
+{
+  "editor.formatOnSave": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "javascript.format.enable": false,
+  "files.trimTrailingWhitespace": true,
+  "typescript.format.enable": false
+}

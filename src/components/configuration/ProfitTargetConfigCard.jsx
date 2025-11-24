@@ -1,19 +1,29 @@
-import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import NumberInput from "./NumberInput"
 
-const ProfitTargetConfigCard = ({ config, updateProfitTarget }) => {
+import useAppStore from "@/store/useAppStore"
+
+const ProfitTargetConfigCard = () => {
+  const config = useAppStore((state) => state.config)
+  const updateChallengeConfig = useAppStore(
+    (state) => state.updateChallengeConfig
+  )
+
+  const updateConfigField = (field, value) => {
+    updateChallengeConfig({ [field]: value })
+  }
+
   return (
     <Card>
       <CardContent className="flex flex-col gap-2 py-0">
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">
+          <Label className="text-sm font-medium text-muted-foreground mb-2">
             Profit Target
           </Label>
           <NumberInput
-            value={config.profitTargets?.phase1 || 0}
-            onChange={updateProfitTarget}
+            value={config.profitTarget || 0}
+            onChange={(val) => updateConfigField("profitTarget", val)}
             min={1}
             max={50}
             step={1}

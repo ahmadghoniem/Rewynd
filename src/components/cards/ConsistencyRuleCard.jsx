@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Info } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -11,15 +11,15 @@ import {
 import useAppStore from "@/store/useAppStore"
 import { calculateConsistencyRule, formatCurrency } from "@/lib/utils"
 
-const ConsistencyRuleCard = (props) => {
+const ConsistencyRuleCard = ({ className }) => {
   const [showAmounts, setShowAmounts] = useState(false)
   const config = useAppStore((state) => state.config) || {}
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
   const updateObjective = useAppStore((state) => state.updateObjective)
   const updateBreakingRule = useAppStore((state) => state.updateBreakingRule)
 
-  const consistencyRule = props.consistencyRule || config.consistencyRule || 15
-  const formatCurrencyFn = props.formatCurrency || formatCurrency
+  const consistencyRule = config.consistencyRule || 15
+  const formatCurrencyFn = formatCurrency
 
   // Memoize consistency calculations
   const consistencyData = useMemo(() => {
@@ -78,12 +78,8 @@ const ConsistencyRuleCard = (props) => {
 
   // Calculate progress for the progress bar
   const threshold = consistencyData.threshold || consistencyRule || 15
-
-  // For scenario 1 (min days not met), show 0 progress
   const progressPercentage =
-    consistencyData.scenario === "min_days_not_met"
-      ? 0
-      : threshold > 0
+    threshold > 0
       ? Math.min(1, (consistencyData.highestDailyPercentage || 0) / threshold)
       : 0
 
@@ -94,7 +90,7 @@ const ConsistencyRuleCard = (props) => {
     typeof consistencyData.threshold === "undefined"
   ) {
     return (
-      <Card className={cn("gap-2 text-xs font-medium py-2", props.className)}>
+      <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
         <CardHeader className="flex justify-between items-center px-2 pb-0">
           <span className="capitalize tracking-wide text-xs font-semibold">
             Consistency Rule
@@ -119,7 +115,7 @@ const ConsistencyRuleCard = (props) => {
   }
 
   return (
-    <Card className={cn("gap-2 text-xs font-medium py-2", props.className)}>
+    <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
       <CardHeader className="flex justify-between items-center px-2 pb-0">
         <span className="capitalize tracking-wide text-xs font-semibold">
           Consistency Rule
@@ -144,12 +140,9 @@ const ConsistencyRuleCard = (props) => {
           <span className="text-xl font-semibold text-foreground">
             {showAmounts
               ? formatCurrencyFn(consistencyData.totalProfits)
-              : `${(consistencyData.scenario === "min_days_not_met"
-                  ? 0
-                  : consistencyData.highestDailyPercentage || 0
-                ).toFixed(1)}%`}
+              : `${(consistencyData.highestDailyPercentage || 0).toFixed(1)}%`}
           </span>
-          <span className="text-base text-muted-foreground">
+          <span className="text-xl text-muted-foreground">
             /{" "}
             {showAmounts
               ? formatCurrencyFn(consistencyData.totalProfits)
@@ -165,9 +158,7 @@ const ConsistencyRuleCard = (props) => {
           progress={progressPercentage}
           height={12}
           filledColor={
-            consistencyData.scenario === "min_days_not_met"
-              ? "bg-muted-foreground"
-              : consistencyData.isConsistent
+            consistencyData.highestDailyPercentage <= threshold
               ? "bg-success"
               : "bg-destructive"
           }

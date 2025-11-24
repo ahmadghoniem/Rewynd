@@ -39,6 +39,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-success: var(--success);
+  --color-profitable: var(--profitable);
   --color-danger: var(--danger);
   --color-destructive: var(--destructive);
   --color-accent-success: var(--accent-success);
@@ -99,11 +100,14 @@
   --success: #10b981; /* Success green: bright green */
   --danger: #ef4444; /* Danger red: bright red */
   --marker-hwm: #3b82f6; /* HWM marker blue */
+  --profitable: #d97706;   /* Profitable text color - Amber 600 for better visibility and warmth */
 
-  --destructive: #dc2626; /* Destructive: dark red */
+  --destructive: #f43f5e; /* Destructive irreversible actions (delete, reset) */
 
   /* Border radius */
   --radius: 0.625rem; /* Default border radius */
+
+
 }
 .dark {
   /* Main background and text */
@@ -152,11 +156,12 @@
   --success: #06d484; /* Success green: (wins, gains, approvals) */
   --danger: #ef4f78; /* Danger red: (errors, losses, rejections) */
   --marker-hwm: #60a5fa; /* HWM marker blue */
-
-  --destructive: #ff4b5c; /* Destructive irreversible actions (delete, reset) */
+  --profitable: #fbbf24;   /* Profitable text color - Amber 400 for warm gold glow */
+  --destructive: #f43f5e; /* Destructive irreversible actions (delete, reset) */
 
   /* Border radius */
   --radius: 0.625rem; /* Default border radius */
+
 }
 
 @font-face {

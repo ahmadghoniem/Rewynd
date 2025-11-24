@@ -2,11 +2,17 @@ import React, { useState, useMemo, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Table, AlertTriangle, Eye, EyeOff, Download } from "lucide-react"
-import { preprocessTradeData, formatNumber } from "@/lib/utils"
+import { Table, Eye, EyeOff, Download } from "lucide-react"
+import {
+  preprocessTradeData,
+  simpleFormatCurrency,
+  getRRDisplayValue,
+  parseTradeDate
+} from "@/lib/utils"
 import TradeRow from "./TradeRow"
 import Pagination from "@/components/ui/pagination"
 import useAppStore from "@/store/useAppStore"
+import TradeHistoryPlaceholder from "./TradeHistoryPlaceholder"
 
 const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
   // Get session data for export filename
@@ -40,16 +46,22 @@ const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
       { key: "rr", label: "R/R" },
       { key: "risk", label: "Risk %" },
       { key: "realized", label: "Realized" },
-      { key: "duration", label: "Hold Time" }
+      { key: "duration", label: "Time Held" }
     ],
     []
   )
 
-  // Pre-process trade data with memoization
-  const processedTrades = useMemo(
-    () => preprocessTradeData(tradesData, accountBalance),
-    [tradesData, accountBalance]
-  )
+  // Pre-process trade data with memoization and sorting
+  const processedTrades = useMemo(() => {
+    const processed = preprocessTradeData(tradesData, accountBalance)
+
+    // Sort by date descending (most recent first)
+    return processed.sort((a, b) => {
+      const dateA = parseTradeDate(a.dateEnd || a.dateStart)
+      const dateB = parseTradeDate(b.dateEnd || b.dateStart)
+      return dateB.getTime() - dateA.getTime()
+    })
+  }, [tradesData, accountBalance])
 
   // Toggle column visibility
   const toggleColumn = useCallback((column) => {
@@ -110,31 +122,22 @@ const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
             value = trade.formattedDates?.end || ""
             break
           case "rr":
-            if (trade.maxRR === "Loss") {
-              value = "-1"
-            } else {
-              const rrNum = parseFloat(trade.maxRR)
-              if (!isNaN(rrNum) && rrNum >= -0.1 && rrNum <= 0.1) {
-                value = "0"
-              } else {
-                value = trade.maxRR || ""
-              }
-            }
+            value = getRRDisplayValue(trade)
             break
           case "risk":
             if (trade.riskPercentage) {
-              value = `${trade.riskPercentage.percent}% ($${formatNumber(
+              value = `${trade.riskPercentage.percent}% (${simpleFormatCurrency(
                 trade.riskPercentage.amount
               )})`
             } else {
-              value = "-"
+              value = "N/A"
             }
             break
           case "realized":
             value = trade.formattedRealized || ""
             break
           case "duration":
-            value = trade.holdTime || trade.duration || "-"
+            value = trade.heldTime || trade.duration || "-"
             break
           default:
             value = trade[key] || ""
@@ -183,15 +186,17 @@ const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
     <Card className="justify-start h-full">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Table className="h-5 w-5" />
-            Trade History ({processedTrades.length} trades)
+          <CardTitle className="flex items-center gap-2 text-lg font-medium text-foreground">
+            Trade History
+            {processedTrades.length > 0 &&
+              ` (${processedTrades.length} ${processedTrades.length === 1 ? "trade" : "trades"})`}
           </CardTitle>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={toggleFilter}
+              disabled={processedTrades.length === 0}
               className="flex items-center gap-2"
             >
               {showFilter ? (
@@ -216,7 +221,7 @@ const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
 
         {/* Column Filter */}
         {showFilter && (
-          <div className="mt-4 p-2 bg-muted/30 text-muted-foreground rounded-lg border border-border">
+          <div className="mt-4 p-2 bg-accent/30 text-muted-foreground rounded-lg border border-border">
             <div className="flex items-center gap-4 mb-3"></div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
               {columnDefinitions.map(({ key, label }) => (
@@ -267,20 +272,16 @@ const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
                 ))}
               </tbody>
             </table>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            )}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground dark:text-foreground">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No trade data available</p>
-            <p className="text-sm">
-              Extract trades from FxReplay to see trade details
-            </p>
-          </div>
+          <TradeHistoryPlaceholder />
         )}
       </CardContent>
     </Card>

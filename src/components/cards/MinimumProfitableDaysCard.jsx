@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import { useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Info } from "lucide-react"
 import { ProgressBar } from "../ui/progressbar"
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import useAppStore from "@/store/useAppStore"
 import { calculateProfitableDaysMetrics } from "@/lib/utils"
 
-const MinimumProfitableDaysCard = (props) => {
+const MinimumProfitableDaysCard = ({ className }) => {
   const config = useAppStore((state) => state.config) || {}
   const extractedTrades = useAppStore((state) => state.extractedTrades) || []
   const sessionData = useAppStore((state) => state.sessionData) || {
@@ -42,7 +42,7 @@ const MinimumProfitableDaysCard = (props) => {
   }
 
   return (
-    <Card className={cn("gap-2 text-xs font-medium py-2", props.className)}>
+    <Card className={cn("gap-2 text-xs font-medium py-2", className)}>
       <CardHeader className="flex justify-between items-center px-2 pb-0">
         <span className="capitalize tracking-wide text-xs font-semibold">
           Minimum Profitable Days
@@ -65,7 +65,7 @@ const MinimumProfitableDaysCard = (props) => {
               ? profitableDays
               : "--"}
           </span>
-          <span className="text-base text-muted-foreground">
+          <span className="text-xl text-muted-foreground">
             /{" "}
             {typeof minProfitableDays === "number" && !isNaN(minProfitableDays)
               ? minProfitableDays

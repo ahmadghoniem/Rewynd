@@ -1,6 +1,6 @@
-import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatCurrency, cn } from "@/lib/utils"
+import { Separator } from "@/components/ui/separator"
 
 const BalanceAndRealizedPnlCard = ({ displayData, className }) => {
   // Calculate PnL percentage
@@ -19,8 +19,8 @@ const BalanceAndRealizedPnlCard = ({ displayData, className }) => {
             {formatCurrency(balance)}
           </span>
         </div>
-        {/* Divider */}
-        <div className="h-12 w-px bg-divider mx-6" />
+        {/* Separator */}
+        <Separator className="h-12 mx-6" orientation="vertical" />
         {/* Realized PnL Section */}
         <div className="flex flex-col items-end flex-1">
           <span className="text-xs text-card-foreground mb-1">
@@ -32,8 +32,8 @@ const BalanceAndRealizedPnlCard = ({ displayData, className }) => {
                 realizedPnL > 0
                   ? "text-success"
                   : realizedPnL < 0
-                  ? "text-danger"
-                  : ""
+                    ? "text-danger"
+                    : ""
               }
             >
               {realizedPnL > 0 ? "+" : realizedPnL < 0 ? "-" : ""}

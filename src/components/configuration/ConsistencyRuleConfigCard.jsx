@@ -1,9 +1,19 @@
-import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import NumberInput from "./NumberInput"
 
-const ConsistencyRuleConfigCard = ({ config, updateConfigField }) => {
+import useAppStore from "@/store/useAppStore"
+
+const ConsistencyRuleConfigCard = () => {
+  const config = useAppStore((state) => state.config)
+  const updateChallengeConfig = useAppStore(
+    (state) => state.updateChallengeConfig
+  )
+
+  const updateConfigField = (field, value) => {
+    updateChallengeConfig({ [field]: value })
+  }
+
   return (
     <Card>
       <CardContent className="flex flex-col gap-2 py-0">

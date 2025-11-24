@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import { useState } from "react"
 
 // Import the new analytics section components
 import {
@@ -12,6 +12,7 @@ import PerformanceSection from "@/components/analytics/PerformanceSection.jsx"
 import ObjectivesSection from "@/components/analytics/ObjectivesSection"
 import Configuration from "@/Configuration"
 import FooterCard from "@/components/cards/FooterCard"
+import FloatingDonateButton from "@/components/cards/FloatingDonateButton"
 
 const AnalyticsView = () => {
   const [showConfiguration, setShowConfiguration] = useState(false)
@@ -38,6 +39,7 @@ const AnalyticsView = () => {
           <FooterCard />
         </div>
       </div>
+      <FloatingDonateButton />
     </div>
   )
 }
