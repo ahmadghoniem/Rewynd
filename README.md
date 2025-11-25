@@ -1,6 +1,4 @@
 # Rewynd - Trading Analytics Dashboard
-Rewynd is a Chrome extension for FxReplay traders who want to go beyond backtesting
-—turn your replay sessions into simulated prop firm challenges and practice hitting profit targets, managing drawdowns, and meeting consistency rules to get funded.
 
 Rewynd is a Chrome extension for FxReplay traders who want to go beyond backtesting—turn your replay sessions into simulated prop firm challenges and practice hitting profit targets, managing drawdowns, and meeting consistency rules to get funded.
 
@@ -99,33 +97,22 @@ Your edge stays yours:
 
 - Node.js 18+
 - Chromium-based browser (Chrome, Brave, Edge, Opera, etc.)
-- Chromium-based browser (Chrome, Brave, Edge, Opera, etc.)
 - Active FxReplay account
 
 #### Development Setup
-#### Development Setup
 
-1. **Clone and install**
-```bash
 1. **Clone and install**
 ```bash
    git clone https://github.com/ahmadghoniem/Rewynd.git
    cd Rewynd
    npm install
 ```
-```
 
-2. **Build the extension**
-```bash
 2. **Build the extension**
 ```bash
    npm run build:extension
 ```
-```
 
-3. **Load and use the extension**
-   - follow steps 3-4 from the [For Users](#for-users) section above
-   
 3. **Load and use the extension**
    - Follow steps 3-4 from the [For Users](#for-users) section above
 
@@ -135,7 +122,6 @@ Your edge stays yours:
 
 1. **Open FxReplay Dashboard**
 
-   - Navigate to an active FxReplay backtesting session
    - Navigate to an active FxReplay backtesting session
 
 2. **Configure Challenge Parameters**
@@ -148,10 +134,6 @@ Your edge stays yours:
      - Daily drawdown limits
      - Maximum drawdown limits
      - Consistency rule percentage
-
-3. **Sync Your Data**
-   - Click the Sync button to extract your trading data
-   - If the data looks incorrect, simply click Sync again to refresh
 
 3. **Sync Your Data**
    - Click the Sync button to extract your trading data
