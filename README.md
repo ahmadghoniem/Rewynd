@@ -7,8 +7,7 @@ Rewynd is a Chrome extension for FxReplay traders who want to go beyond backtest
 ![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-v3-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-<img width="851" height="910" alt="image" src="https://github.com/user-attachments/assets/42894dd3-aa4e-48e5-81b1-172613a08f03" />
-## ✨ Core Features
+<img width="1382" height="1457" alt="screencapture-localhost-5173-2025-11-25-02_56_12" src="https://github.com/user-attachments/assets/30ebf668-b344-47fb-9388-d12f8d2fab40" />
 
 ### 📊 Performance Analytics That Actually Matter
 
