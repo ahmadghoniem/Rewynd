@@ -39,6 +39,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-success: var(--success);
+  --color-profitable: var(--profitable);
   --color-danger: var(--danger);
   --color-destructive: var(--destructive);
   --color-accent-success: var(--accent-success);
@@ -57,7 +58,6 @@
   /* Card backgrounds and text */
   --card: #f8f9fa; /* Card background: very light gray */
   --card-foreground: #2d3748; /* Card text: dark gray */
-  --card-border: #e2e8f0; /* Card border: light gray */
 
   /* Primary: Use for main actions, key stats, and primary highlights */
   --primary: #a78bfa; /* Keep the same violet primary color */
@@ -93,26 +93,21 @@
   /* Divider color */
   --divider: #e2e8f0; /* Divider: light gray */
 
-  /* Chart colors */
-  --chart-1: #a78bfa; /* Chart violet (same as primary) */
-  --chart-2: #3b82f6; /* Chart blue */
-  --chart-3: #10b981; /* Chart green */
-  --chart-4: #f59e0b; /* Chart amber */
-  --chart-5: #ef4444; /* Chart red */
-
   /* Inputs */
   --input: #ffffff; /* Input background: white */
-  --input-border: #d1d5db; /* Input border: light gray */
 
   /* Status colors */
   --success: #10b981; /* Success green: bright green */
   --danger: #ef4444; /* Danger red: bright red */
   --marker-hwm: #3b82f6; /* HWM marker blue */
+  --profitable: #d97706;   /* Profitable text color - Amber 600 for better visibility and warmth */
 
-  --destructive: #dc2626; /* Destructive: dark red */
+  --destructive: #f43f5e; /* Destructive irreversible actions (delete, reset) */
 
   /* Border radius */
   --radius: 0.625rem; /* Default border radius */
+
+
 }
 .dark {
   /* Main background and text */
@@ -161,11 +156,12 @@
   --success: #06d484; /* Success green: (wins, gains, approvals) */
   --danger: #ef4f78; /* Danger red: (errors, losses, rejections) */
   --marker-hwm: #60a5fa; /* HWM marker blue */
-
-  --destructive: #ff4b5c; /* Destructive irreversible actions (delete, reset) */
+  --profitable: #fbbf24;   /* Profitable text color - Amber 400 for warm gold glow */
+  --destructive: #f43f5e; /* Destructive irreversible actions (delete, reset) */
 
   /* Border radius */
   --radius: 0.625rem; /* Default border radius */
+
 }
 
 @font-face {

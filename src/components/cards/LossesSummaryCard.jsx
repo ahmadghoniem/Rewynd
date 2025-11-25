@@ -1,6 +1,6 @@
-import React from "react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { Separator } from "@/components/ui/separator"
 
 const LossesSummaryCard = ({ stats, formatCurrency, className }) => {
   return (
@@ -28,8 +28,8 @@ const LossesSummaryCard = ({ stats, formatCurrency, className }) => {
             </span>
           </div>
         </div>
-        {/* Divider */}
-        <div className="h-12 w-px bg-divider mx-6" />
+        {/* Separator */}
+        <Separator className="h-12 mx-6" orientation="vertical" />
         {/* Max Consecutive Losses Section */}
         <div className="flex flex-col items-end flex-1">
           <span className="text-xs text-card-foreground mb-1">

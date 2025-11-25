@@ -1,132 +1,108 @@
-import React from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Database, Sun, Moon } from "lucide-react"
-import { useTheme } from "../../ThemeContext"
-import useAppStore from "../../store/useAppStore"
-import sampleTrades from "../../sampleTrades.json"
+import { FileText, Settings } from "lucide-react"
+import useAppStore from "@/store/useAppStore"
+import NotesDialog from "../analytics/NotesDialog"
+import SessionDataManager from "./SessionDataManager"
+import SessionChangeManager from "./SessionChangeManager"
+import StatusBadge from "@/components/ui/status-badge"
+import SyncButton from "./SyncButton"
+import { useTheme } from "@/ThemeContext"
+import {
+  ThemeToggleButton,
+  useThemeTransition
+} from "@/components/ui/shadcn-io/theme-toggle-button"
 
-const HeaderCard = () => {
+const HeaderCard = ({ showConfiguration, onToggleConfiguration }) => {
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false)
   const { isDark, toggleTheme } = useTheme()
-  const loadSessionData = useAppStore((state) => state.loadSessionData)
-  const loadTradeData = useAppStore((state) => state.loadTradeData)
+  const { startTransition } = useThemeTransition()
+  const capital = useAppStore((state) => state.sessionData.capital)
+  const sessionData = useAppStore((state) => state.sessionData)
+  const isInSync = useAppStore((state) => state.isInSync)
 
-  // Handler for refreshing all data with automatic tab switching
-  const handleRefreshData = async () => {
-    if (!window.chrome?.tabs) {
-      alert("Chrome extension messaging not available.")
-      return
-    }
+  // Get session ID from global state
+  const sessionId = sessionData?.id
 
-    try {
-      // Get current tab and FxReplay tab
-      // eslint-disable-next-line no-undef
-      const [currentTab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-      })
-      // eslint-disable-next-line no-undef
-      const [fxReplayTab] = await chrome.tabs.query({
-        url: "https://app.fxreplay.com/en-US/auth/chart/*"
-      })
+  // Format capital for display (default to 100K if not available)
+  const formattedCapital = capital && `${(capital / 1000).toFixed(0)}K`
 
-      if (!fxReplayTab) {
-        alert("Please open a FxReplay tab to refresh data.")
-        return
-      }
+  // Create the header text with dynamic values
+  // Use last 8 characters of session ID for cleaner display
+  const shortSessionId = sessionId && sessionId.slice(-8)
+  const headerText =
+    sessionId && capital && `#${shortSessionId} -$${formattedCapital}`
 
-      // Switch to FxReplay tab and extract data
-      // eslint-disable-next-line no-undef
-      await chrome.tabs.update(fxReplayTab.id, { active: true })
+  const getChallengeStatus = useAppStore((state) => state.getChallengeStatus)
 
-      // Extract both session data and trade data separately
-      const [sessionResponse, tradeResponse] = await Promise.all([
-        // eslint-disable-next-line no-undef
-        chrome.tabs.sendMessage(fxReplayTab.id, {
-          type: "EXTRACT_SESSION_DATA"
-        }),
-        // eslint-disable-next-line no-undef
-        chrome.tabs.sendMessage(fxReplayTab.id, {
-          type: "EXTRACT_TRADES",
-          forceRefresh: true
-        })
-      ])
+  // Get current badge status
+  const badgeStatus = getChallengeStatus()
 
-      if (sessionResponse?.success && tradeResponse?.success) {
-        // Load both session data and trade data
-        await Promise.all([loadSessionData(), loadTradeData()])
-
-        // Trigger account data extraction using the existing mechanism
-        // This will automatically update the UI through the store
-        console.log(
-          "✅ Data refreshed successfully! Session and trade data updated."
-        )
-
-        alert("Data refreshed successfully!")
-      } else {
-        const errors = []
-        if (!sessionResponse?.success) {
-          errors.push("Session data extraction failed")
-        }
-        if (!tradeResponse?.success) {
-          errors.push("Trade data extraction failed")
-        }
-        alert(
-          `Failed to refresh data: ${errors.join(
-            ", "
-          )}. Make sure you have a FxReplay tab open.`
-        )
-      }
-
-      // Switch back to original tab
-      if (currentTab?.id !== fxReplayTab.id) {
-        // eslint-disable-next-line no-undef
-        await chrome.tabs.update(currentTab.id, { active: true })
-      }
-    } catch (error) {
-      console.error("Error during data refresh:", error)
-      alert("Error during data refresh. Please try again.")
-    }
+  const handleThemeToggle = () => {
+    startTransition(() => {
+      toggleTheme()
+    })
   }
 
   return (
-    <header className="bg-background border-b border-border/50 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo on the left */}
-          <div className="flex items-center">
-            <img src="/logo.png" alt="Rewynd" className="h-full w-32" />
-          </div>
+    <>
+      <div className="w-full flex items-center justify-between mb-2 p-2.5 border border-border/50 rounded-lg bg-card">
+        <div className="flex items-center gap-3">
+          <img
+            src="/icon.png"
+            alt="Rewynd"
+            className="h-8 w-8 flex-shrink-0"
+            style={{
+              filter: isDark ? "none" : "invert(1)"
+            }}
+          />
+          <div className="h-4 w-px bg-border/50"></div>
+          {headerText && (
+            <h1 className="text-lg font-semibold text-foreground uppercase">
+              {headerText}
+            </h1>
+          )}
+          {isInSync && <StatusBadge status={badgeStatus} className="h-8" />}
+          <SyncButton />
+        </div>
 
-          {/* Buttons on the right */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefreshData}
-              className="h-9 px-3"
-              title="Refresh Data"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
+        <div className="flex items-center gap-2">
+          <SessionChangeManager sessionData={sessionData} />
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="h-9 px-3"
-              title="Toggle Theme"
-            >
-              {isDark ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setNotesDialogOpen(true)}
+            className="h-8 px-3 text-xs font-medium"
+          >
+            <FileText className="h-3 w-3 mr-1.5" />
+            Notes
+          </Button>
+
+          <SessionDataManager sessionId={sessionId} />
+
+          <Button
+            variant={showConfiguration ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleConfiguration}
+            className="h-8 px-3 text-xs font-medium"
+          >
+            <Settings className="h-3 w-3 mr-1.5" />
+            Configuration
+          </Button>
+
+          <ThemeToggleButton
+            theme={isDark ? "dark" : "light"}
+            variant="circle-blur"
+            start="top-right"
+            onClick={handleThemeToggle}
+            className="h-8 w-8"
+          />
         </div>
       </div>
-    </header>
+
+      <NotesDialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen} />
+    </>
   )
 }
 

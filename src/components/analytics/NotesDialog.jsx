@@ -58,7 +58,7 @@ const NotesDialog = ({ open, onOpenChange }) => {
         <div className="h-full">
           <RichTextEditor
             initialValue={tempNotes}
-            onChange={handleNotesChange}
+            onChange={(newNotes) => handleNotesChange(newNotes)}
           />
         </div>
       </DialogContent>

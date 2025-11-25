@@ -1,35 +1,21 @@
-import React, { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Heart, Clipboard, CheckCircle, Github } from "lucide-react"
-import { cn, copyToClipboard, shortenAddress } from "@/lib/utils"
+import { Heart, Github } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Separator } from "@/components/ui/separator"
 
 const FooterCard = ({ className }) => {
-  const [copiedAddress, setCopiedAddress] = useState(null)
-
-  // Crypto donation address (replace with your actual address)
-  const usdtAddress = "TQn9Y2khDD95J42FQtQTdwVVRjqQZ6Zg9g"
-
-  const handleCopyToClipboard = async (address) => {
-    const success = await copyToClipboard(address)
-    if (success) {
-      setCopiedAddress(true)
-      setTimeout(() => setCopiedAddress(false), 2000)
-    }
-  }
-
   return (
-    <Card className={cn("flex-1", className)}>
-      <CardContent className="flex flex-1 flex-col justify-between text-xs font-medium pt-0">
+    <Card className={cn("flex-1 py-2", className)}>
+      <CardContent className="flex flex-1 flex-col justify-between text-xs font-medium pt-0 px-3">
         {/* Main Footer Content */}
         <div className="flex justify-between text-sm text-muted-foreground">
-          <div className="flex flex-1 justify-around items-center text-base">
+          <div className="flex flex-1 justify-between items-center text-base pb-1">
             <div className="flex items-center gap-1">
               <span>Made with</span>
               <Heart className="h-4 w-4 text-primary fill-primary" />
               <span>for traders</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="mr-2 text-border">|</span>
+            <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-2">
                 <a
                   href="https://github.com/ahmadghoniem/Rewynd"
@@ -55,9 +41,9 @@ const FooterCard = ({ className }) => {
             </div>
           </div>
         </div>
-
-        {/* USDT Donation Section */}
-        <div className="border-t border-border pt-2">
+        {/* Separator */}
+        <Separator orientation="horizontal" className="mb-2" />
+        <div>
           <span>
             © 2025 Rewynd— Not affiliated with FxReplay and intended solely for
             educational practice, not financial guidance.

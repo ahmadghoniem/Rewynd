@@ -5,7 +5,7 @@ import {
   TooltipContent
 } from "@/components/ui/tooltip"
 import { Info } from "lucide-react"
-import { cn, parseTradeDate } from "@/lib/utils"
+import { cn, parseTradeDate, isBreakevenTrade } from "@/lib/utils"
 const CurrentStreakCard = ({ extractedTrades, className }) => {
   let streak = 0
   let type = null
@@ -14,24 +14,34 @@ const CurrentStreakCard = ({ extractedTrades, className }) => {
     const sorted = [...extractedTrades].sort(
       (a, b) => parseTradeDate(a.dateStart) - parseTradeDate(b.dateStart)
     )
-    for (let i = sorted.length - 1; i >= 0; i--) {
-      const realized = parseFloat(
-        sorted[i].realized?.replace(/[$,]/g, "") || "0"
-      )
-      if (i === sorted.length - 1) {
-        type = realized > 0 ? "Win" : realized < 0 ? "Loss" : null
-        streak = 1
-      } else {
-        const prevRealized = parseFloat(
-          sorted[i + 1].realized?.replace(/[$,]/g, "") || "0"
+
+    // Filter out breakeven trades using utility function
+    const nonBreakevenTrades = sorted.filter(
+      (trade) => !isBreakevenTrade(trade)
+    )
+
+    if (nonBreakevenTrades.length > 0) {
+      // Start from the most recent non-breakeven trade
+      for (let i = nonBreakevenTrades.length - 1; i >= 0; i--) {
+        const realized = parseFloat(
+          nonBreakevenTrades[i].realized?.replace(/[$,]/g, "") || "0"
         )
-        if (
-          (realized > 0 && prevRealized > 0) ||
-          (realized < 0 && prevRealized < 0)
-        ) {
-          streak++
+        if (i === nonBreakevenTrades.length - 1) {
+          // Initialize the streak type based on the most recent non-breakeven trade
+          type = realized > 0 ? "Win" : "Loss"
+          streak = 1
         } else {
-          break
+          const prevRealized = parseFloat(
+            nonBreakevenTrades[i + 1].realized?.replace(/[$,]/g, "") || "0"
+          )
+          if (
+            (realized > 0 && prevRealized > 0) ||
+            (realized < 0 && prevRealized < 0)
+          ) {
+            streak++
+          } else {
+            break
+          }
         }
       }
     }
@@ -47,8 +57,8 @@ const CurrentStreakCard = ({ extractedTrades, className }) => {
             </span>
           </TooltipTrigger>
           <TooltipContent sideOffset={6}>
-            The number of consecutive wins or losses. Shows your current run of
-            results.
+            The number of consecutive wins or losses. Breakeven trades are
+            ignored and don't reset your streak.
           </TooltipContent>
         </Tooltip>
       </CardHeader>
@@ -59,8 +69,8 @@ const CurrentStreakCard = ({ extractedTrades, className }) => {
             streak === 0 || !type
               ? "text-foreground"
               : type === "Win"
-              ? "text-success"
-              : "text-danger"
+                ? "text-success"
+                : "text-danger"
           )}
         >
           {streak} {type ? type + (streak > 1 ? "s" : "") : ""}

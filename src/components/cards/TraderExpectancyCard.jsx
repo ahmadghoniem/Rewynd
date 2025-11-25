@@ -5,7 +5,7 @@ import {
   TooltipContent
 } from "@/components/ui/tooltip"
 import { Info } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 const TraderExpectancyCard = ({ extractedTrades, className }) => {
   let expectancy = 0
   if (extractedTrades && extractedTrades.length > 0) {
@@ -53,7 +53,7 @@ const TraderExpectancyCard = ({ extractedTrades, className }) => {
         </Tooltip>
       </CardHeader>
       <CardContent>
-        <div className="text-xl font-normal">{expectancy.toFixed(2)}</div>
+        <div className="text-xl font-normal">{formatCurrency(expectancy)}</div>
       </CardContent>
     </Card>
   )

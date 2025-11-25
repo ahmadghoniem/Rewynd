@@ -1,7 +1,20 @@
 {
   "manifest_version": 3,
   "name": "Rewynd",
-  "version": "1.0",
+  "description": "Turn your replay sessions into simulated prop firm challenges and practice hitting profit targets, managing drawdowns, and meeting consistency rules to get funded.",
+    "keywords": [
+      "fxreplay",
+      "forex backtesting",
+      "prop firm challenge",
+      "trading journal",
+      "trading analytics",
+      "risk management",
+      "funded trader",
+      "drawdown tracker",
+      "prop trading",
+      "forex simulator"
+    ],
+  "version": "1.0.0",
 
   "background": {
     "service_worker": "background.js"
@@ -9,11 +22,19 @@
 
   "content_scripts": [
     {
-      "matches": ["https://*.fxreplay.com/*"],
-      "js": ["utils.js", "content.js"]
+      "matches": ["https://app.fxreplay.com/*/auth/testing/chart/*"],
+      "js": ["content.js"]
     }
   ],
-  "action": {},
+  "action": {
+    "default_title": "Rewynd"
+  },
+  "icons": {
+    "16": "favicon.png",
+    "32": "favicon.png",
+    "48": "favicon.png",
+    "128": "favicon.png"
+  },
   "permissions": ["storage", "tabs"],
   "web_accessible_resources": [
     {

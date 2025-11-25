@@ -1,72 +1,11 @@
-import React, { useEffect } from "react"
+import React from "react"
 import AnalyticsView from "./analytics"
 import { ThemeProvider } from "./ThemeContext"
-import useAppStore from "./store/useAppStore"
-import HeaderCard from "./components/cards/HeaderCard"
-
-/* eslint-disable no-undef */
 
 const AppContent = () => {
-  const setSessionData = useAppStore((state) => state.setSessionData)
-  const loadSessionData = useAppStore((state) => state.loadSessionData)
-
-  const loadTradeData = useAppStore((state) => state.loadTradeData)
-
-  // Load saved configuration and account data on mount
-  useEffect(() => {
-    // Set up event listener for real-time updates from website
-    const handleSessionUpdate = (event) => {
-      const newData = event.detail
-      // console.log("Event-triggered session update:", newData)
-      setSessionData(newData)
-    }
-
-    // Set up storage event listener for cross-tab updates
-    const handleStorageChange = (event) => {
-      if (event.key === "tradeAnalytics_sessionData") {
-        // console.log("Storage change detected, reloading session data")
-        loadSessionData()
-      }
-    }
-
-    // Set up Chrome extension message listener
-    // eslint-disable-next-line no-unused-vars
-    const handleExtensionMessage = (message, sender, sendResponse) => {
-      if (message.type === "SESSION_DATA_UPDATED") {
-        loadSessionData()
-      }
-      if (message.type === "TRADE_DATA_UPDATED") {
-        loadTradeData()
-      }
-    }
-
-    // Add event listeners
-    window.addEventListener("sessionDataUpdated", handleSessionUpdate)
-    window.addEventListener("storage", handleStorageChange)
-
-    // Add Chrome extension message listener if available
-    if (chrome && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.addListener(handleExtensionMessage)
-    }
-
-    // Cleanup
-    return () => {
-      window.removeEventListener("sessionDataUpdated", handleSessionUpdate)
-      window.removeEventListener("storage", handleStorageChange)
-
-      // Remove Chrome extension message listener if available
-      if (chrome && chrome.runtime && chrome.runtime.onMessage) {
-        chrome.runtime.onMessage.removeListener(handleExtensionMessage)
-      }
-    }
-  }, [])
-
   return (
     <ThemeProvider>
       <div className="min-h-screen mx-auto bg-background transition-colors duration-200">
-        {/* Header */}
-        <HeaderCard />
-        {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <AnalyticsView />
         </main>

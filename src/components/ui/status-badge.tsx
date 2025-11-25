@@ -1,15 +1,22 @@
-import React from "react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 interface StatusBadgeProps {
-  status: "funded" | "in-progress" | "failed"
+  status: "funded" | "in-progress" | "failed" | "syncing"
   className?: string
 }
 
 const StatusBadge = ({ status, className }: StatusBadgeProps) => {
   const getStatusConfig = (status: string) => {
     switch (status) {
+      case "sync":
+        return {
+          label: "Sync",
+          variant: "secondary" as const,
+          dotColor: "bg-violet-500",
+          className:
+            "bg-violet-100 text-violet-800 dark:bg-violet-900/20 dark:text-violet-400"
+        }
       case "funded":
         return {
           label: "Funded",
@@ -22,7 +29,8 @@ const StatusBadge = ({ status, className }: StatusBadgeProps) => {
           label: "In Progress",
           variant: "secondary" as const,
           dotColor: "bg-yellow-500",
-          className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+          className:
+            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
         }
       case "failed":
         return {
@@ -31,12 +39,14 @@ const StatusBadge = ({ status, className }: StatusBadgeProps) => {
           dotColor: "bg-danger",
           className: "bg-accent-danger text-accent-danger-foreground"
         }
+
       default:
         return {
           label: "Unknown",
           variant: "secondary" as const,
           dotColor: "bg-gray-500",
-          className: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+          className:
+            "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
         }
     }
   }

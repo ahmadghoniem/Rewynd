@@ -1,4 +1,3 @@
-import React from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -27,8 +26,8 @@ const DrawdownTypeSelector = ({ value, onChange }) => {
               value === "trailing"
                 ? "translate-x-0"
                 : value === "trailing_scaling"
-                ? "translate-x-[calc(100%-1px)]"
-                : "translate-x-0 opacity-0"
+                  ? "translate-x-[calc(100%-1px)]"
+                  : "translate-x-0 opacity-0"
             )}
             style={{ width: "calc(50% - 0.5px)" }}
           />

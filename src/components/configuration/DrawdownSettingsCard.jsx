@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import NumberInput from "./NumberInput"
 import DrawdownTypeSelector from "./DrawdownTypeSelector"
 
-const DrawdownSettingsCard = ({ config, updateConfigField }) => {
+const DrawdownConfigCard = ({ config, updateConfigField }) => {
   return (
     <Card>
       <CardContent className="flex flex-col gap-2 py-0">
@@ -50,4 +50,4 @@ const DrawdownSettingsCard = ({ config, updateConfigField }) => {
   )
 }
 
-export default DrawdownSettingsCard
+export default DrawdownConfigCard

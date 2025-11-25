@@ -1,26 +1,24 @@
 import React, { useState, useMemo, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Table, Eye, EyeOff, Download } from "lucide-react"
 import {
-  Table,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Filter,
-  Eye,
-  EyeOff
-} from "lucide-react"
-import { preprocessTradeData } from "@/lib/utils"
+  preprocessTradeData,
+  simpleFormatCurrency,
+  getRRDisplayValue,
+  parseTradeDate
+} from "@/lib/utils"
 import TradeRow from "./TradeRow"
 import Pagination from "@/components/ui/pagination"
+import useAppStore from "@/store/useAppStore"
+import TradeHistoryPlaceholder from "./TradeHistoryPlaceholder"
 
-const TradeHistoryCard = ({
-  tradesData = [],
-  accountSize = 0,
-  accountBalance = 0
-}) => {
+const TradeHistoryCard = ({ tradesData = [], accountBalance = 0 }) => {
+  // Get session data for export filename
+  const sessionData = useAppStore((state) => state.sessionData)
+  const sessionId = sessionData?.id || "unknown"
+
   // Consolidated state management
   const [tableState, setTableState] = useState({
     visibleColumns: {
@@ -28,12 +26,10 @@ const TradeHistoryCard = ({
       side: true,
       dateStart: true,
       dateEnd: true,
-      sl: false,
-      tp: false,
       rr: true,
       risk: true, // Risk % column visible by default
       realized: true,
-      duration: false
+      duration: true
     },
     showFilter: false,
     currentPage: 1
@@ -47,40 +43,25 @@ const TradeHistoryCard = ({
       { key: "side", label: "Side" },
       { key: "dateStart", label: "Date Start" },
       { key: "dateEnd", label: "Date End" },
-      { key: "sl", label: "SL" },
-      { key: "tp", label: "TP" },
       { key: "rr", label: "R/R" },
       { key: "risk", label: "Risk %" },
       { key: "realized", label: "Realized" },
-      { key: "duration", label: "Hold Time" }
+      { key: "duration", label: "Time Held" }
     ],
     []
   )
 
-  // Pre-process trade data with memoization
-  const processedTrades = useMemo(
-    () => preprocessTradeData(tradesData, accountBalance),
-    [tradesData, accountBalance]
-  )
+  // Pre-process trade data with memoization and sorting
+  const processedTrades = useMemo(() => {
+    const processed = preprocessTradeData(tradesData, accountBalance)
 
-  // Preset filter button handler
-  const applyPresetFilter = useCallback(() => {
-    setTableState((prev) => ({
-      ...prev,
-      visibleColumns: {
-        asset: true,
-        side: true,
-        dateStart: true,
-        dateEnd: true,
-        sl: false,
-        tp: false,
-        rr: true,
-        risk: true,
-        realized: true,
-        duration: true // Show Hold Time in the simple preset
-      }
-    }))
-  }, [])
+    // Sort by date descending (most recent first)
+    return processed.sort((a, b) => {
+      const dateA = parseTradeDate(a.dateEnd || a.dateStart)
+      const dateB = parseTradeDate(b.dateEnd || b.dateStart)
+      return dateB.getTime() - dateA.getTime()
+    })
+  }, [tradesData, accountBalance])
 
   // Toggle column visibility
   const toggleColumn = useCallback((column) => {
@@ -91,49 +72,6 @@ const TradeHistoryCard = ({
         [column]: !prev.visibleColumns[column]
       }
     }))
-  }, [])
-
-  // Toggle all columns
-  const toggleAllColumns = useCallback(() => {
-    setTableState((prev) => {
-      const allVisible = Object.values(prev.visibleColumns).every((v) => v)
-
-      if (allVisible) {
-        // Switch to simple preset: show only essential columns
-        return {
-          ...prev,
-          visibleColumns: {
-            asset: true,
-            side: true,
-            dateStart: true,
-            dateEnd: true,
-            sl: false,
-            tp: false,
-            rr: true,
-            risk: true,
-            realized: true,
-            duration: false
-          }
-        }
-      } else {
-        // Show all columns (advanced)
-        return {
-          ...prev,
-          visibleColumns: {
-            asset: true,
-            side: true,
-            dateStart: true,
-            dateEnd: true,
-            sl: true,
-            tp: true,
-            rr: true,
-            risk: true,
-            realized: true,
-            duration: true
-          }
-        }
-      }
-    })
   }, [])
 
   // Toggle filter visibility
@@ -152,6 +90,90 @@ const TradeHistoryCard = ({
     }))
   }, [])
 
+  // CSV download function - downloads all data, not just visible columns
+  const downloadCSV = useCallback(() => {
+    if (processedTrades.length === 0) return
+
+    // Use all available columns for CSV export
+    const allColumnKeys = columnDefinitions.map((col) => col.key)
+
+    // Create CSV headers
+    const headers = allColumnKeys.map((key) => {
+      const col = columnDefinitions.find((c) => c.key === key)
+      return col ? col.label : key
+    })
+
+    // Create CSV rows
+    const csvRows = processedTrades.map((trade) => {
+      return allColumnKeys.map((key) => {
+        let value = ""
+
+        switch (key) {
+          case "asset":
+            value = trade.asset || ""
+            break
+          case "side":
+            value = trade.side || ""
+            break
+          case "dateStart":
+            value = trade.formattedDates?.start || ""
+            break
+          case "dateEnd":
+            value = trade.formattedDates?.end || ""
+            break
+          case "rr":
+            value = getRRDisplayValue(trade)
+            break
+          case "risk":
+            if (trade.riskPercentage) {
+              value = `${trade.riskPercentage.percent}% (${simpleFormatCurrency(
+                trade.riskPercentage.amount
+              )})`
+            } else {
+              value = "N/A"
+            }
+            break
+          case "realized":
+            value = trade.formattedRealized || ""
+            break
+          case "duration":
+            value = trade.heldTime || trade.duration || "-"
+            break
+          default:
+            value = trade[key] || ""
+        }
+
+        // Escape CSV values (handle commas, quotes, newlines)
+        if (
+          typeof value === "string" &&
+          (value.includes(",") || value.includes('"') || value.includes("\n"))
+        ) {
+          value = `"${value.replace(/"/g, '""')}"`
+        }
+
+        return value
+      })
+    })
+
+    // Combine headers and rows
+    const csvContent = [headers, ...csvRows]
+      .map((row) => row.join(","))
+      .join("\n")
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    const timestamp = new Date().toISOString().split("T")[0]
+    const shortSessionId = sessionId ? sessionId.slice(-8) : "unknown"
+    link.setAttribute("download", `rewynd-${shortSessionId}-${timestamp}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }, [processedTrades, columnDefinitions, sessionId])
+
   // Pagination calculations
   const pageSize = 5
   const totalPages = Math.ceil(processedTrades.length / pageSize)
@@ -164,15 +186,17 @@ const TradeHistoryCard = ({
     <Card className="justify-start h-full">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Table className="h-5 w-5" />
-            Trade History ({processedTrades.length} trades)
+          <CardTitle className="flex items-center gap-2 text-lg font-medium text-foreground">
+            Trade History
+            {processedTrades.length > 0 &&
+              ` (${processedTrades.length} ${processedTrades.length === 1 ? "trade" : "trades"})`}
           </CardTitle>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={toggleFilter}
+              disabled={processedTrades.length === 0}
               className="flex items-center gap-2"
             >
               {showFilter ? (
@@ -183,40 +207,29 @@ const TradeHistoryCard = ({
               {showFilter ? "Hide" : "Show"} Filters
             </Button>
             <Button
-              variant={
-                Object.values(visibleColumns).every((v) => v)
-                  ? "default"
-                  : "outline"
-              }
+              variant="outline"
               size="sm"
-              onClick={toggleAllColumns}
+              onClick={downloadCSV}
+              disabled={processedTrades.length === 0}
               className="flex items-center gap-2"
             >
-              Advanced
+              <Download className="h-4 w-4" />
+              Download CSV
             </Button>
           </div>
         </div>
 
         {/* Column Filter */}
         {showFilter && (
-          <div className="mt-4 p-4 bg-background dark:bg-gray-800 rounded-lg border border-border">
-            <div className="flex items-center gap-4 mb-3">
-              <h4 className="text-sm font-medium text-muted-foreground">
-                Visible Columns:
-              </h4>
-            </div>
+          <div className="mt-4 p-2 bg-accent/30 text-muted-foreground rounded-lg border border-border">
+            <div className="flex items-center gap-4 mb-3"></div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
               {columnDefinitions.map(({ key, label }) => (
                 <div key={key} className="flex items-center space-x-2">
                   <Checkbox
                     id={key}
                     checked={visibleColumns[key]}
-                    disabled={Object.values(visibleColumns).every((v) => v)}
-                    onCheckedChange={() => {
-                      if (!Object.values(visibleColumns).every((v) => v)) {
-                        toggleColumn(key)
-                      }
-                    }}
+                    onCheckedChange={() => toggleColumn(key)}
                   />
                   <label
                     htmlFor={key}
@@ -259,20 +272,16 @@ const TradeHistoryCard = ({
                 ))}
               </tbody>
             </table>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            )}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground dark:text-foreground">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No trade data available</p>
-            <p className="text-sm">
-              Extract trades from FxReplay to see trade details
-            </p>
-          </div>
+          <TradeHistoryPlaceholder />
         )}
       </CardContent>
     </Card>

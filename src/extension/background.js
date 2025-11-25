@@ -7,18 +7,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Store the session data in extension storage
     chrome.storage.local.set(
       {
-        tradeAnalytics_sessionData: message.data
-      },
-      () => {
-        // Broadcast to all popup windows
-        chrome.runtime
-          .sendMessage({
-            type: "SESSION_DATA_UPDATED",
-            data: message.data
-          })
-          .catch(() => {
-            // Popup might not be open, that's okay
-          })
+        rewynd_sessionData: message.data
       }
     )
 
@@ -27,8 +16,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "GET_SESSION_DATA") {
     // Retrieve session data from extension storage
-    chrome.storage.local.get(["tradeAnalytics_sessionData"], (result) => {
-      sendResponse({ data: result.tradeAnalytics_sessionData })
+    chrome.storage.local.get(["rewynd_sessionData"], (result) => {
+      sendResponse({ data: result.rewynd_sessionData })
     })
     return true // Keep the message channel open for async response
   }
@@ -46,21 +35,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (forceRefresh) {
       // Replace all data
       chrome.storage.local.set(
-        { fxreplay_trade_data: { trades, lastUpdated: Date.now(), url } },
-        () => {
-          chrome.runtime
-            .sendMessage({
-              type: "TRADE_DATA_UPDATED",
-              data: { trades, lastUpdated: Date.now(), url }
-            })
-            .catch(() => {})
-        }
+        { rewynd_tradeData: { trades, lastUpdated: Date.now(), url } },
       )
       sendResponse({ success: true })
+      return true
     } else {
       // Append with duplicate detection
-      chrome.storage.local.get(["fxreplay_trade_data"], (result) => {
-        const existingTrades = result.fxreplay_trade_data?.trades || []
+      chrome.storage.local.get(["rewynd_tradeData"], (result) => {
+        const existingTrades = result.rewynd_tradeData?.trades || []
         const existingIds = new Set(
           existingTrades.map((trade) => `${trade.dateStart}-${trade.dateEnd}`)
         )
@@ -81,11 +63,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           lastUpdated: Date.now(),
           url
         }
-        chrome.storage.local.set({ fxreplay_trade_data: updatedData }, () => {
-          chrome.runtime
-            .sendMessage({ type: "TRADE_DATA_UPDATED", data: updatedData })
-            .catch(() => {})
-        })
+        chrome.storage.local.set({ rewynd_tradeData: updatedData })
 
         sendResponse({ success: true })
       })
@@ -95,8 +73,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "GET_TRADE_DATA") {
     // Retrieve trade data from extension storage
-    chrome.storage.local.get(["fxreplay_trade_data"], (result) => {
-      sendResponse({ data: result.fxreplay_trade_data })
+    chrome.storage.local.get(["rewynd_tradeData"], (result) => {
+      sendResponse({ data: result.rewynd_tradeData })
     })
     return true // Keep the message channel open for async response
   }
@@ -114,73 +92,76 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })
     return true // Keep the message channel open for async response
   }
-
-  if (message.type === "SAVE_PRESET") {
-    chrome.storage.local.get(["fxReplayPresets"], (result) => {
-      const existingPresets = result.fxReplayPresets || []
-      const updatedPresets = [...existingPresets, message.data]
-      chrome.storage.local.set({ fxReplayPresets: updatedPresets }, () => {
-        sendResponse({ success: true })
-      })
-    })
-    return true // Keep the message channel open for async response
-  }
-
-  if (message.type === "GET_PRESETS") {
-    chrome.storage.local.get(["fxReplayPresets"], (result) => {
-      sendResponse({ data: result.fxReplayPresets || [] })
-    })
-    return true // Keep the message channel open for async response
-  }
-
-  if (message.type === "DELETE_PRESET") {
-    chrome.storage.local.get(["fxReplayPresets"], (result) => {
-      const existingPresets = result.fxReplayPresets || []
-      const updatedPresets = existingPresets.filter(
-        (p) => p.name !== message.data.name
-      )
-      chrome.storage.local.set({ fxReplayPresets: updatedPresets }, () => {
-        sendResponse({ success: true })
-      })
-    })
-    return true // Keep the message channel open for async response
-  }
-
-  if (message.type === "CLEAR_PRESETS") {
-    chrome.storage.local.set({ fxReplayPresets: [] }, () => {
-      sendResponse({ success: true })
-    })
-    return true // Keep the message channel open for async response
-  }
-
   if (message.type === "SAVE_NOTES") {
-    chrome.storage.local.set({ fxReplayNotes: message.data }, () => {
+    chrome.storage.local.set({ rewynd_notesData: message.data }, () => {
       sendResponse({ success: true })
     })
     return true // Keep the message channel open for async response
   }
 
   if (message.type === "GET_NOTES") {
-    chrome.storage.local.get(["fxReplayNotes"], (result) => {
-      sendResponse({ data: result.fxReplayNotes })
+    chrome.storage.local.get(["rewynd_notesData"], (result) => {
+      sendResponse({ data: result.rewynd_notesData })
     })
     return true // Keep the message channel open for async response
   }
 
-  if (message.type === "CLEAR_TRADE_DATA") {
-    chrome.storage.local.remove(["fxreplay_trade_data"], () => {
-      sendResponse({ success: true })
-    })
+  if (message.type === "RESET_SESSION") {
+    // Clear all session-related data: trades, notes, session data, and sync status
+    chrome.storage.local.remove(
+      [
+        "rewynd_tradeData",
+        "rewynd_notesData",
+        "rewynd_sessionData",
+        "isInSync"
+      ],
+      () => {
+        sendResponse({ success: true })
+      }
+    )
     return true // Keep the message channel open for async response
   }
 
+  // Clear notes handler (kept for potential note sharing toggle across sessions)
   if (message.type === "CLEAR_NOTES") {
-    chrome.storage.local.remove(["fxReplayNotes"], () => {
+    chrome.storage.local.remove(["rewynd_notesData"], () => {
       sendResponse({ success: true })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "SYNC_STATUS_UPDATE") {
+    chrome.storage.local.set({ isInSync: message.data }, () => {
+      sendResponse({ success: true })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "GET_SYNC_STATUS") {
+    chrome.storage.local.get(["isInSync"], (result) => {
+      sendResponse({ data: result.isInSync ?? false })
+    })
+    return true // Keep the message channel open for async response
+  }
+
+  if (message.type === "STOP_OBSERVER") {
+    // Forward the message to the content script to stop the observer
+    chrome.tabs.query({ url: "https://app.fxreplay.com/*/auth/testing/chart/*" }, (tabs) => {
+      if (tabs.length > 0) {
+        chrome.tabs.sendMessage(tabs[0].id, { type: "STOP_OBSERVER" }, () => {
+          // Update sync status to false when observer is stopped
+          chrome.storage.local.set({ isInSync: false }, () => {
+            sendResponse({ success: true })
+          })
+        })
+      } else {
+        sendResponse({ success: true })
+      }
     })
     return true // Keep the message channel open for async response
   }
 })
+
 chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({ url: chrome.runtime.getURL("index.html") })
 })
